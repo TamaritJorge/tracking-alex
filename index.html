@@ -1,0 +1,1047 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seguimiento Álex 👶</title>
+
+  <!-- Supabase JS (base de datos + auth + tiempo real) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- Chart.js (gráficas) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <!-- Adaptador de fechas para Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+  <style>
+    /* ═══════════════════════════════════════════
+       VARIABLES DE COLOR
+       ═══════════════════════════════════════════ */
+    :root {
+      --bg:       #f1f5f9;
+      --surface:  #ffffff;
+      --surface2: #f8fafc;
+      --border:   #e2e8f0;
+      --text:     #0f172a;
+      --text2:    #64748b;
+      --primary:  #2563eb;
+      --primary-h:#1d4ed8;
+      --danger:   #dc2626;
+      --left:     #2563eb;   /* pecho izquierdo: azul */
+      --right:    #dc2626;   /* pecho derecho: rojo  */
+      --weight:   #059669;   /* peso: verde           */
+      --r:        14px;
+    }
+
+    /* Modo oscuro automático (sigue el sistema operativo) */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg:       #0f172a;
+        --surface:  #1e293b;
+        --surface2: #334155;
+        --border:   #475569;
+        --text:     #f1f5f9;
+        --text2:    #94a3b8;
+      }
+    }
+
+    /* Modo oscuro forzado por el usuario */
+    :root[data-theme="dark"] {
+      --bg:       #0f172a;
+      --surface:  #1e293b;
+      --surface2: #334155;
+      --border:   #475569;
+      --text:     #f1f5f9;
+      --text2:    #94a3b8;
+    }
+
+    /* ═══════════════════════════════════════════
+       BASE
+       ═══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ═══════════════════════════════════════════
+       CABECERA
+       ═══════════════════════════════════════════ */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .header-title { font-size: 1.1rem; font-weight: 700; }
+    .header-right { display: flex; gap: 8px; }
+
+    .icon-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px 10px;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 1rem;
+      line-height: 1;
+    }
+
+    /* ═══════════════════════════════════════════
+       BANNER SOLO LECTURA
+       ═══════════════════════════════════════════ */
+    .readonly-banner {
+      background: #fef9c3;
+      color: #713f12;
+      text-align: center;
+      padding: 8px 16px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    /* ═══════════════════════════════════════════
+       PANTALLA DE LOGIN
+       ═══════════════════════════════════════════ */
+    .login-wrap {
+      padding: 48px 16px 32px;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .login-title {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 6px;
+    }
+
+    .login-sub {
+      text-align: center;
+      color: var(--text2);
+      margin-bottom: 28px;
+      font-size: 0.9rem;
+    }
+
+    /* ═══════════════════════════════════════════
+       TARJETA
+       ═══════════════════════════════════════════ */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .card-sub {
+      font-size: 0.8rem;
+      color: var(--text2);
+      margin-bottom: 16px;
+    }
+
+    /* ═══════════════════════════════════════════
+       FORMULARIOS
+       ═══════════════════════════════════════════ */
+    .field { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="datetime-local"],
+    input[type="date"] {
+      display: block;
+      width: 100%;
+      padding: 14px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 1rem;
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    input:focus { border-color: var(--primary); }
+
+    /* ═══════════════════════════════════════════
+       BOTONES
+       ═══════════════════════════════════════════ */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity .2s, background .2s;
+    }
+
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    .btn-primary  { background: var(--primary); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-h); }
+
+    .btn-danger-sm {
+      display: inline-block;
+      padding: 5px 10px;
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    .error-txt {
+      color: var(--danger);
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+
+    /* ═══════════════════════════════════════════
+       SELECTOR DE PECHO (toggle)
+       ═══════════════════════════════════════════ */
+    .toggle-row { display: flex; gap: 10px; }
+
+    .toggle-opt {
+      flex: 1;
+      padding: 14px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 0.95rem;
+      font-weight: 500;
+      cursor: pointer;
+      text-align: center;
+      transition: all .2s;
+    }
+
+    .toggle-opt.sel {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* ═══════════════════════════════════════════
+       CONTENIDO PRINCIPAL Y TABS
+       ═══════════════════════════════════════════ */
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 16px 16px 90px; /* espacio para la barra de tabs */
+    }
+
+    .tab-panel          { display: none; }
+    .tab-panel.active   { display: block; }
+
+    .tab-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 10px 8px 8px;
+      background: none;
+      border: none;
+      color: var(--text2);
+      font-size: 0.7rem;
+      cursor: pointer;
+      transition: color .2s;
+    }
+
+    .tab-btn.active { color: var(--primary); }
+    .tab-icon { font-size: 1.35rem; }
+
+    /* ═══════════════════════════════════════════
+       GRÁFICAS
+       ═══════════════════════════════════════════ */
+    .chart-wrap {
+      position: relative;
+      height: 230px;
+      margin-top: 12px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 8px 0 4px;
+      font-size: 0.82rem;
+      color: var(--text2);
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+
+    .legend-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* ═══════════════════════════════════════════
+       TABLA HISTORIAL
+       ═══════════════════════════════════════════ */
+    .card-no-pad { padding: 0; overflow: hidden; }
+    .table-wrap  { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+
+    thead th {
+      text-align: left;
+      padding: 10px 12px;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      font-weight: 600;
+    }
+
+    tbody td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px;
+      color: var(--text2);
+      font-size: 0.9rem;
+    }
+
+    /* ═══════════════════════════════════════════
+       TOAST (notificación flotante)
+       ═══════════════════════════════════════════ */
+    .toast {
+      position: fixed;
+      top: 64px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: var(--bg);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      z-index: 999;
+      pointer-events: none;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity .25s;
+    }
+
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     TOAST
+     ═══════════════════════════════════════════ -->
+<div id="toast" class="toast"></div>
+
+
+<!-- ═══════════════════════════════════════════
+     PANTALLA DE LOGIN
+     ═══════════════════════════════════════════ -->
+<div id="loginScreen" style="display:none">
+  <div class="header">
+    <span class="header-title">👶 Seguimiento Álex</span>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn1" title="Cambiar tema">🌙</button>
+    </div>
+  </div>
+
+  <div class="login-wrap">
+    <p class="login-title">👶</p>
+    <p class="login-sub">Inicia sesión para registrar datos</p>
+    <div class="card">
+      <div class="field">
+        <label for="loginEmail">Correo electrónico</label>
+        <input type="email" id="loginEmail" placeholder="tu@correo.com" autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="loginPwd">Contraseña</label>
+        <input type="password" id="loginPwd" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <p id="loginErr" class="error-txt" style="display:none">
+        Correo o contraseña incorrectos.
+      </p>
+      <button class="btn btn-primary" id="loginBtn" style="margin-top:4px">Entrar</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     APP PRINCIPAL
+     ═══════════════════════════════════════════ -->
+<div id="appScreen" style="display:none">
+  <!-- Banner solo lectura (visible solo con ?modo=ver) -->
+  <div id="roBanner" class="readonly-banner" style="display:none">
+    👁️ Modo solo lectura · Datos de Álex para la matrona
+  </div>
+
+  <div class="header">
+    <span class="header-title">👶 Seguimiento Álex</span>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn2" title="Cambiar tema">🌙</button>
+      <button class="icon-btn" id="logoutBtn" style="font-size:.8rem">Salir</button>
+    </div>
+  </div>
+
+  <main>
+
+    <!-- ── TAB: REGISTRAR ─────────────────────── -->
+    <div id="tab-registrar" class="tab-panel active">
+
+      <div class="card">
+        <p class="card-title">🍼 Extracción de leche</p>
+        <p class="card-sub">Registra el pecho y los ml extraídos</p>
+
+        <div class="field">
+          <label>Pecho</label>
+          <div class="toggle-row">
+            <button class="toggle-opt sel" data-p="izquierdo">Izquierdo</button>
+            <button class="toggle-opt"     data-p="derecho">Derecho</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="extMl">Cantidad (ml)</label>
+          <input type="number" id="extMl" placeholder="0"
+                 min="0" max="500" inputmode="decimal" step="0.5">
+        </div>
+
+        <div class="field">
+          <label for="extFecha">Fecha y hora</label>
+          <input type="datetime-local" id="extFecha">
+        </div>
+
+        <button class="btn btn-primary" id="btnExt">Guardar extracción</button>
+      </div>
+
+      <div class="card">
+        <p class="card-title">⚖️ Peso del bebé</p>
+        <p class="card-sub">En gramos</p>
+
+        <div class="field">
+          <label for="pesoG">Peso (gramos)</label>
+          <input type="number" id="pesoG" placeholder="3000"
+                 min="500" max="10000" inputmode="numeric">
+        </div>
+
+        <div class="field">
+          <label for="pesoFecha">Fecha</label>
+          <input type="date" id="pesoFecha">
+        </div>
+
+        <button class="btn btn-primary" id="btnPeso">Guardar peso</button>
+      </div>
+    </div>
+
+
+    <!-- ── TAB: GRÁFICAS ─────────────────────── -->
+    <div id="tab-graficas" class="tab-panel">
+
+      <div class="card">
+        <p class="card-title">Extracciones de leche</p>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--left)"></div>
+            <span>Izquierdo — puntos ●, línea continua</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--right)"></div>
+            <span>Derecho — puntos ▲, línea discontinua</span>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartExt"></canvas></div>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Peso</p>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--weight)"></div>
+            <span>Gramos — puntos ■</span>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartPeso"></canvas></div>
+      </div>
+    </div>
+
+
+    <!-- ── TAB: HISTORIAL ────────────────────── -->
+    <div id="tab-historial" class="tab-panel">
+      <div class="card card-no-pad">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Detalle</th>
+                <th id="thAcc">Acc.</th>
+              </tr>
+            </thead>
+            <tbody id="histBody">
+              <tr><td colspan="4" class="empty-state">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── BARRA DE TABS ──────────────────────── -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="registrar">
+      <span class="tab-icon">✏️</span><span>Registrar</span>
+    </button>
+    <button class="tab-btn" data-tab="graficas">
+      <span class="tab-icon">📊</span><span>Gráficas</span>
+    </button>
+    <button class="tab-btn" data-tab="historial">
+      <span class="tab-icon">📋</span><span>Historial</span>
+    </button>
+  </nav>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     LÓGICA DE LA APP
+     ═══════════════════════════════════════════ -->
+<script>
+/* ─────────────────────────────────────────────────────────────
+   CONFIGURACIÓN
+   Solo la publishable key va aquí — la secret key NUNCA
+   ───────────────────────────────────────────────────────────── */
+const SUPABASE_URL = 'https://yzarrncayxkvkpyflbrk.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_IliCiFj7DM6UHxL4YxlnNw_57j6pW5z';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* ── Estado ────────────────────────────────────────────────── */
+const params  = new URLSearchParams(location.search);
+const modoVer = params.get('modo') === 'ver';   // URL de la matrona
+let registros = [];
+let chartExt  = null;
+let chartPeso = null;
+let pecho     = 'izquierdo';
+let tabActual = modoVer ? 'graficas' : 'registrar';
+
+/* ─────────────────────────────────────────────────────────────
+   TEMA CLARO / OSCURO
+   ───────────────────────────────────────────────────────────── */
+let tema = localStorage.getItem('tema') || 'auto';
+
+function esDark() {
+  return tema === 'dark' ||
+    (tema === 'auto' && matchMedia('(prefers-color-scheme: dark)').matches);
+}
+
+function aplicarTema(t) {
+  tema = t;
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem('tema', t);
+  const icono = esDark() ? '☀️' : '🌙';
+  document.getElementById('themeBtn1').textContent = icono;
+  document.getElementById('themeBtn2').textContent = icono;
+  if (tabActual === 'graficas' && chartExt) renderCharts();
+}
+
+function toggleTema() { aplicarTema(esDark() ? 'light' : 'dark'); }
+
+document.getElementById('themeBtn1').addEventListener('click', toggleTema);
+document.getElementById('themeBtn2').addEventListener('click', toggleTema);
+aplicarTema(tema);
+
+/* ─────────────────────────────────────────────────────────────
+   TOAST (notificación de 2 segundos)
+   ───────────────────────────────────────────────────────────── */
+let toastTimer;
+function toast(msg, ms = 2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HELPERS DE FECHA
+   ───────────────────────────────────────────────────────────── */
+function ahoraLocal() {
+  // Formato YYYY-MM-DDTHH:mm para datetime-local
+  const d = new Date();
+  return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+function hoyLocal() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function fmtFechaHora(iso) {
+  return new Date(iso).toLocaleString('es-ES', {
+    day: '2-digit', month: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────
+   INICIALIZACIÓN
+   ───────────────────────────────────────────────────────────── */
+async function init() {
+  if (modoVer) {
+    mostrarApp(true);
+    return;
+  }
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) mostrarApp(false);
+  else mostrarLogin();
+}
+
+function mostrarLogin() {
+  document.getElementById('loginScreen').style.display = '';
+  document.getElementById('appScreen').style.display   = 'none';
+}
+
+function mostrarApp(soloLectura) {
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appScreen').style.display   = '';
+
+  if (soloLectura) {
+    document.getElementById('roBanner').style.display  = '';
+    document.getElementById('logoutBtn').style.display = 'none';
+    // Ocultar la pestaña "Registrar" en modo solo lectura
+    document.querySelector('[data-tab="registrar"]').style.display = 'none';
+  }
+
+  // Valores por defecto de los formularios
+  document.getElementById('extFecha').value  = ahoraLocal();
+  document.getElementById('pesoFecha').value = hoyLocal();
+
+  cargarDatos();
+  configurarRealtime();
+  switchTab(tabActual);
+}
+
+/* ─────────────────────────────────────────────────────────────
+   AUTH — LOGIN / LOGOUT
+   ───────────────────────────────────────────────────────────── */
+document.getElementById('loginBtn').addEventListener('click', async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPwd').value;
+  const btn   = document.getElementById('loginBtn');
+  const errEl = document.getElementById('loginErr');
+
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Entrando…';
+
+  const { error } = await sb.auth.signInWithPassword({ email, password: pwd });
+
+  btn.disabled = false;
+  btn.textContent = 'Entrar';
+
+  if (error) {
+    errEl.style.display = '';
+  } else {
+    mostrarApp(false);
+  }
+});
+
+// Pulsar Enter en el campo contraseña hace login
+document.getElementById('loginPwd').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('loginBtn').click();
+});
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await sb.auth.signOut();
+  mostrarLogin();
+});
+
+/* ─────────────────────────────────────────────────────────────
+   TABS
+   ───────────────────────────────────────────────────────────── */
+function switchTab(tab) {
+  tabActual = tab;
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+  const panel = document.getElementById(`tab-${tab}`);
+  if (panel) panel.classList.add('active');
+
+  const btn = document.querySelector(`[data-tab="${tab}"]`);
+  if (btn) btn.classList.add('active');
+
+  if (tab === 'graficas') renderCharts();
+}
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+});
+
+/* ─────────────────────────────────────────────────────────────
+   SELECTOR DE PECHO
+   ───────────────────────────────────────────────────────────── */
+document.querySelectorAll('.toggle-opt').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.toggle-opt').forEach(b => b.classList.remove('sel'));
+    btn.classList.add('sel');
+    pecho = btn.dataset.p;
+  });
+});
+
+/* ─────────────────────────────────────────────────────────────
+   GUARDAR EXTRACCIÓN
+   ───────────────────────────────────────────────────────────── */
+document.getElementById('btnExt').addEventListener('click', async () => {
+  const ml       = parseFloat(document.getElementById('extMl').value);
+  const fechaStr = document.getElementById('extFecha').value;
+
+  if (!fechaStr || isNaN(ml) || ml < 0) {
+    toast('⚠️ Rellena todos los campos.');
+    return;
+  }
+
+  const btn = document.getElementById('btnExt');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+
+  const { error } = await sb.from('registros').insert({
+    tipo:      'extraccion',
+    fecha_hora: new Date(fechaStr).toISOString(),
+    datos:     { pecho, ml }
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Guardar extracción';
+
+  if (error) {
+    toast('❌ Error al guardar. Comprueba la conexión.');
+    console.error(error);
+  } else {
+    toast('✅ Extracción guardada');
+    document.getElementById('extMl').value   = '';
+    document.getElementById('extFecha').value = ahoraLocal();
+  }
+});
+
+/* ─────────────────────────────────────────────────────────────
+   GUARDAR PESO
+   ───────────────────────────────────────────────────────────── */
+document.getElementById('btnPeso').addEventListener('click', async () => {
+  const gramos   = parseInt(document.getElementById('pesoG').value);
+  const fechaStr = document.getElementById('pesoFecha').value;
+
+  if (!fechaStr || isNaN(gramos) || gramos < 500) {
+    toast('⚠️ Rellena todos los campos (mínimo 500 g).');
+    return;
+  }
+
+  const btn = document.getElementById('btnPeso');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+
+  // Para el peso guardamos mediodía del día seleccionado
+  const fecha = new Date(fechaStr + 'T12:00:00');
+
+  const { error } = await sb.from('registros').insert({
+    tipo:      'peso',
+    fecha_hora: fecha.toISOString(),
+    datos:     { gramos }
+  });
+
+  btn.disabled = false;
+  btn.textContent = 'Guardar peso';
+
+  if (error) {
+    toast('❌ Error al guardar.');
+    console.error(error);
+  } else {
+    toast('✅ Peso guardado');
+    document.getElementById('pesoG').value     = '';
+    document.getElementById('pesoFecha').value = hoyLocal();
+  }
+});
+
+/* ─────────────────────────────────────────────────────────────
+   CARGAR DATOS
+   ───────────────────────────────────────────────────────────── */
+async function cargarDatos() {
+  const { data, error } = await sb
+    .from('registros')
+    .select('*')
+    .order('fecha_hora', { ascending: true });
+
+  if (error) { console.error('Error al cargar:', error); return; }
+
+  registros = data || [];
+  renderTabla();
+  if (tabActual === 'graficas') renderCharts();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TIEMPO REAL — sincronización automática entre móviles
+   ───────────────────────────────────────────────────────────── */
+function configurarRealtime() {
+  sb.channel('tracking-alex')
+    .on('postgres_changes',
+        { event: '*', schema: 'public', table: 'registros' },
+        () => { cargarDatos(); })
+    .subscribe();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TABLA HISTORIAL
+   ───────────────────────────────────────────────────────────── */
+function renderTabla() {
+  const tbody = document.getElementById('histBody');
+  const thAcc = document.getElementById('thAcc');
+  if (modoVer) thAcc.style.display = 'none';
+
+  // Ordenar de más reciente a más antiguo
+  const filas = [...registros].sort((a, b) =>
+    new Date(b.fecha_hora) - new Date(a.fecha_hora)
+  );
+
+  if (!filas.length) {
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No hay registros todavía.</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = filas.map(r => {
+    let tipo = '', detalle = '';
+
+    if (r.tipo === 'extraccion') {
+      tipo    = r.datos.pecho === 'izquierdo' ? '🍼 Izq.' : '🍼 Der.';
+      detalle = `${r.datos.ml} ml`;
+    } else if (r.tipo === 'peso') {
+      tipo    = '⚖️ Peso';
+      detalle = `${r.datos.gramos} g`;
+    } else {
+      // Tipo futuro (tomas, pañales, etc.)
+      tipo    = r.tipo;
+      detalle = JSON.stringify(r.datos);
+    }
+
+    const accCell = modoVer
+      ? ''
+      : `<td><button class="btn-danger-sm" onclick="borrar('${r.id}')">🗑️</button></td>`;
+
+    return `<tr>
+      <td>${fmtFechaHora(r.fecha_hora)}</td>
+      <td>${tipo}</td>
+      <td>${detalle}</td>
+      ${accCell}
+    </tr>`;
+  }).join('');
+}
+
+/* ─────────────────────────────────────────────────────────────
+   BORRAR REGISTRO
+   ───────────────────────────────────────────────────────────── */
+window.borrar = async function(id) {
+  if (!confirm('¿Borrar este registro?')) return;
+  const { error } = await sb.from('registros').delete().eq('id', id);
+  if (error) toast('❌ Error al borrar.');
+  else { toast('🗑️ Registro borrado'); await cargarDatos(); }
+};
+
+/* ─────────────────────────────────────────────────────────────
+   GRÁFICAS
+   ───────────────────────────────────────────────────────────── */
+function coloresEjes() {
+  return esDark()
+    ? { grid: 'rgba(255,255,255,0.08)', tick: '#94a3b8' }
+    : { grid: 'rgba(0,0,0,0.07)',       tick: '#64748b' };
+}
+
+function rangoFechas() {
+  // Mismo rango en ambas gráficas para eje X compartido visualmente
+  if (!registros.length) {
+    const hoy = new Date();
+    return { min: new Date(hoy - 7 * 864e5), max: new Date(hoy.getTime() + 864e5) };
+  }
+  const ts  = registros.map(r => +new Date(r.fecha_hora));
+  const min = new Date(Math.min(...ts));
+  const max = new Date(Math.max(...ts));
+  // Margen de medio día a cada lado
+  min.setHours(min.getHours() - 12);
+  max.setHours(max.getHours() + 12);
+  return { min, max };
+}
+
+function renderCharts() {
+  const c   = coloresEjes();
+  const rng = rangoFechas();
+
+  const ext   = registros.filter(r => r.tipo === 'extraccion');
+  const pesos = registros.filter(r => r.tipo === 'peso');
+
+  // Datos por pecho
+  const dIzq = ext.filter(r => r.datos.pecho === 'izquierdo')
+                  .map(r => ({ x: r.fecha_hora, y: r.datos.ml }));
+  const dDer = ext.filter(r => r.datos.pecho === 'derecho')
+                  .map(r => ({ x: r.fecha_hora, y: r.datos.ml }));
+
+  const dPeso = pesos.map(r => ({ x: r.fecha_hora, y: r.datos.gramos }));
+
+  // Eje X idéntico en las dos gráficas → comparación visual directa
+  const ejeX = {
+    type: 'time',
+    min:  rng.min,
+    max:  rng.max,
+    time: {
+      unit: 'day',
+      tooltipFormat: 'dd/MM HH:mm',
+      displayFormats: { day: 'dd/MM', hour: 'HH:mm' }
+    },
+    grid:  { color: c.grid },
+    ticks: { color: c.tick, maxTicksLimit: 7 }
+  };
+
+  const pluginsCfg = {
+    legend: { display: false },
+    tooltip: {
+      callbacks: {
+        label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}${ctx.dataset.unidad}`
+      }
+    }
+  };
+
+  /* ── Gráfica de extracciones ── */
+  if (chartExt) chartExt.destroy();
+  chartExt = new Chart(document.getElementById('chartExt'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Izquierdo',
+          data: dIzq,
+          backgroundColor: '#2563eb',
+          borderColor:     '#2563eb',
+          pointStyle:  'circle',     // ● círculo → distinguible en B&N
+          pointRadius:      7,
+          pointHoverRadius: 9,
+          showLine: true,            // conecta los puntos con una línea
+          borderDash: [],            // línea continua
+          tension: 0.3,
+          unidad: ' ml'
+        },
+        {
+          label: 'Derecho',
+          data: dDer,
+          backgroundColor: '#dc2626',
+          borderColor:     '#dc2626',
+          pointStyle:  'triangle',   // ▲ triángulo → distinguible en B&N
+          pointRadius:      8,
+          pointHoverRadius: 10,
+          showLine: true,
+          borderDash: [5, 3],        // línea discontinua → también B&N
+          tension: 0.3,
+          unidad: ' ml'
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: pluginsCfg,
+      scales: {
+        x: ejeX,
+        y: {
+          beginAtZero: true,
+          grid:  { color: c.grid },
+          ticks: { color: c.tick },
+          title: { display: true, text: 'ml', color: c.tick }
+        }
+      }
+    }
+  });
+
+  /* ── Gráfica de peso ── */
+  if (chartPeso) chartPeso.destroy();
+  chartPeso = new Chart(document.getElementById('chartPeso'), {
+    type: 'scatter',
+    data: {
+      datasets: [{
+        label: 'Peso',
+        data: dPeso,
+        backgroundColor: '#059669',
+        borderColor:     '#059669',
+        pointStyle:  'rect',         // ■ cuadrado → distinguible en B&N
+        pointRadius:      7,
+        pointHoverRadius: 9,
+        showLine: true,
+        tension: 0.3,
+        unidad: ' g'
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: pluginsCfg,
+      scales: {
+        x: ejeX,    // ← mismo eje X que la gráfica de extracciones
+        y: {
+          beginAtZero: false,
+          grid:  { color: c.grid },
+          ticks: { color: c.tick },
+          title: { display: true, text: 'gramos', color: c.tick }
+        }
+      }
+    }
+  });
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ARRANCAR
+   ───────────────────────────────────────────────────────────── */
+init();
+</script>
+</body>
+</html>
