@@ -80,10 +80,18 @@
       height: 56px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-end;
     }
 
-    .header-title { font-size: 1.1rem; font-weight: 700; }
+    .header-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 1.1rem;
+      font-weight: 700;
+      white-space: nowrap;
+      pointer-events: none;
+    }
     .header-right { display: flex; gap: 8px; }
 
     .icon-btn {
@@ -98,15 +106,46 @@
     }
 
     /* ═══════════════════════════════════════════
-       BANNER SOLO LECTURA
+       MODAL DE EDICIÓN
        ═══════════════════════════════════════════ */
-    .readonly-banner {
-      background: #fef9c3;
-      color: #713f12;
-      text-align: center;
-      padding: 8px 16px;
-      font-size: 0.875rem;
-      font-weight: 500;
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      padding: 16px;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      border-radius: var(--r);
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-title {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 16px;
+    }
+
+    .modal-btns { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+
+    .btn-edit-sm {
+      display: inline-block;
+      padding: 5px 10px;
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.8rem;
+      cursor: pointer;
     }
 
     /* ═══════════════════════════════════════════
@@ -416,11 +455,6 @@
      APP PRINCIPAL
      ═══════════════════════════════════════════ -->
 <div id="appScreen" style="display:none">
-  <!-- Banner solo lectura (visible solo con ?modo=ver) -->
-  <div id="roBanner" class="readonly-banner" style="display:none">
-    👁️ Modo solo lectura · Datos de Álex para la matrona
-  </div>
-
   <div class="header">
     <span class="header-title">👶 Seguimiento Álex</span>
     <div class="header-right">
@@ -535,6 +569,19 @@
   </main>
 
   <!-- ── BARRA DE TABS ──────────────────────── -->
+  <!-- ── MODAL DE EDICIÓN ──────────────────────── -->
+  <div id="editModal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <p class="modal-title">✏️ Editar registro</p>
+      <div id="editForm"></div>
+      <div class="modal-btns">
+        <button class="btn btn-primary" id="btnSaveEdit">Guardar cambios</button>
+        <button class="btn" id="btnCancelEdit"
+                style="background:var(--surface2);color:var(--text)">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
   <nav class="tab-bar">
     <button class="tab-btn active" data-tab="registrar">
       <span class="tab-icon">✏️</span><span>Registrar</span>
@@ -653,7 +700,6 @@ function mostrarApp(soloLectura) {
   document.getElementById('appScreen').style.display   = '';
 
   if (soloLectura) {
-    document.getElementById('roBanner').style.display  = '';
     document.getElementById('logoutBtn').style.display = 'none';
     // Ocultar la pestaña "Registrar" en modo solo lectura
     document.querySelector('[data-tab="registrar"]').style.display = 'none';
@@ -870,7 +916,10 @@ function renderTabla() {
 
     const accCell = modoVer
       ? ''
-      : `<td><button class="btn-danger-sm" onclick="borrar('${r.id}')">🗑️</button></td>`;
+      : `<td style="white-space:nowrap">
+           <button class="btn-edit-sm"   onclick="editar('${r.id}')">✏️</button>
+           <button class="btn-danger-sm" onclick="borrar('${r.id}')" style="margin-left:4px">🗑️</button>
+         </td>`;
 
     return `<tr>
       <td>${fmtFechaHora(r.fecha_hora)}</td>
@@ -1037,6 +1086,128 @@ function renderCharts() {
     }
   });
 }
+
+/* ─────────────────────────────────────────────────────────────
+   EDITAR REGISTRO
+   ───────────────────────────────────────────────────────────── */
+let editandoId   = null;
+let editandoTipo = null;
+let pechoEdicion = 'izquierdo';
+
+function toLocalDT(iso) {
+  const d = new Date(iso);
+  return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+window.editar = function(id) {
+  const r = registros.find(x => x.id === id);
+  if (!r) return;
+
+  editandoId   = id;
+  editandoTipo = r.tipo;
+  pechoEdicion = r.datos.pecho || 'izquierdo';
+
+  let html = '';
+
+  if (r.tipo === 'extraccion') {
+    html = `
+      <div class="field">
+        <label>Pecho</label>
+        <div class="toggle-row">
+          <button class="toggle-opt ${r.datos.pecho === 'izquierdo' ? 'sel':''}" data-ep="izquierdo">Izquierdo</button>
+          <button class="toggle-opt ${r.datos.pecho === 'derecho'   ? 'sel':''}" data-ep="derecho">Derecho</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>Cantidad (ml)</label>
+        <input type="number" id="editMl" value="${r.datos.ml}"
+               min="0" max="500" inputmode="decimal" step="0.5">
+      </div>
+      <div class="field">
+        <label>Fecha y hora</label>
+        <input type="datetime-local" id="editFechaHora" value="${toLocalDT(r.fecha_hora)}">
+      </div>`;
+  } else if (r.tipo === 'peso') {
+    html = `
+      <div class="field">
+        <label>Peso (gramos)</label>
+        <input type="number" id="editGramos" value="${r.datos.gramos}"
+               min="500" max="10000" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label>Fecha</label>
+        <input type="date" id="editFechaDia" value="${r.fecha_hora.slice(0,10)}">
+      </div>`;
+  }
+
+  document.getElementById('editForm').innerHTML = html;
+  document.getElementById('editModal').style.display = '';
+
+  // Activar toggles de pecho dentro del modal
+  document.querySelectorAll('[data-ep]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('[data-ep]').forEach(b => b.classList.remove('sel'));
+      btn.classList.add('sel');
+      pechoEdicion = btn.dataset.ep;
+    });
+  });
+};
+
+document.getElementById('btnCancelEdit').addEventListener('click', () => {
+  document.getElementById('editModal').style.display = 'none';
+  editandoId = null;
+});
+
+// Cerrar tocando el fondo oscuro
+document.getElementById('editModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('editModal')) {
+    document.getElementById('editModal').style.display = 'none';
+    editandoId = null;
+  }
+});
+
+document.getElementById('btnSaveEdit').addEventListener('click', async () => {
+  if (!editandoId) return;
+
+  let fecha_hora, datos;
+
+  if (editandoTipo === 'extraccion') {
+    const ml       = parseFloat(document.getElementById('editMl').value);
+    const fechaStr = document.getElementById('editFechaHora').value;
+    if (!fechaStr || isNaN(ml) || ml < 0) { toast('⚠️ Rellena todos los campos.'); return; }
+    fecha_hora = new Date(fechaStr).toISOString();
+    datos      = { pecho: pechoEdicion, ml };
+
+  } else if (editandoTipo === 'peso') {
+    const gramos   = parseInt(document.getElementById('editGramos').value);
+    const fechaStr = document.getElementById('editFechaDia').value;
+    if (!fechaStr || isNaN(gramos) || gramos < 500) { toast('⚠️ Rellena todos los campos.'); return; }
+    fecha_hora = new Date(fechaStr + 'T12:00:00').toISOString();
+    datos      = { gramos };
+  }
+
+  const btn = document.getElementById('btnSaveEdit');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+
+  const { error } = await sb
+    .from('registros')
+    .update({ fecha_hora, datos })
+    .eq('id', editandoId);
+
+  btn.disabled = false;
+  btn.textContent = 'Guardar cambios';
+
+  if (error) {
+    toast('❌ Error al guardar. Comprueba la conexión.');
+    console.error(error);
+  } else {
+    toast('✅ Registro actualizado');
+    document.getElementById('editModal').style.display = 'none';
+    editandoId = null;
+    await cargarDatos();
+  }
+});
 
 /* ─────────────────────────────────────────────────────────────
    ARRANCAR
