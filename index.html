@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Seguimiento Álex 👶</title>
 
   <!-- Supabase JS (base de datos + auth + tiempo real) -->
@@ -26,9 +26,11 @@
       --primary:  #2563eb;
       --primary-h:#1d4ed8;
       --danger:   #dc2626;
-      --left:     #2563eb;   /* pecho izquierdo: azul */
-      --right:    #dc2626;   /* pecho derecho: rojo  */
-      --weight:   #059669;   /* peso: verde           */
+      --left:     #2563eb;   /* pecho izquierdo: azul   */
+      --right:    #dc2626;   /* pecho derecho:  rojo    */
+      --weight:   #059669;   /* peso:           verde   */
+      --caca:     #8a5a34;   /* caca:           marrón  */
+      --pipi:     #38bdf8;   /* pipí:           celeste */
       --r:        14px;
     }
 
@@ -60,15 +62,19 @@
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background: var(--bg);
       color: var(--text);
       min-height: 100dvh;
       -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
     }
 
     /* ═══════════════════════════════════════════
        CABECERA
+       El título ya NO usa position:absolute, así que nunca
+       puede solaparse con los botones en pantallas estrechas
+       (era el fallo que se veía en Android).
        ═══════════════════════════════════════════ */
     .header {
       position: sticky;
@@ -76,33 +82,47 @@
       z-index: 50;
       background: var(--surface);
       border-bottom: 1px solid var(--border);
-      padding: 0 16px;
-      height: 56px;
+      padding: env(safe-area-inset-top, 0px) 12px 0;
+      height: calc(56px + env(safe-area-inset-top, 0px));
       display: flex;
       align-items: center;
-      justify-content: flex-end;
+      justify-content: space-between;
+      gap: 8px;
     }
 
     .header-title {
-      position: absolute;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 1.1rem;
+      flex: 1;
+      min-width: 0;              /* necesario para que funcione el ellipsis */
+      font-size: 1.05rem;
       font-weight: 700;
       white-space: nowrap;
-      pointer-events: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .header-right { display: flex; gap: 8px; }
+
+    .header-right {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;            /* los botones nunca se comprimen */
+    }
 
     .icon-btn {
       background: none;
       border: 1px solid var(--border);
       border-radius: 8px;
+      min-width: 44px;           /* objetivo táctil cómodo */
+      min-height: 40px;
       padding: 6px 10px;
       color: var(--text);
       cursor: pointer;
       font-size: 1rem;
+      font-family: inherit;
       line-height: 1;
+    }
+
+    /* En pantallas muy estrechas acortamos el título */
+    @media (max-width: 380px) {
+      .hide-narrow { display: none; }
     }
 
     /* ═══════════════════════════════════════════
@@ -125,17 +145,12 @@
       width: 100%;
       max-width: 500px;
       margin: 0 auto;
-      max-height: 90vh;
+      max-height: 85vh;
       overflow-y: auto;
     }
 
-    .modal-title {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 16px;
-    }
-
-    .modal-btns { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+    .modal-title { font-size: 1rem; font-weight: 600; margin-bottom: 16px; }
+    .modal-btns  { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
 
     .btn-edit-sm {
       display: inline-block;
@@ -145,24 +160,15 @@
       border: 1px solid var(--border);
       border-radius: 6px;
       font-size: 0.8rem;
+      font-family: inherit;
       cursor: pointer;
     }
 
     /* ═══════════════════════════════════════════
        PANTALLA DE LOGIN
        ═══════════════════════════════════════════ */
-    .login-wrap {
-      padding: 48px 16px 32px;
-      max-width: 420px;
-      margin: 0 auto;
-    }
-
-    .login-title {
-      text-align: center;
-      font-size: 2rem;
-      margin-bottom: 6px;
-    }
-
+    .login-wrap  { padding: 48px 16px 32px; max-width: 420px; margin: 0 auto; }
+    .login-title { text-align: center; font-size: 2rem; margin-bottom: 6px; }
     .login-sub {
       text-align: center;
       color: var(--text2);
@@ -181,17 +187,32 @@
       margin-bottom: 16px;
     }
 
-    .card-title {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 2px;
+    .card-title { font-size: 1rem;   font-weight: 600; margin-bottom: 2px; }
+    .card-sub   { font-size: 0.8rem; color: var(--text2); margin-bottom: 16px; }
+
+    /* ═══════════════════════════════════════════
+       RESUMEN DE HOY
+       ═══════════════════════════════════════════ */
+    .sum-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
     }
 
-    .card-sub {
-      font-size: 0.8rem;
-      color: var(--text2);
-      margin-bottom: 16px;
+    @media (min-width: 480px) {
+      .sum-grid { grid-template-columns: repeat(4, 1fr); }
     }
+
+    .sum-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .sum-val   { font-size: 1.25rem; font-weight: 700; line-height: 1.2; }
+    .sum-lbl   { font-size: 0.72rem; color: var(--text2); margin-top: 2px; }
+    .sum-extra { font-size: 0.7rem;  color: var(--text2); margin-top: 3px; }
 
     /* ═══════════════════════════════════════════
        FORMULARIOS
@@ -209,8 +230,10 @@
     input[type="email"],
     input[type="password"],
     input[type="number"],
+    input[type="text"],
     input[type="datetime-local"],
-    input[type="date"] {
+    input[type="date"],
+    textarea {
       display: block;
       width: 100%;
       padding: 14px 12px;
@@ -219,13 +242,16 @@
       background: var(--surface);
       color: var(--text);
       font-size: 1rem;
+      font-family: inherit;
       appearance: none;
       -webkit-appearance: none;
       outline: none;
       transition: border-color .2s;
     }
 
-    input:focus { border-color: var(--primary); }
+    textarea { resize: vertical; min-height: 44px; }
+
+    input:focus, textarea:focus { border-color: var(--primary); }
 
     /* ═══════════════════════════════════════════
        BOTONES
@@ -238,13 +264,14 @@
       border-radius: 10px;
       font-size: 1rem;
       font-weight: 600;
+      font-family: inherit;
       cursor: pointer;
       transition: opacity .2s, background .2s;
     }
 
     .btn:disabled { opacity: .55; cursor: not-allowed; }
 
-    .btn-primary  { background: var(--primary); color: #fff; }
+    .btn-primary { background: var(--primary); color: #fff; }
     .btn-primary:hover:not(:disabled) { background: var(--primary-h); }
 
     .btn-danger-sm {
@@ -255,29 +282,34 @@
       border: none;
       border-radius: 6px;
       font-size: 0.8rem;
+      font-family: inherit;
       cursor: pointer;
     }
 
-    .error-txt {
-      color: var(--danger);
-      font-size: 0.85rem;
-      margin-top: 8px;
+    .error-txt { color: var(--danger); font-size: 0.85rem; margin-top: 8px; }
+
+    .hint-txt {
+      font-size: 0.75rem;
+      color: var(--text2);
+      margin: -8px 0 16px;
+      line-height: 1.4;
     }
 
     /* ═══════════════════════════════════════════
-       SELECTOR DE PECHO (toggle)
+       SELECTOR DE DOS OPCIONES (pecho, transparente)
        ═══════════════════════════════════════════ */
     .toggle-row { display: flex; gap: 10px; }
 
     .toggle-opt {
       flex: 1;
-      padding: 14px;
+      padding: 14px 8px;
       border: 2px solid var(--border);
       border-radius: 10px;
       background: var(--surface2);
       color: var(--text2);
       font-size: 0.95rem;
       font-weight: 500;
+      font-family: inherit;
       cursor: pointer;
       text-align: center;
       transition: all .2s;
@@ -290,16 +322,88 @@
     }
 
     /* ═══════════════════════════════════════════
+       SELECTOR DE CANTIDAD 0-10
+       11 botones en lugar de un input numérico: en el móvil
+       se registra de un toque y sin abrir el teclado.
+       ═══════════════════════════════════════════ */
+    .qty-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .qty-btn {
+      flex: 1 0 calc(16.66% - 6px);
+      min-width: 42px;
+      padding: 11px 0;
+      border: 2px solid var(--border);
+      border-radius: 9px;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .qty-btn.sel {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* ═══════════════════════════════════════════
+       SELECTOR DE COLOR DE CACA
+       ═══════════════════════════════════════════ */
+    .color-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    @media (min-width: 420px) {
+      .color-row { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .color-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 8px;
+      border: 2px solid var(--border);
+      border-radius: 9px;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 0.74rem;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .color-btn.sel {
+      border-color: var(--primary);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .color-swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      /* borde propio: si no, el blanquecino desaparece sobre fondo claro */
+      border: 1px solid rgba(128,128,128,.55);
+    }
+
+    /* ═══════════════════════════════════════════
        CONTENIDO PRINCIPAL Y TABS
        ═══════════════════════════════════════════ */
     main {
       max-width: 640px;
       margin: 0 auto;
-      padding: 16px 16px 90px; /* espacio para la barra de tabs */
+      padding: 16px 16px 96px; /* hueco para la barra de tabs */
     }
 
-    .tab-panel          { display: none; }
-    .tab-panel.active   { display: block; }
+    .tab-panel        { display: none; }
+    .tab-panel.active { display: block; }
 
     .tab-bar {
       position: fixed;
@@ -322,6 +426,7 @@
       border: none;
       color: var(--text2);
       font-size: 0.7rem;
+      font-family: inherit;
       cursor: pointer;
       transition: color .2s;
     }
@@ -332,17 +437,13 @@
     /* ═══════════════════════════════════════════
        GRÁFICAS
        ═══════════════════════════════════════════ */
-    .chart-wrap {
-      position: relative;
-      height: 230px;
-      margin-top: 12px;
-    }
+    .chart-wrap { position: relative; height: 230px; margin-top: 12px; }
 
     .legend {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
-      margin: 8px 0 4px;
+      gap: 14px;
+      margin: 10px 0 4px;
       font-size: 0.82rem;
       color: var(--text2);
     }
@@ -350,14 +451,40 @@
     .legend-item { display: flex; align-items: center; gap: 6px; }
 
     .legend-dot {
-      width: 10px; height: 10px;
+      width: 11px; height: 11px;
       border-radius: 50%;
       flex-shrink: 0;
+      border: 1px solid rgba(128,128,128,.35);
     }
 
     /* ═══════════════════════════════════════════
-       TABLA HISTORIAL
+       HISTORIAL
        ═══════════════════════════════════════════ */
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .chip {
+      padding: 8px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--text2);
+      font-size: 0.82rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .chip.sel {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
     .card-no-pad { padding: 0; overflow: hidden; }
     .table-wrap  { overflow-x: auto; }
 
@@ -374,12 +501,16 @@
       font-weight: 600;
     }
 
-    tbody td {
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--border);
-    }
-
+    tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
     tbody tr:last-child td { border-bottom: none; }
+
+    .nota-txt {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text2);
+      margin-top: 3px;
+      font-style: italic;
+    }
 
     .empty-state {
       text-align: center;
@@ -393,7 +524,7 @@
        ═══════════════════════════════════════════ */
     .toast {
       position: fixed;
-      top: 64px;
+      top: calc(64px + env(safe-area-inset-top, 0px));
       left: 50%;
       transform: translateX(-50%);
       background: var(--text);
@@ -403,7 +534,8 @@
       font-size: 0.9rem;
       z-index: 999;
       pointer-events: none;
-      white-space: nowrap;
+      max-width: calc(100vw - 32px);
+      text-align: center;
       opacity: 0;
       transition: opacity .25s;
     }
@@ -416,7 +548,7 @@
 <!-- ═══════════════════════════════════════════
      TOAST
      ═══════════════════════════════════════════ -->
-<div id="toast" class="toast"></div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
 
 
 <!-- ═══════════════════════════════════════════
@@ -424,9 +556,9 @@
      ═══════════════════════════════════════════ -->
 <div id="loginScreen" style="display:none">
   <div class="header">
-    <span class="header-title">👶 Seguimiento Álex</span>
+    <span class="header-title">👶 <span class="hide-narrow">Seguimiento </span>Álex</span>
     <div class="header-right">
-      <button class="icon-btn" id="themeBtn1" title="Cambiar tema">🌙</button>
+      <button class="icon-btn" id="themeBtn1" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
     </div>
   </div>
 
@@ -456,9 +588,9 @@
      ═══════════════════════════════════════════ -->
 <div id="appScreen" style="display:none">
   <div class="header">
-    <span class="header-title">👶 Seguimiento Álex</span>
+    <span class="header-title">👶 <span class="hide-narrow">Seguimiento </span>Álex</span>
     <div class="header-right">
-      <button class="icon-btn" id="themeBtn2" title="Cambiar tema">🌙</button>
+      <button class="icon-btn" id="themeBtn2" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
       <button class="icon-btn" id="logoutBtn" style="font-size:.8rem">Salir</button>
     </div>
   </div>
@@ -468,15 +600,23 @@
     <!-- ── TAB: REGISTRAR ─────────────────────── -->
     <div id="tab-registrar" class="tab-panel active">
 
+      <!-- Resumen del día -->
+      <div class="card">
+        <p class="card-title">📅 Hoy</p>
+        <p class="card-sub" id="resumenFecha">—</p>
+        <div class="sum-grid" id="resumenHoy"></div>
+      </div>
+
+      <!-- Extracción -->
       <div class="card">
         <p class="card-title">🍼 Extracción de leche</p>
         <p class="card-sub">Registra el pecho y los ml extraídos</p>
 
         <div class="field">
           <label>Pecho</label>
-          <div class="toggle-row">
-            <button class="toggle-opt sel" data-p="izquierdo">Izquierdo</button>
-            <button class="toggle-opt"     data-p="derecho">Derecho</button>
+          <div class="toggle-row" id="rowPecho">
+            <button type="button" class="toggle-opt sel" data-v="izquierdo" aria-pressed="true">Izquierdo</button>
+            <button type="button" class="toggle-opt"     data-v="derecho"   aria-pressed="false">Derecho</button>
           </div>
         </div>
 
@@ -494,6 +634,7 @@
         <button class="btn btn-primary" id="btnExt">Guardar extracción</button>
       </div>
 
+      <!-- Peso -->
       <div class="card">
         <p class="card-title">⚖️ Peso del bebé</p>
         <p class="card-sub">En gramos</p>
@@ -505,11 +646,73 @@
         </div>
 
         <div class="field">
-          <label for="pesoFecha">Fecha</label>
-          <input type="date" id="pesoFecha">
+          <label for="pesoFecha">Fecha y hora</label>
+          <input type="datetime-local" id="pesoFecha">
         </div>
 
         <button class="btn btn-primary" id="btnPeso">Guardar peso</button>
+      </div>
+
+      <!-- Caca -->
+      <div class="card">
+        <p class="card-title">💩 Caca</p>
+        <p class="card-sub">Cantidad y color</p>
+
+        <div class="field">
+          <label>Cantidad (0 = nada · 10 = muchísima)</label>
+          <div class="qty-row" id="rowCacaQty"></div>
+        </div>
+
+        <div class="field">
+          <label>Color</label>
+          <div class="color-row" id="rowCacaColor"></div>
+        </div>
+        <p class="hint-txt">
+          Si la ves blanquecina o con sangre, coméntalo con el pediatra.
+        </p>
+
+        <div class="field">
+          <label for="cacaFecha">Fecha y hora</label>
+          <input type="datetime-local" id="cacaFecha">
+        </div>
+
+        <div class="field">
+          <label for="cacaNota">Nota (opcional)</label>
+          <input type="text" id="cacaNota" placeholder="Textura, olor, si le costó…" maxlength="200">
+        </div>
+
+        <button class="btn btn-primary" id="btnCaca">Guardar caca</button>
+      </div>
+
+      <!-- Pipí -->
+      <div class="card">
+        <p class="card-title">💧 Pipí</p>
+        <p class="card-sub">Cantidad y aspecto</p>
+
+        <div class="field">
+          <label>Cantidad (0 = nada · 10 = muchísimo)</label>
+          <div class="qty-row" id="rowPipiQty"></div>
+        </div>
+
+        <div class="field">
+          <label>Aspecto</label>
+          <div class="toggle-row" id="rowPipiTrans">
+            <button type="button" class="toggle-opt sel" data-v="si" aria-pressed="true">Transparente</button>
+            <button type="button" class="toggle-opt"     data-v="no" aria-pressed="false">No transparente</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="pipiNota">Nota (opcional)</label>
+          <input type="text" id="pipiNota" placeholder="Color raro, olor, manchitas…" maxlength="200">
+        </div>
+
+        <div class="field">
+          <label for="pipiFecha">Fecha y hora</label>
+          <input type="datetime-local" id="pipiFecha">
+        </div>
+
+        <button class="btn btn-primary" id="btnPipi">Guardar pipí</button>
       </div>
     </div>
 
@@ -522,11 +725,11 @@
         <div class="legend">
           <div class="legend-item">
             <div class="legend-dot" style="background:var(--left)"></div>
-            <span>Izquierdo — puntos ●, línea continua</span>
+            <span>Izquierdo</span>
           </div>
           <div class="legend-item">
             <div class="legend-dot" style="background:var(--right)"></div>
-            <span>Derecho — puntos ▲, línea discontinua</span>
+            <span>Derecho</span>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="chartExt"></canvas></div>
@@ -537,16 +740,40 @@
         <div class="legend">
           <div class="legend-item">
             <div class="legend-dot" style="background:var(--weight)"></div>
-            <span>Gramos — puntos ■</span>
+            <span>Gramos</span>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="chartPeso"></canvas></div>
+      </div>
+
+      <div class="card">
+        <p class="card-title">Pañales</p>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot"
+                 style="background:linear-gradient(135deg,#d4a017 0%,#4d9c5a 50%,#8a5a34 100%)"></div>
+            <span>Caca (cada punto, con su color)</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--pipi)"></div>
+            <span>Pipí</span>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartPanal"></canvas></div>
       </div>
     </div>
 
 
     <!-- ── TAB: HISTORIAL ────────────────────── -->
     <div id="tab-historial" class="tab-panel">
+      <div class="chip-row" id="filtroRow">
+        <button type="button" class="chip sel" data-f="todo"       aria-pressed="true">Todo</button>
+        <button type="button" class="chip"     data-f="extraccion" aria-pressed="false">🍼 Leche</button>
+        <button type="button" class="chip"     data-f="peso"       aria-pressed="false">⚖️ Peso</button>
+        <button type="button" class="chip"     data-f="caca"       aria-pressed="false">💩 Caca</button>
+        <button type="button" class="chip"     data-f="pipi"       aria-pressed="false">💧 Pipí</button>
+      </div>
+
       <div class="card card-no-pad">
         <div class="table-wrap">
           <table>
@@ -568,8 +795,7 @@
 
   </main>
 
-  <!-- ── BARRA DE TABS ──────────────────────── -->
-  <!-- ── MODAL DE EDICIÓN ──────────────────────── -->
+  <!-- ── MODAL DE EDICIÓN ───────────────────── -->
   <div id="editModal" class="modal-overlay" style="display:none">
     <div class="modal-box">
       <p class="modal-title">✏️ Editar registro</p>
@@ -582,6 +808,7 @@
     </div>
   </div>
 
+  <!-- ── BARRA DE TABS ──────────────────────── -->
   <nav class="tab-bar">
     <button class="tab-btn active" data-tab="registrar">
       <span class="tab-icon">✏️</span><span>Registrar</span>
@@ -610,14 +837,158 @@ const SUPABASE_KEY = 'sb_publishable_IliCiFj7DM6UHxL4YxlnNw_57j6pW5z';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+/* ─────────────────────────────────────────────────────────────
+   COLORES DE CACA
+   Definidos UNA sola vez y reutilizados en el formulario, el
+   modal de edición, la tabla y la gráfica.
+   ───────────────────────────────────────────────────────────── */
+const COLORES_CACA = {
+  mostaza:     { label: 'Amarillo mostaza', hex: '#d4a017' },
+  amarillo:    { label: 'Amarillo claro',   hex: '#f2c94c' },
+  verde:       { label: 'Verde',            hex: '#4d9c5a' },
+  marron:      { label: 'Marrón',           hex: '#8a5a34' },
+  naranja:     { label: 'Naranja',          hex: '#e07b39' },
+  negro:       { label: 'Negro (meconio)',  hex: '#3b3b3b' },
+  blanquecino: { label: 'Blanquecino ⚠️',    hex: '#e8e4d9' },
+  rojizo:      { label: 'Rojizo / sangre ⚠️', hex: '#b03030' }
+};
+
+const COLOR_CACA_DEF = 'mostaza';
+const COLOR_PIPI     = '#38bdf8';
+
+function infoColor(clave) {
+  return COLORES_CACA[clave] || { label: clave || '—', hex: '#8a5a34' };
+}
+
 /* ── Estado ────────────────────────────────────────────────── */
 const params  = new URLSearchParams(location.search);
 const modoVer = params.get('modo') === 'ver';   // URL de la matrona
-let registros = [];
-let chartExt  = null;
-let chartPeso = null;
-let pecho     = 'izquierdo';
-let tabActual = modoVer ? 'graficas' : 'registrar';
+let registros  = [];
+let charts     = {};            // { ext, peso, panal }
+let filtroHist = 'todo';
+let canalRT    = null;
+let tabActual  = modoVer ? 'graficas' : 'registrar';
+
+/* ─────────────────────────────────────────────────────────────
+   UTILIDADES
+   ───────────────────────────────────────────────────────────── */
+
+// Escapa texto antes de meterlo en innerHTML. Imprescindible desde
+// que existen las notas libres: sin esto, una nota con <script> o
+// con comillas rompería (o peor) la tabla del historial.
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[c]));
+}
+
+let toastTimer;
+function toast(msg, ms = 2500) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
+}
+
+/* ── Fechas ────────────────────────────────────────────────── */
+
+// Momento actual en formato YYYY-MM-DDTHH:mm para datetime-local
+function ahoraLocal() {
+  const d = new Date();
+  return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+// Pasa un ISO de la base de datos al formato de datetime-local
+function toLocalDT(iso) {
+  const d = new Date(iso);
+  return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+}
+
+function fmtFechaHora(iso) {
+  return new Date(iso).toLocaleString('es-ES', {
+    day: '2-digit', month: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  });
+}
+
+// Lee un input datetime-local y devuelve el ISO, o null si no vale
+function leerFechaISO(id) {
+  const v = document.getElementById(id).value;
+  if (!v) return null;
+  const d = new Date(v);
+  return isNaN(+d) ? null : d.toISOString();
+}
+
+function esHoy(iso) {
+  const d = new Date(iso), h = new Date();
+  return d.getFullYear() === h.getFullYear()
+      && d.getMonth()    === h.getMonth()
+      && d.getDate()     === h.getDate();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   SELECTORES DE BOTONES (cantidad, color, dos opciones)
+
+   Se generan por HTML y se gestionan con UN listener delegado:
+   así funcionan igual en el formulario principal y dentro del
+   modal de edición, que se crea sobre la marcha.
+   ───────────────────────────────────────────────────────────── */
+
+function htmlCantidad(valor = 0) {
+  let h = '';
+  for (let n = 0; n <= 10; n++) {
+    const sel = n === valor;
+    h += `<button type="button" class="qty-btn${sel ? ' sel' : ''}" `
+       + `data-v="${n}" aria-pressed="${sel}">${n}</button>`;
+  }
+  return h;
+}
+
+function htmlColores(valor = COLOR_CACA_DEF) {
+  return Object.entries(COLORES_CACA).map(([clave, c]) => {
+    const sel = clave === valor;
+    return `<button type="button" class="color-btn${sel ? ' sel' : ''}" `
+         + `data-v="${clave}" aria-pressed="${sel}" title="${esc(c.label)}">`
+         + `<span class="color-swatch" style="background:${c.hex}"></span>`
+         + `<span>${esc(c.label)}</span></button>`;
+  }).join('');
+}
+
+// Valor seleccionado dentro de una fila de botones
+function valorSel(rowId, porDefecto = null) {
+  const el = document.querySelector('#' + rowId + ' .sel');
+  return el ? el.dataset.v : porDefecto;
+}
+
+function cantidadSel(rowId) {
+  const v = valorSel(rowId);
+  return v === null ? null : parseInt(v, 10);
+}
+
+// Un único listener para todos los selectores de la página,
+// acotado siempre a la fila del propio botón: así el toggle de
+// pipí no desmarca el de pecho (y viceversa).
+document.addEventListener('click', e => {
+  const btn = e.target.closest('.qty-btn, .color-btn, .toggle-opt, .chip');
+  if (!btn) return;
+
+  const fila = btn.closest('.qty-row, .color-row, .toggle-row, .chip-row');
+  if (!fila) return;
+
+  fila.querySelectorAll('button').forEach(b => {
+    b.classList.remove('sel');
+    b.setAttribute('aria-pressed', 'false');
+  });
+  btn.classList.add('sel');
+  btn.setAttribute('aria-pressed', 'true');
+
+  // Los chips del historial además filtran
+  if (btn.classList.contains('chip')) {
+    filtroHist = btn.dataset.f;
+    renderTabla();
+  }
+});
 
 /* ─────────────────────────────────────────────────────────────
    TEMA CLARO / OSCURO
@@ -636,7 +1007,7 @@ function aplicarTema(t) {
   const icono = esDark() ? '☀️' : '🌙';
   document.getElementById('themeBtn1').textContent = icono;
   document.getElementById('themeBtn2').textContent = icono;
-  if (tabActual === 'graficas' && chartExt) renderCharts();
+  if (tabActual === 'graficas' && charts.ext) renderCharts();
 }
 
 function toggleTema() { aplicarTema(esDark() ? 'light' : 'dark'); }
@@ -646,45 +1017,16 @@ document.getElementById('themeBtn2').addEventListener('click', toggleTema);
 aplicarTema(tema);
 
 /* ─────────────────────────────────────────────────────────────
-   TOAST (notificación de 2 segundos)
-   ───────────────────────────────────────────────────────────── */
-let toastTimer;
-function toast(msg, ms = 2500) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove('show'), ms);
-}
-
-/* ─────────────────────────────────────────────────────────────
-   HELPERS DE FECHA
-   ───────────────────────────────────────────────────────────── */
-function ahoraLocal() {
-  // Formato YYYY-MM-DDTHH:mm para datetime-local
-  const d = new Date();
-  return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
-
-function hoyLocal() {
-  return new Date().toISOString().slice(0, 10);
-}
-
-function fmtFechaHora(iso) {
-  return new Date(iso).toLocaleString('es-ES', {
-    day: '2-digit', month: '2-digit',
-    hour: '2-digit', minute: '2-digit'
-  });
-}
-
-/* ─────────────────────────────────────────────────────────────
    INICIALIZACIÓN
    ───────────────────────────────────────────────────────────── */
 async function init() {
-  if (modoVer) {
-    mostrarApp(true);
-    return;
-  }
+  // Pintar los selectores generados antes de nada
+  document.getElementById('rowCacaQty').innerHTML   = htmlCantidad(1);
+  document.getElementById('rowPipiQty').innerHTML   = htmlCantidad(1);
+  document.getElementById('rowCacaColor').innerHTML = htmlColores();
+
+  if (modoVer) { mostrarApp(true); return; }
+
   const { data: { session } } = await sb.auth.getSession();
   if (session) mostrarApp(false);
   else mostrarLogin();
@@ -705,13 +1047,17 @@ function mostrarApp(soloLectura) {
     document.querySelector('[data-tab="registrar"]').style.display = 'none';
   }
 
-  // Valores por defecto de los formularios
-  document.getElementById('extFecha').value  = ahoraLocal();
-  document.getElementById('pesoFecha').value = hoyLocal();
-
+  resetFechas();
   cargarDatos();
   configurarRealtime();
   switchTab(tabActual);
+}
+
+// Todos los formularios arrancan en "ahora"
+function resetFechas() {
+  ['extFecha', 'pesoFecha', 'cacaFecha', 'pipiFecha'].forEach(id => {
+    document.getElementById(id).value = ahoraLocal();
+  });
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -732,11 +1078,8 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   btn.disabled = false;
   btn.textContent = 'Entrar';
 
-  if (error) {
-    errEl.style.display = '';
-  } else {
-    mostrarApp(false);
-  }
+  if (error) errEl.style.display = '';
+  else       mostrarApp(false);
 });
 
 // Pulsar Enter en el campo contraseña hace login
@@ -757,13 +1100,15 @@ function switchTab(tab) {
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
-  const panel = document.getElementById(`tab-${tab}`);
+  const panel = document.getElementById('tab-' + tab);
   if (panel) panel.classList.add('active');
 
-  const btn = document.querySelector(`[data-tab="${tab}"]`);
+  const btn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
   if (btn) btn.classList.add('active');
 
+  // Las gráficas solo se pueden dibujar con el panel visible
   if (tab === 'graficas') renderCharts();
+  window.scrollTo(0, 0);
 }
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
@@ -771,87 +1116,105 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 });
 
 /* ─────────────────────────────────────────────────────────────
-   SELECTOR DE PECHO
+   GUARDAR — helper común a los cuatro formularios
    ───────────────────────────────────────────────────────────── */
-document.querySelectorAll('.toggle-opt').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.toggle-opt').forEach(b => b.classList.remove('sel'));
-    btn.classList.add('sel');
-    pecho = btn.dataset.p;
-  });
-});
-
-/* ─────────────────────────────────────────────────────────────
-   GUARDAR EXTRACCIÓN
-   ───────────────────────────────────────────────────────────── */
-document.getElementById('btnExt').addEventListener('click', async () => {
-  const ml       = parseFloat(document.getElementById('extMl').value);
-  const fechaStr = document.getElementById('extFecha').value;
-
-  if (!fechaStr || isNaN(ml) || ml < 0) {
-    toast('⚠️ Rellena todos los campos.');
-    return;
-  }
-
-  const btn = document.getElementById('btnExt');
+async function guardarRegistro(btnId, textoBtn, tipo, fechaISO, datos, alTerminar) {
+  const btn = document.getElementById(btnId);
   btn.disabled = true;
   btn.textContent = 'Guardando…';
 
-  const { error } = await sb.from('registros').insert({
-    tipo:      'extraccion',
-    fecha_hora: new Date(fechaStr).toISOString(),
-    datos:     { pecho, ml }
-  });
+  const { error } = await sb.from('registros')
+    .insert({ tipo, fecha_hora: fechaISO, datos });
 
   btn.disabled = false;
-  btn.textContent = 'Guardar extracción';
+  btn.textContent = textoBtn;
 
   if (error) {
-    toast('❌ Error al guardar. Comprueba la conexión.');
     console.error(error);
-  } else {
-    toast('✅ Extracción guardada');
-    document.getElementById('extMl').value   = '';
-    document.getElementById('extFecha').value = ahoraLocal();
+    toast('❌ No se pudo guardar: ' + (error.message || 'error desconocido'), 4500);
+    return;
   }
-});
+  if (alTerminar) alTerminar();
+}
 
-/* ─────────────────────────────────────────────────────────────
-   GUARDAR PESO
-   ───────────────────────────────────────────────────────────── */
-document.getElementById('btnPeso').addEventListener('click', async () => {
-  const gramos   = parseInt(document.getElementById('pesoG').value);
-  const fechaStr = document.getElementById('pesoFecha').value;
+/* ── Extracción ────────────────────────────────────────────── */
+document.getElementById('btnExt').addEventListener('click', () => {
+  const ml    = parseFloat(document.getElementById('extMl').value);
+  const fecha = leerFechaISO('extFecha');
 
-  if (!fechaStr || isNaN(gramos) || gramos < 500) {
-    toast('⚠️ Rellena todos los campos (mínimo 500 g).');
+  if (!fecha || isNaN(ml) || ml < 0) {
+    toast('⚠️ Indica los ml y la fecha.');
     return;
   }
 
-  const btn = document.getElementById('btnPeso');
-  btn.disabled = true;
-  btn.textContent = 'Guardando…';
+  guardarRegistro('btnExt', 'Guardar extracción', 'extraccion', fecha,
+    { pecho: valorSel('rowPecho', 'izquierdo'), ml },
+    () => {
+      toast('✅ Extracción guardada');
+      document.getElementById('extMl').value    = '';
+      document.getElementById('extFecha').value = ahoraLocal();
+    });
+});
 
-  // Para el peso guardamos mediodía del día seleccionado
-  const fecha = new Date(fechaStr + 'T12:00:00');
+/* ── Peso ──────────────────────────────────────────────────── */
+document.getElementById('btnPeso').addEventListener('click', () => {
+  const gramos = parseInt(document.getElementById('pesoG').value, 10);
+  const fecha  = leerFechaISO('pesoFecha');
 
-  const { error } = await sb.from('registros').insert({
-    tipo:      'peso',
-    fecha_hora: fecha.toISOString(),
-    datos:     { gramos }
-  });
-
-  btn.disabled = false;
-  btn.textContent = 'Guardar peso';
-
-  if (error) {
-    toast('❌ Error al guardar.');
-    console.error(error);
-  } else {
-    toast('✅ Peso guardado');
-    document.getElementById('pesoG').value     = '';
-    document.getElementById('pesoFecha').value = hoyLocal();
+  if (!fecha || isNaN(gramos) || gramos < 500) {
+    toast('⚠️ Indica el peso (mínimo 500 g) y la fecha.');
+    return;
   }
+
+  guardarRegistro('btnPeso', 'Guardar peso', 'peso', fecha, { gramos },
+    () => {
+      toast('✅ Peso guardado');
+      document.getElementById('pesoG').value     = '';
+      document.getElementById('pesoFecha').value = ahoraLocal();
+    });
+});
+
+/* ── Caca ──────────────────────────────────────────────────── */
+document.getElementById('btnCaca').addEventListener('click', () => {
+  const cantidad = cantidadSel('rowCacaQty');
+  const color    = valorSel('rowCacaColor', COLOR_CACA_DEF);
+  const nota     = document.getElementById('cacaNota').value.trim();
+  const fecha    = leerFechaISO('cacaFecha');
+
+  if (cantidad === null || !fecha) {
+    toast('⚠️ Indica la cantidad y la fecha.');
+    return;
+  }
+
+  const datos = { cantidad, color };
+  if (nota) datos.nota = nota;
+
+  guardarRegistro('btnCaca', 'Guardar caca', 'caca', fecha, datos, () => {
+    toast('✅ Caca guardada');
+    document.getElementById('cacaNota').value  = '';
+    document.getElementById('cacaFecha').value = ahoraLocal();
+  });
+});
+
+/* ── Pipí ──────────────────────────────────────────────────── */
+document.getElementById('btnPipi').addEventListener('click', () => {
+  const cantidad = cantidadSel('rowPipiQty');
+  const nota     = document.getElementById('pipiNota').value.trim();
+  const fecha    = leerFechaISO('pipiFecha');
+
+  if (cantidad === null || !fecha) {
+    toast('⚠️ Indica la cantidad y la fecha.');
+    return;
+  }
+
+  const datos = { cantidad, transparente: valorSel('rowPipiTrans', 'si') === 'si' };
+  if (nota) datos.nota = nota;
+
+  guardarRegistro('btnPipi', 'Guardar pipí', 'pipi', fecha, datos, () => {
+    toast('✅ Pipí guardado');
+    document.getElementById('pipiNota').value  = '';
+    document.getElementById('pipiFecha').value = ahoraLocal();
+  });
 });
 
 /* ─────────────────────────────────────────────────────────────
@@ -863,9 +1226,17 @@ async function cargarDatos() {
     .select('*')
     .order('fecha_hora', { ascending: true });
 
-  if (error) { console.error('Error al cargar:', error); return; }
+  if (error) {
+    console.error('Error al cargar:', error);
+    document.getElementById('histBody').innerHTML =
+      `<tr><td colspan="4" class="empty-state">
+         ❌ No se pudieron cargar los datos.<br>${esc(error.message || '')}
+       </td></tr>`;
+    return;
+  }
 
   registros = data || [];
+  renderResumen();
   renderTabla();
   if (tabActual === 'graficas') renderCharts();
 }
@@ -874,56 +1245,129 @@ async function cargarDatos() {
    TIEMPO REAL — sincronización automática entre móviles
    ───────────────────────────────────────────────────────────── */
 function configurarRealtime() {
-  sb.channel('tracking-alex')
+  if (canalRT) return;          // no re-suscribir si ya hay canal
+  canalRT = sb.channel('tracking-alex')
     .on('postgres_changes',
         { event: '*', schema: 'public', table: 'registros' },
-        () => { cargarDatos(); })
+        () => cargarDatos())
     .subscribe();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RESUMEN DE HOY
+   ───────────────────────────────────────────────────────────── */
+function renderResumen() {
+  const cont = document.getElementById('resumenHoy');
+  if (!cont) return;
+
+  document.getElementById('resumenFecha').textContent =
+    new Date().toLocaleDateString('es-ES', {
+      weekday: 'long', day: 'numeric', month: 'long'
+    });
+
+  const hoy = registros.filter(r => esHoy(r.fecha_hora));
+
+  const ext = hoy.filter(r => r.tipo === 'extraccion');
+  const ml  = n => ext.filter(r => r.datos.pecho === n)
+                      .reduce((s, r) => s + (Number(r.datos.ml) || 0), 0);
+  const mlIzq = ml('izquierdo');
+  const mlDer = ml('derecho');
+
+  const cacas  = hoy.filter(r => r.tipo === 'caca').length;
+  const pipis  = hoy.filter(r => r.tipo === 'pipi').length;
+
+  // El último peso puede ser de otro día: se muestra con su fecha
+  const pesos  = registros.filter(r => r.tipo === 'peso');
+  const ultimo = pesos.length ? pesos[pesos.length - 1] : null;
+
+  cont.innerHTML = `
+    <div class="sum-item">
+      <div class="sum-val">${mlIzq + mlDer} ml</div>
+      <div class="sum-lbl">Leche hoy</div>
+      <div class="sum-extra">Izq ${mlIzq} · Der ${mlDer}</div>
+    </div>
+    <div class="sum-item">
+      <div class="sum-val">${cacas}</div>
+      <div class="sum-lbl">💩 Cacas hoy</div>
+      <div class="sum-extra">${ext.length} ${ext.length === 1 ? 'extracción' : 'extracciones'}</div>
+    </div>
+    <div class="sum-item">
+      <div class="sum-val">${pipis}</div>
+      <div class="sum-lbl">💧 Pipís hoy</div>
+      <div class="sum-extra">&nbsp;</div>
+    </div>
+    <div class="sum-item">
+      <div class="sum-val">${ultimo ? ultimo.datos.gramos + ' g' : '—'}</div>
+      <div class="sum-lbl">Último peso</div>
+      <div class="sum-extra">${ultimo ? esc(fmtFechaHora(ultimo.fecha_hora)) : 'sin datos'}</div>
+    </div>`;
 }
 
 /* ─────────────────────────────────────────────────────────────
    TABLA HISTORIAL
    ───────────────────────────────────────────────────────────── */
+
+// Devuelve { tipo, detalle } ya escapado, listo para innerHTML
+function describir(r) {
+  const d = r.datos || {};
+  const nota = d.nota ? `<span class="nota-txt">📝 ${esc(d.nota)}</span>` : '';
+
+  if (r.tipo === 'extraccion') {
+    return {
+      tipo:    d.pecho === 'izquierdo' ? '🍼 Izq.' : '🍼 Der.',
+      detalle: `${esc(d.ml)} ml`
+    };
+  }
+  if (r.tipo === 'peso') {
+    return { tipo: '⚖️ Peso', detalle: `${esc(d.gramos)} g` };
+  }
+  if (r.tipo === 'caca') {
+    const c = infoColor(d.color);
+    return {
+      tipo: '💩 Caca',
+      detalle: `<span class="color-swatch" style="background:${c.hex};`
+             + `display:inline-block;vertical-align:-3px;margin-right:6px"></span>`
+             + `${esc(d.cantidad)} · ${esc(c.label)}${nota}`
+    };
+  }
+  if (r.tipo === 'pipi') {
+    return {
+      tipo: '💧 Pipí',
+      detalle: `${esc(d.cantidad)} · ${d.transparente ? 'transparente' : 'no transparente'}${nota}`
+    };
+  }
+  // Tipo desconocido (por si en el futuro se añade otro)
+  return { tipo: esc(r.tipo), detalle: esc(JSON.stringify(d)) };
+}
+
 function renderTabla() {
   const tbody = document.getElementById('histBody');
   const thAcc = document.getElementById('thAcc');
   if (modoVer) thAcc.style.display = 'none';
 
-  // Ordenar de más reciente a más antiguo
-  const filas = [...registros].sort((a, b) =>
-    new Date(b.fecha_hora) - new Date(a.fecha_hora)
-  );
+  const filas = registros
+    .filter(r => filtroHist === 'todo' || r.tipo === filtroHist)
+    .sort((a, b) => new Date(b.fecha_hora) - new Date(a.fecha_hora));  // más reciente primero
 
   if (!filas.length) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">No hay registros todavía.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">
+      ${filtroHist === 'todo' ? 'No hay registros todavía.' : 'No hay registros de este tipo.'}
+    </td></tr>`;
     return;
   }
 
   tbody.innerHTML = filas.map(r => {
-    let tipo = '', detalle = '';
+    const { tipo, detalle } = describir(r);
 
-    if (r.tipo === 'extraccion') {
-      tipo    = r.datos.pecho === 'izquierdo' ? '🍼 Izq.' : '🍼 Der.';
-      detalle = `${r.datos.ml} ml`;
-    } else if (r.tipo === 'peso') {
-      tipo    = '⚖️ Peso';
-      detalle = `${r.datos.gramos} g`;
-    } else {
-      // Tipo futuro (tomas, pañales, etc.)
-      tipo    = r.tipo;
-      detalle = JSON.stringify(r.datos);
-    }
-
-    const accCell = modoVer
-      ? ''
-      : `<td style="white-space:nowrap">
-           <button class="btn-edit-sm"   onclick="editar('${r.id}')">✏️</button>
-           <button class="btn-danger-sm" onclick="borrar('${r.id}')" style="margin-left:4px">🗑️</button>
-         </td>`;
+    const accCell = modoVer ? '' : `
+      <td style="white-space:nowrap">
+        <button class="btn-edit-sm"   onclick="editar('${r.id}')" aria-label="Editar">✏️</button>
+        <button class="btn-danger-sm" onclick="borrar('${r.id}')" style="margin-left:4px" aria-label="Borrar">🗑️</button>
+      </td>`;
 
     return `<tr>
-      <td>${fmtFechaHora(r.fecha_hora)}</td>
-      <td>${tipo}</td>
+      <td style="white-space:nowrap">${esc(fmtFechaHora(r.fecha_hora))}</td>
+      <td style="white-space:nowrap">${tipo}</td>
       <td>${detalle}</td>
       ${accCell}
     </tr>`;
@@ -934,10 +1378,18 @@ function renderTabla() {
    BORRAR REGISTRO
    ───────────────────────────────────────────────────────────── */
 window.borrar = async function(id) {
-  if (!confirm('¿Borrar este registro?')) return;
+  const r = registros.find(x => x.id === id);
+  const q = r ? `¿Borrar el registro de ${fmtFechaHora(r.fecha_hora)}?` : '¿Borrar este registro?';
+  if (!confirm(q)) return;
+
   const { error } = await sb.from('registros').delete().eq('id', id);
-  if (error) toast('❌ Error al borrar.');
-  else { toast('🗑️ Registro borrado'); await cargarDatos(); }
+  if (error) {
+    console.error(error);
+    toast('❌ No se pudo borrar: ' + (error.message || ''), 4000);
+  } else {
+    toast('🗑️ Registro borrado');
+    await cargarDatos();
+  }
 };
 
 /* ─────────────────────────────────────────────────────────────
@@ -950,7 +1402,7 @@ function coloresEjes() {
 }
 
 function rangoFechas() {
-  // Mismo rango en ambas gráficas para eje X compartido visualmente
+  // Mismo rango en las tres gráficas → se comparan de un vistazo
   if (!registros.length) {
     const hoy = new Date();
     return { min: new Date(hoy - 7 * 864e5), max: new Date(hoy.getTime() + 864e5) };
@@ -970,17 +1422,31 @@ function renderCharts() {
 
   const ext   = registros.filter(r => r.tipo === 'extraccion');
   const pesos = registros.filter(r => r.tipo === 'peso');
+  const cacas = registros.filter(r => r.tipo === 'caca');
+  const pipis = registros.filter(r => r.tipo === 'pipi');
 
-  // Datos por pecho
-  const dIzq = ext.filter(r => r.datos.pecho === 'izquierdo')
-                  .map(r => ({ x: r.fecha_hora, y: r.datos.ml }));
-  const dDer = ext.filter(r => r.datos.pecho === 'derecho')
-                  .map(r => ({ x: r.fecha_hora, y: r.datos.ml }));
-
+  const dIzq  = ext.filter(r => r.datos.pecho === 'izquierdo')
+                   .map(r => ({ x: r.fecha_hora, y: r.datos.ml }));
+  const dDer  = ext.filter(r => r.datos.pecho === 'derecho')
+                   .map(r => ({ x: r.fecha_hora, y: r.datos.ml }));
   const dPeso = pesos.map(r => ({ x: r.fecha_hora, y: r.datos.gramos }));
 
-  // Eje X idéntico en las dos gráficas → comparación visual directa
-  const ejeX = {
+  const dCaca = cacas.map(r => ({
+    x: r.fecha_hora,
+    y: r.datos.cantidad,
+    meta: { color: infoColor(r.datos.color).label, nota: r.datos.nota }
+  }));
+  const dPipi = pipis.map(r => ({
+    x: r.fecha_hora,
+    y: r.datos.cantidad,
+    meta: { transparente: !!r.datos.transparente, nota: r.datos.nota }
+  }));
+
+  // Cada punto de caca se pinta de su propio color
+  const coloresPuntosCaca = cacas.map(r => infoColor(r.datos.color).hex);
+
+  // Eje X idéntico en las tres gráficas
+  const ejeX = () => ({
     type: 'time',
     min:  rng.min,
     max:  rng.max,
@@ -991,20 +1457,29 @@ function renderCharts() {
     },
     grid:  { color: c.grid },
     ticks: { color: c.tick, maxTicksLimit: 7 }
-  };
+  });
 
+  const ejeY = (titulo, extra = {}) => Object.assign({
+    grid:  { color: c.grid },
+    ticks: { color: c.tick },
+    title: { display: true, text: titulo, color: c.tick }
+  }, extra);
+
+  // Tooltip por defecto: valor + unidad del dataset
   const pluginsCfg = {
     legend: { display: false },
     tooltip: {
       callbacks: {
-        label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}${ctx.dataset.unidad}`
+        label: ctx => `${ctx.dataset.label}: ${ctx.parsed.y}${ctx.dataset.unidad || ''}`
       }
     }
   };
 
-  /* ── Gráfica de extracciones ── */
-  if (chartExt) chartExt.destroy();
-  chartExt = new Chart(document.getElementById('chartExt'), {
+  const base = { responsive: true, maintainAspectRatio: false };
+
+  /* ── Extracciones ── */
+  if (charts.ext) charts.ext.destroy();
+  charts.ext = new Chart(document.getElementById('chartExt'), {
     type: 'scatter',
     data: {
       datasets: [
@@ -1013,10 +1488,9 @@ function renderCharts() {
           data: dIzq,
           backgroundColor: '#2563eb',
           borderColor:     '#2563eb',
-          pointStyle:  'circle',     // ● círculo → distinguible en B&N
-          pointRadius:      7,
-          pointHoverRadius: 9,
-          showLine: true,            // conecta los puntos con una línea
+          pointStyle: 'circle',      // ● círculo → distinguible en B&N
+          pointRadius: 7, pointHoverRadius: 9,
+          showLine: true,
           borderDash: [],            // línea continua
           tension: 0.3,
           unidad: ' ml'
@@ -1026,35 +1500,24 @@ function renderCharts() {
           data: dDer,
           backgroundColor: '#dc2626',
           borderColor:     '#dc2626',
-          pointStyle:  'triangle',   // ▲ triángulo → distinguible en B&N
-          pointRadius:      8,
-          pointHoverRadius: 10,
+          pointStyle: 'triangle',    // ▲ triángulo → distinguible en B&N
+          pointRadius: 8, pointHoverRadius: 10,
           showLine: true,
-          borderDash: [5, 3],        // línea discontinua → también B&N
+          borderDash: [5, 3],        // línea discontinua
           tension: 0.3,
           unidad: ' ml'
         }
       ]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
+    options: Object.assign({}, base, {
       plugins: pluginsCfg,
-      scales: {
-        x: ejeX,
-        y: {
-          beginAtZero: true,
-          grid:  { color: c.grid },
-          ticks: { color: c.tick },
-          title: { display: true, text: 'ml', color: c.tick }
-        }
-      }
-    }
+      scales: { x: ejeX(), y: ejeY('ml', { beginAtZero: true }) }
+    })
   });
 
-  /* ── Gráfica de peso ── */
-  if (chartPeso) chartPeso.destroy();
-  chartPeso = new Chart(document.getElementById('chartPeso'), {
+  /* ── Peso ── */
+  if (charts.peso) charts.peso.destroy();
+  charts.peso = new Chart(document.getElementById('chartPeso'), {
     type: 'scatter',
     data: {
       datasets: [{
@@ -1062,28 +1525,69 @@ function renderCharts() {
         data: dPeso,
         backgroundColor: '#059669',
         borderColor:     '#059669',
-        pointStyle:  'rect',         // ■ cuadrado → distinguible en B&N
-        pointRadius:      7,
-        pointHoverRadius: 9,
+        pointStyle: 'rect',          // ■ cuadrado → distinguible en B&N
+        pointRadius: 7, pointHoverRadius: 9,
         showLine: true,
         tension: 0.3,
         unidad: ' g'
       }]
     },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
+    options: Object.assign({}, base, {
       plugins: pluginsCfg,
-      scales: {
-        x: ejeX,    // ← mismo eje X que la gráfica de extracciones
-        y: {
-          beginAtZero: false,
-          grid:  { color: c.grid },
-          ticks: { color: c.tick },
-          title: { display: true, text: 'gramos', color: c.tick }
+      scales: { x: ejeX(), y: ejeY('gramos', { beginAtZero: false }) }
+    })
+  });
+
+  /* ── Pañales ── */
+  // Sin línea: son eventos sueltos, no una tendencia.
+  if (charts.panal) charts.panal.destroy();
+  charts.panal = new Chart(document.getElementById('chartPanal'), {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Caca',
+          data: dCaca,
+          backgroundColor: coloresPuntosCaca,   // un color por punto
+          borderColor: esDark() ? '#e2e8f0' : '#334155',
+          borderWidth: 1.5,                     // así el blanquecino se ve siempre
+          pointStyle: 'circle',
+          pointRadius: 8, pointHoverRadius: 10,
+          showLine: false
+        },
+        {
+          label: 'Pipí',
+          data: dPipi,
+          backgroundColor: COLOR_PIPI,
+          borderColor:     COLOR_PIPI,
+          pointStyle: 'triangle',
+          pointRadius: 8, pointHoverRadius: 10,
+          showLine: false
         }
+      ]
+    },
+    options: Object.assign({}, base, {
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const m = ctx.raw.meta || {};
+              let s = `${ctx.dataset.label}: ${ctx.parsed.y}`;
+              if (m.color) s += ' · ' + m.color;
+              if (m.transparente !== undefined) {
+                s += ' · ' + (m.transparente ? 'transparente' : 'no transparente');
+              }
+              return m.nota ? [s, '📝 ' + m.nota] : s;
+            }
+          }
+        }
+      },
+      scales: {
+        x: ejeX(),
+        y: ejeY('cantidad', { min: 0, max: 10, ticks: { color: c.tick, stepSize: 2 } })
       }
-    }
+    })
   });
 }
 
@@ -1092,12 +1596,6 @@ function renderCharts() {
    ───────────────────────────────────────────────────────────── */
 let editandoId   = null;
 let editandoTipo = null;
-let pechoEdicion = 'izquierdo';
-
-function toLocalDT(iso) {
-  const d = new Date(iso);
-  return new Date(d - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
-}
 
 window.editar = function(id) {
   const r = registros.find(x => x.id === id);
@@ -1105,7 +1603,13 @@ window.editar = function(id) {
 
   editandoId   = id;
   editandoTipo = r.tipo;
-  pechoEdicion = r.datos.pecho || 'izquierdo';
+  const d = r.datos || {};
+
+  const campoFecha = `
+    <div class="field">
+      <label for="editFecha">Fecha y hora</label>
+      <input type="datetime-local" id="editFecha" value="${toLocalDT(r.fecha_hora)}">
+    </div>`;
 
   let html = '';
 
@@ -1113,100 +1617,142 @@ window.editar = function(id) {
     html = `
       <div class="field">
         <label>Pecho</label>
-        <div class="toggle-row">
-          <button class="toggle-opt ${r.datos.pecho === 'izquierdo' ? 'sel':''}" data-ep="izquierdo">Izquierdo</button>
-          <button class="toggle-opt ${r.datos.pecho === 'derecho'   ? 'sel':''}" data-ep="derecho">Derecho</button>
+        <div class="toggle-row" id="rowEditPecho">
+          <button type="button" class="toggle-opt ${d.pecho !== 'derecho' ? 'sel' : ''}" data-v="izquierdo">Izquierdo</button>
+          <button type="button" class="toggle-opt ${d.pecho === 'derecho' ? 'sel' : ''}" data-v="derecho">Derecho</button>
         </div>
       </div>
       <div class="field">
-        <label>Cantidad (ml)</label>
-        <input type="number" id="editMl" value="${r.datos.ml}"
+        <label for="editMl">Cantidad (ml)</label>
+        <input type="number" id="editMl" value="${esc(d.ml)}"
                min="0" max="500" inputmode="decimal" step="0.5">
-      </div>
-      <div class="field">
-        <label>Fecha y hora</label>
-        <input type="datetime-local" id="editFechaHora" value="${toLocalDT(r.fecha_hora)}">
-      </div>`;
+      </div>${campoFecha}`;
+
   } else if (r.tipo === 'peso') {
     html = `
       <div class="field">
-        <label>Peso (gramos)</label>
-        <input type="number" id="editGramos" value="${r.datos.gramos}"
+        <label for="editGramos">Peso (gramos)</label>
+        <input type="number" id="editGramos" value="${esc(d.gramos)}"
                min="500" max="10000" inputmode="numeric">
+      </div>${campoFecha}`;
+
+  } else if (r.tipo === 'caca') {
+    html = `
+      <div class="field">
+        <label>Cantidad</label>
+        <div class="qty-row" id="rowEditQty">${htmlCantidad(Number(d.cantidad) || 0)}</div>
       </div>
       <div class="field">
-        <label>Fecha</label>
-        <input type="date" id="editFechaDia" value="${r.fecha_hora.slice(0,10)}">
-      </div>`;
+        <label>Color</label>
+        <div class="color-row" id="rowEditColor">${htmlColores(d.color || COLOR_CACA_DEF)}</div>
+      </div>
+      <div class="field">
+        <label for="editNota">Nota (opcional)</label>
+        <input type="text" id="editNota" value="${esc(d.nota || '')}" maxlength="200">
+      </div>${campoFecha}`;
+
+  } else if (r.tipo === 'pipi') {
+    html = `
+      <div class="field">
+        <label>Cantidad</label>
+        <div class="qty-row" id="rowEditQty">${htmlCantidad(Number(d.cantidad) || 0)}</div>
+      </div>
+      <div class="field">
+        <label>Aspecto</label>
+        <div class="toggle-row" id="rowEditTrans">
+          <button type="button" class="toggle-opt ${d.transparente ? 'sel' : ''}"  data-v="si">Transparente</button>
+          <button type="button" class="toggle-opt ${d.transparente ? '' : 'sel'}" data-v="no">No transparente</button>
+        </div>
+      </div>
+      <div class="field">
+        <label for="editNota">Nota (opcional)</label>
+        <input type="text" id="editNota" value="${esc(d.nota || '')}" maxlength="200">
+      </div>${campoFecha}`;
+
+  } else {
+    toast('Este tipo de registro no se puede editar aquí.');
+    return;
   }
 
   document.getElementById('editForm').innerHTML = html;
   document.getElementById('editModal').style.display = '';
-
-  // Activar toggles de pecho dentro del modal
-  document.querySelectorAll('[data-ep]').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('[data-ep]').forEach(b => b.classList.remove('sel'));
-      btn.classList.add('sel');
-      pechoEdicion = btn.dataset.ep;
-    });
-  });
+  // Los selectores del modal los gestiona el listener delegado global
 };
 
-document.getElementById('btnCancelEdit').addEventListener('click', () => {
+function cerrarModal() {
   document.getElementById('editModal').style.display = 'none';
   editandoId = null;
-});
+}
+
+document.getElementById('btnCancelEdit').addEventListener('click', cerrarModal);
 
 // Cerrar tocando el fondo oscuro
 document.getElementById('editModal').addEventListener('click', e => {
-  if (e.target === document.getElementById('editModal')) {
-    document.getElementById('editModal').style.display = 'none';
-    editandoId = null;
-  }
+  if (e.target.id === 'editModal') cerrarModal();
 });
 
 document.getElementById('btnSaveEdit').addEventListener('click', async () => {
   if (!editandoId) return;
 
-  let fecha_hora, datos;
+  const fecha_hora = leerFechaISO('editFecha');
+  if (!fecha_hora) { toast('⚠️ La fecha no es válida.'); return; }
+
+  let datos;
 
   if (editandoTipo === 'extraccion') {
-    const ml       = parseFloat(document.getElementById('editMl').value);
-    const fechaStr = document.getElementById('editFechaHora').value;
-    if (!fechaStr || isNaN(ml) || ml < 0) { toast('⚠️ Rellena todos los campos.'); return; }
-    fecha_hora = new Date(fechaStr).toISOString();
-    datos      = { pecho: pechoEdicion, ml };
+    const ml = parseFloat(document.getElementById('editMl').value);
+    if (isNaN(ml) || ml < 0) { toast('⚠️ Indica los ml.'); return; }
+    datos = { pecho: valorSel('rowEditPecho', 'izquierdo'), ml };
 
   } else if (editandoTipo === 'peso') {
-    const gramos   = parseInt(document.getElementById('editGramos').value);
-    const fechaStr = document.getElementById('editFechaDia').value;
-    if (!fechaStr || isNaN(gramos) || gramos < 500) { toast('⚠️ Rellena todos los campos.'); return; }
-    fecha_hora = new Date(fechaStr + 'T12:00:00').toISOString();
-    datos      = { gramos };
+    const gramos = parseInt(document.getElementById('editGramos').value, 10);
+    if (isNaN(gramos) || gramos < 500) { toast('⚠️ Indica el peso (mínimo 500 g).'); return; }
+    datos = { gramos };
+
+  } else if (editandoTipo === 'caca' || editandoTipo === 'pipi') {
+    const cantidad = cantidadSel('rowEditQty');
+    if (cantidad === null) { toast('⚠️ Indica la cantidad.'); return; }
+    const nota = document.getElementById('editNota').value.trim();
+
+    datos = editandoTipo === 'caca'
+      ? { cantidad, color: valorSel('rowEditColor', COLOR_CACA_DEF) }
+      : { cantidad, transparente: valorSel('rowEditTrans', 'si') === 'si' };
+
+    if (nota) datos.nota = nota;
+
+  } else {
+    return;
   }
 
   const btn = document.getElementById('btnSaveEdit');
   btn.disabled = true;
   btn.textContent = 'Guardando…';
 
-  const { error } = await sb
+  // .select() nos dice cuántas filas se han modificado de verdad:
+  // si RLS bloquea el UPDATE, Supabase no da error pero devuelve 0.
+  const { data, error } = await sb
     .from('registros')
     .update({ fecha_hora, datos })
-    .eq('id', editandoId);
+    .eq('id', editandoId)
+    .select();
 
   btn.disabled = false;
   btn.textContent = 'Guardar cambios';
 
   if (error) {
-    toast('❌ Error al guardar. Comprueba la conexión.');
     console.error(error);
-  } else {
-    toast('✅ Registro actualizado');
-    document.getElementById('editModal').style.display = 'none';
-    editandoId = null;
-    await cargarDatos();
+    toast('❌ No se pudo guardar: ' + (error.message || ''), 4500);
+    return;
   }
+
+  if (!data || !data.length) {
+    toast('⚠️ No se modificó nada. Falta la policy de UPDATE en Supabase (migracion.sql).', 6000);
+    return;
+  }
+
+  toast('✅ Registro actualizado');
+  cerrarModal();
+  await cargarDatos();
 });
 
 /* ─────────────────────────────────────────────────────────────
