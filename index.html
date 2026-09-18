@@ -600,11 +600,11 @@
     <!-- ── TAB: REGISTRAR ─────────────────────── -->
     <div id="tab-registrar" class="tab-panel active">
 
-      <!-- Resumen del día -->
+      <!-- Resumen de las últimas 24 h (se repite en la pestaña Gráficas) -->
       <div class="card">
-        <p class="card-title">📅 Hoy</p>
-        <p class="card-sub" id="resumenFecha">—</p>
-        <div class="sum-grid" id="resumenHoy"></div>
+        <p class="card-title">🕐 Últimas 24 h</p>
+        <p class="card-sub" data-resumen-desde>—</p>
+        <div class="sum-grid" data-resumen></div>
       </div>
 
       <!-- Extracción -->
@@ -719,6 +719,13 @@
 
     <!-- ── TAB: GRÁFICAS ─────────────────────── -->
     <div id="tab-graficas" class="tab-panel">
+
+      <!-- Mismo resumen que en la pestaña Registrar -->
+      <div class="card">
+        <p class="card-title">🕐 Últimas 24 h</p>
+        <p class="card-sub" data-resumen-desde>—</p>
+        <div class="sum-grid" data-resumen></div>
+      </div>
 
       <div class="card">
         <p class="card-title">Extracciones de leche</p>
@@ -920,11 +927,13 @@ function leerFechaISO(id) {
   return isNaN(+d) ? null : d.toISOString();
 }
 
-function esHoy(iso) {
-  const d = new Date(iso), h = new Date();
-  return d.getFullYear() === h.getFullYear()
-      && d.getMonth()    === h.getMonth()
-      && d.getDate()     === h.getDate();
+const VENTANA_MS = 24 * 60 * 60 * 1000;
+
+// Ventana móvil: desde hace 24 h hasta ahora mismo.
+// No es "hoy" de calendario, así que a las 2 de la mañana sigue
+// contando lo de la tarde anterior, que es cuando más falta hace.
+function enVentana(iso, desde) {
+  return +new Date(iso) >= desde;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1106,10 +1115,31 @@ function switchTab(tab) {
   const btn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
   if (btn) btn.classList.add('active');
 
+  // La ventana de 24 h se mueve sola, así que se recalcula cada vez
+  // que se entra en una pestaña que muestra el resumen.
+  if (tab === 'registrar' || tab === 'graficas') renderResumen();
+
   // Las gráficas solo se pueden dibujar con el panel visible
   if (tab === 'graficas') renderCharts();
   window.scrollTo(0, 0);
 }
+
+// Si la app se queda abierta horas (pasa de noche), el resumen
+// se refresca solo para que no muestre una ventana caducada.
+setInterval(() => {
+  if (tabActual === 'registrar' || tabActual === 'graficas') renderResumen();
+}, 5 * 60 * 1000);
+
+// Al rotar el móvil, Chart.js no reajusta el ancho del canvas por su
+// cuenta (se queda con el de antes y los puntos se amontonan a la
+// izquierda), así que se redibujan a mano.
+let tempResize;
+addEventListener('resize', () => {
+  clearTimeout(tempResize);
+  tempResize = setTimeout(() => {
+    if (tabActual === 'graficas') renderCharts();
+  }, 250);
+});
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => switchTab(btn.dataset.tab));
@@ -1254,53 +1284,61 @@ function configurarRealtime() {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   RESUMEN DE HOY
+   RESUMEN DE LAS ÚLTIMAS 24 H
+
+   El mismo panel se pinta en la pestaña Registrar y en la de
+   Gráficas: se busca por [data-resumen], así que basta con
+   añadir el contenedor donde haga falta.
    ───────────────────────────────────────────────────────────── */
 function renderResumen() {
-  const cont = document.getElementById('resumenHoy');
-  if (!cont) return;
+  const conts = document.querySelectorAll('[data-resumen]');
+  if (!conts.length) return;
 
-  document.getElementById('resumenFecha').textContent =
-    new Date().toLocaleDateString('es-ES', {
-      weekday: 'long', day: 'numeric', month: 'long'
+  const desde = Date.now() - VENTANA_MS;
+
+  document.querySelectorAll('[data-resumen-desde]').forEach(el => {
+    el.textContent = 'Desde las ' + new Date(desde).toLocaleString('es-ES', {
+      hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short'
     });
+  });
 
-  const hoy = registros.filter(r => esHoy(r.fecha_hora));
+  const recientes = registros.filter(r => enVentana(r.fecha_hora, desde));
 
-  const ext = hoy.filter(r => r.tipo === 'extraccion');
-  const ml  = n => ext.filter(r => r.datos.pecho === n)
-                      .reduce((s, r) => s + (Number(r.datos.ml) || 0), 0);
+  const pipis = recientes.filter(r => r.tipo === 'pipi').length;
+  const cacas = recientes.filter(r => r.tipo === 'caca').length;
+
+  const ext   = recientes.filter(r => r.tipo === 'extraccion');
+  const ml    = lado => ext.filter(r => r.datos.pecho === lado)
+                           .reduce((s, r) => s + (Number(r.datos.ml) || 0), 0);
   const mlIzq = ml('izquierdo');
   const mlDer = ml('derecho');
 
-  const cacas  = hoy.filter(r => r.tipo === 'caca').length;
-  const pipis  = hoy.filter(r => r.tipo === 'pipi').length;
-
-  // El último peso puede ser de otro día: se muestra con su fecha
+  // El último peso suele ser de hace más de 24 h, así que aquí no
+  // se filtra por ventana: se muestra el más reciente con su fecha.
   const pesos  = registros.filter(r => r.tipo === 'peso');
   const ultimo = pesos.length ? pesos[pesos.length - 1] : null;
 
-  cont.innerHTML = `
+  const html = `
     <div class="sum-item">
-      <div class="sum-val">${mlIzq + mlDer} ml</div>
-      <div class="sum-lbl">Leche hoy</div>
-      <div class="sum-extra">Izq ${mlIzq} · Der ${mlDer}</div>
+      <div class="sum-val">${pipis}</div>
+      <div class="sum-lbl">💧 Pipís</div>
     </div>
     <div class="sum-item">
       <div class="sum-val">${cacas}</div>
-      <div class="sum-lbl">💩 Cacas hoy</div>
-      <div class="sum-extra">${ext.length} ${ext.length === 1 ? 'extracción' : 'extracciones'}</div>
-    </div>
-    <div class="sum-item">
-      <div class="sum-val">${pipis}</div>
-      <div class="sum-lbl">💧 Pipís hoy</div>
-      <div class="sum-extra">&nbsp;</div>
+      <div class="sum-lbl">💩 Cacas</div>
     </div>
     <div class="sum-item">
       <div class="sum-val">${ultimo ? ultimo.datos.gramos + ' g' : '—'}</div>
       <div class="sum-lbl">Último peso</div>
       <div class="sum-extra">${ultimo ? esc(fmtFechaHora(ultimo.fecha_hora)) : 'sin datos'}</div>
+    </div>
+    <div class="sum-item">
+      <div class="sum-val">${mlIzq + mlDer} ml</div>
+      <div class="sum-lbl">🍼 Leche</div>
+      <div class="sum-extra">Izq ${mlIzq} · Der ${mlDer}</div>
     </div>`;
+
+  conts.forEach(c => { c.innerHTML = html; });
 }
 
 /* ─────────────────────────────────────────────────────────────
