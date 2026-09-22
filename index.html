@@ -31,6 +31,8 @@
       --weight:   #059669;   /* peso:           verde   */
       --caca:     #8a5a34;   /* caca:           marrón  */
       --pipi:     #38bdf8;   /* pipí:           celeste */
+      --target:   #f59e0b;   /* mínimo 20 g/día: ámbar  */
+      --ok:       #059669;   /* va bien:         verde  */
       --r:        14px;
     }
 
@@ -213,6 +215,18 @@
     .sum-val   { font-size: 1.25rem; font-weight: 700; line-height: 1.2; }
     .sum-lbl   { font-size: 0.72rem; color: var(--text2); margin-top: 2px; }
     .sum-extra { font-size: 0.7rem;  color: var(--text2); margin-top: 3px; }
+
+    /* Ganancia de peso al día, justo debajo del peso actual */
+    .sum-trend {
+      font-size: 0.82rem;
+      font-weight: 600;
+      line-height: 1.2;
+      margin-top: 3px;
+    }
+
+    .sum-trend.ok   { color: var(--ok); }
+    .sum-trend.bajo { color: var(--danger); }
+    .sum-trend.nd   { color: var(--text2); font-weight: 500; }
 
     /* ═══════════════════════════════════════════
        FORMULARIOS
@@ -457,6 +471,15 @@
       border: 1px solid rgba(128,128,128,.35);
     }
 
+    /* Guion para las series que se dibujan como línea discontinua.
+       El patrón de rayas llega en el atributo style de cada leyenda. */
+    .legend-dash {
+      width: 18px;
+      height: 3px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
     /* ═══════════════════════════════════════════
        HISTORIAL
        ═══════════════════════════════════════════ */
@@ -607,52 +630,36 @@
         <div class="sum-grid" data-resumen></div>
       </div>
 
-      <!-- Extracción -->
+      <!-- Pipí -->
       <div class="card">
-        <p class="card-title">🍼 Extracción de leche</p>
-        <p class="card-sub">Registra el pecho y los ml extraídos</p>
+        <p class="card-title">💧 Pipí</p>
+        <p class="card-sub">Cantidad y aspecto</p>
 
         <div class="field">
-          <label>Pecho</label>
-          <div class="toggle-row" id="rowPecho">
-            <button type="button" class="toggle-opt sel" data-v="izquierdo" aria-pressed="true">Izquierdo</button>
-            <button type="button" class="toggle-opt"     data-v="derecho"   aria-pressed="false">Derecho</button>
+          <label>Cantidad (0 = nada · 10 = muchísimo)</label>
+          <div class="qty-row" id="rowPipiQty"></div>
+        </div>
+
+        <div class="field">
+          <label>Aspecto</label>
+          <div class="toggle-row" id="rowPipiTrans">
+            <button type="button" class="toggle-opt sel" data-v="si" aria-pressed="true">Transparente</button>
+            <button type="button" class="toggle-opt"     data-v="no" aria-pressed="false">No transparente</button>
           </div>
         </div>
 
         <div class="field">
-          <label for="extMl">Cantidad (ml)</label>
-          <input type="number" id="extMl" placeholder="0"
-                 min="0" max="500" inputmode="decimal" step="0.5">
+          <label for="pipiNota">Nota (opcional)</label>
+          <input type="text" id="pipiNota" placeholder="Color raro, olor, manchitas…" maxlength="200">
         </div>
 
         <div class="field">
-          <label for="extFecha">Fecha y hora</label>
-          <input type="datetime-local" id="extFecha">
+          <label for="pipiFecha">Fecha y hora</label>
+          <input type="datetime-local" id="pipiFecha">
         </div>
 
-        <button class="btn btn-primary" id="btnExt">Guardar extracción</button>
+        <button class="btn btn-primary" id="btnPipi">Guardar pipí</button>
       </div>
-
-      <!-- Peso -->
-      <div class="card">
-        <p class="card-title">⚖️ Peso del bebé</p>
-        <p class="card-sub">En gramos</p>
-
-        <div class="field">
-          <label for="pesoG">Peso (gramos)</label>
-          <input type="number" id="pesoG" placeholder="3000"
-                 min="500" max="10000" inputmode="numeric">
-        </div>
-
-        <div class="field">
-          <label for="pesoFecha">Fecha y hora</label>
-          <input type="datetime-local" id="pesoFecha">
-        </div>
-
-        <button class="btn btn-primary" id="btnPeso">Guardar peso</button>
-      </div>
-
       <!-- Caca -->
       <div class="card">
         <p class="card-title">💩 Caca</p>
@@ -684,36 +691,52 @@
         <button class="btn btn-primary" id="btnCaca">Guardar caca</button>
       </div>
 
-      <!-- Pipí -->
+      <!-- Peso -->
       <div class="card">
-        <p class="card-title">💧 Pipí</p>
-        <p class="card-sub">Cantidad y aspecto</p>
+        <p class="card-title">⚖️ Peso del bebé</p>
+        <p class="card-sub">En gramos</p>
 
         <div class="field">
-          <label>Cantidad (0 = nada · 10 = muchísimo)</label>
-          <div class="qty-row" id="rowPipiQty"></div>
+          <label for="pesoG">Peso (gramos)</label>
+          <input type="number" id="pesoG" placeholder="3000"
+                 min="500" max="10000" inputmode="numeric">
         </div>
 
         <div class="field">
-          <label>Aspecto</label>
-          <div class="toggle-row" id="rowPipiTrans">
-            <button type="button" class="toggle-opt sel" data-v="si" aria-pressed="true">Transparente</button>
-            <button type="button" class="toggle-opt"     data-v="no" aria-pressed="false">No transparente</button>
+          <label for="pesoFecha">Fecha y hora</label>
+          <input type="datetime-local" id="pesoFecha">
+        </div>
+
+        <button class="btn btn-primary" id="btnPeso">Guardar peso</button>
+      </div>
+
+      <!-- Extracción -->
+      <div class="card">
+        <p class="card-title">🍼 Extracción de leche</p>
+        <p class="card-sub">Registra el pecho y los ml extraídos</p>
+
+        <div class="field">
+          <label>Pecho</label>
+          <div class="toggle-row" id="rowPecho">
+            <button type="button" class="toggle-opt sel" data-v="izquierdo" aria-pressed="true">Izquierdo</button>
+            <button type="button" class="toggle-opt"     data-v="derecho"   aria-pressed="false">Derecho</button>
           </div>
         </div>
 
         <div class="field">
-          <label for="pipiNota">Nota (opcional)</label>
-          <input type="text" id="pipiNota" placeholder="Color raro, olor, manchitas…" maxlength="200">
+          <label for="extMl">Cantidad (ml)</label>
+          <input type="number" id="extMl" placeholder="0"
+                 min="0" max="500" inputmode="decimal" step="0.5">
         </div>
 
         <div class="field">
-          <label for="pipiFecha">Fecha y hora</label>
-          <input type="datetime-local" id="pipiFecha">
+          <label for="extFecha">Fecha y hora</label>
+          <input type="datetime-local" id="extFecha">
         </div>
 
-        <button class="btn btn-primary" id="btnPipi">Guardar pipí</button>
+        <button class="btn btn-primary" id="btnExt">Guardar extracción</button>
       </div>
+
     </div>
 
 
@@ -728,29 +751,25 @@
       </div>
 
       <div class="card">
-        <p class="card-title">Extracciones de leche</p>
-        <div class="legend">
-          <div class="legend-item">
-            <div class="legend-dot" style="background:var(--left)"></div>
-            <span>Izquierdo</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-dot" style="background:var(--right)"></div>
-            <span>Derecho</span>
-          </div>
-        </div>
-        <div class="chart-wrap"><canvas id="chartExt"></canvas></div>
-      </div>
-
-      <div class="card">
         <p class="card-title">Peso</p>
         <div class="legend">
           <div class="legend-item">
             <div class="legend-dot" style="background:var(--weight)"></div>
-            <span>Gramos</span>
+            <span>Pesadas</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dash"
+                 style="background:repeating-linear-gradient(90deg,var(--weight) 0 5px,transparent 5px 9px)"></div>
+            <span>Tendencia</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dash"
+                 style="background:repeating-linear-gradient(90deg,var(--target) 0 5px,transparent 5px 9px)"></div>
+            <span>Mínimo 20 g/día</span>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="chartPeso"></canvas></div>
+        <p class="hint-txt" id="notaTendencia" style="margin:10px 0 0"></p>
       </div>
 
       <div class="card">
@@ -770,6 +789,21 @@
       </div>
     </div>
 
+
+      <div class="card">
+        <p class="card-title">Extracciones de leche</p>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--left)"></div>
+            <span>Izquierdo</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--right)"></div>
+            <span>Derecho</span>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartExt"></canvas></div>
+      </div>
 
     <!-- ── TAB: HISTORIAL ────────────────────── -->
     <div id="tab-historial" class="tab-panel">
@@ -934,6 +968,67 @@ const VENTANA_MS = 24 * 60 * 60 * 1000;
 // contando lo de la tarde anterior, que es cuando más falta hace.
 function enVentana(iso, desde) {
   return +new Date(iso) >= desde;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   TENDENCIA DE PESO
+
+   Recta de mínimos cuadrados sobre las pesadas recientes.
+
+   Sólo se usan los últimos DIAS_TENDENCIA días a propósito: los
+   primeros días el bebé PIERDE peso (Álex bajó de 3050 a 2840),
+   y meter esa bajada en el ajuste aplanaría la pendiente y daría
+   una estimación falsamente mala.
+   ───────────────────────────────────────────────────────────── */
+const OBJETIVO_G_DIA  = 20;   // mínimo que indicó la pediatra
+const DIAS_TENDENCIA  = 7;    // ventana de pesadas que entra en el ajuste
+const DIAS_PROYECCION = 7;    // hasta dónde se prolonga la recta
+const MIN_HORAS_SPAN  = 18;   // por debajo de esto la pendiente se dispara
+
+function tendenciaPeso() {
+  const pts = registros
+    .filter(r => r.tipo === 'peso')
+    .map(r => ({ t: +new Date(r.fecha_hora), g: Number(r.datos.gramos) }))
+    .filter(p => !isNaN(p.t) && !isNaN(p.g))
+    .sort((a, b) => a.t - b.t);
+
+  if (pts.length < 2) return null;
+
+  const ultimo = pts[pts.length - 1];
+  let usados = pts.filter(p => p.t >= ultimo.t - DIAS_TENDENCIA * 864e5);
+  if (usados.length < 2) usados = pts.slice(-2);   // pesadas muy espaciadas
+
+  const span = usados[usados.length - 1].t - usados[0].t;
+  if (span < MIN_HORAS_SPAN * 3600e3) return null;
+
+  // Mínimos cuadrados con el tiempo en días desde la primera pesada usada
+  const t0 = usados[0].t;
+  const x  = usados.map(p => (p.t - t0) / 864e5);
+  const n  = usados.length;
+  const mx = x.reduce((a, b) => a + b, 0) / n;
+  const my = usados.reduce((a, p) => a + p.g, 0) / n;
+
+  let num = 0, den = 0;
+  x.forEach((xi, i) => {
+    num += (xi - mx) * (usados[i].g - my);
+    den += (xi - mx) ** 2;
+  });
+  if (!den) return null;
+
+  const gPorDia = num / den;
+  return {
+    gPorDia,
+    inter: my - gPorDia * mx,          // gramos estimados en t0
+    t0,
+    n,
+    dias: span / 864e5,
+    ultimo
+  };
+}
+
+// Gramos estimados por la recta en un instante dado
+function pesoEstimado(tend, t) {
+  return tend.inter + tend.gPorDia * (t - tend.t0) / 864e5;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1318,6 +1413,23 @@ function renderResumen() {
   const pesos  = registros.filter(r => r.tipo === 'peso');
   const ultimo = pesos.length ? pesos[pesos.length - 1] : null;
 
+  // Ganancia diaria frente al mínimo de 20 g/día que marcó la pediatra
+  const tend = tendenciaPeso();
+  let trend;
+  if (!tend) {
+    // Distinguir "aún no hay datos" de "las hay, pero demasiado juntas":
+    // si no, con dos pesadas seguidas el aviso despista.
+    trend = pesos.length >= 2
+      ? `<div class="sum-trend nd">g/día: pesadas muy juntas</div>`
+      : `<div class="sum-trend nd">g/día: faltan pesadas</div>`;
+  } else {
+    const g     = Math.round(tend.gPorDia);
+    const clase = g >= OBJETIVO_G_DIA ? 'ok' : 'bajo';
+    const signo = g > 0 ? '+' : '';
+    trend = `<div class="sum-trend ${clase}" title="Ajuste sobre ${tend.n} pesadas de los últimos ${tend.dias.toFixed(1)} días">`
+          + `${signo}${g} g/día</div>`;
+  }
+
   const html = `
     <div class="sum-item">
       <div class="sum-val">${pipis}</div>
@@ -1329,6 +1441,7 @@ function renderResumen() {
     </div>
     <div class="sum-item">
       <div class="sum-val">${ultimo ? ultimo.datos.gramos + ' g' : '—'}</div>
+      ${trend}
       <div class="sum-lbl">Último peso</div>
       <div class="sum-extra">${ultimo ? esc(fmtFechaHora(ultimo.fecha_hora)) : 'sin datos'}</div>
     </div>
@@ -1554,27 +1667,84 @@ function renderCharts() {
   });
 
   /* ── Peso ── */
+  // Además de las pesadas se dibujan dos rectas discontinuas:
+  // la tendencia real y el mínimo de 20 g/día de la pediatra.
+  const tend = tendenciaPeso();
+  const dsPeso = [{
+    label: 'Peso',
+    data: dPeso,
+    backgroundColor: '#059669',
+    borderColor:     '#059669',
+    pointStyle: 'rect',          // ■ cuadrado → distinguible en B&N
+    pointRadius: 7, pointHoverRadius: 9,
+    showLine: true,
+    tension: 0.3,
+    unidad: ' g'
+  }];
+
+  let ejeXPeso = ejeX();
+
+  if (tend) {
+    const tFin = tend.ultimo.t + DIAS_PROYECCION * 864e5;
+    const iso  = t => new Date(t).toISOString();
+
+    // Tendencia: la recta ajustada, prolongada hacia adelante
+    dsPeso.push({
+      label: 'Tendencia',
+      data: [
+        { x: iso(tend.t0), y: Math.round(pesoEstimado(tend, tend.t0)) },
+        { x: iso(tFin),    y: Math.round(pesoEstimado(tend, tFin))    }
+      ],
+      borderColor: '#059669',
+      backgroundColor: 'transparent',
+      borderDash: [6, 4],
+      borderWidth: 2,
+      pointRadius: 0, pointHoverRadius: 0,
+      showLine: true,
+      unidad: ' g (estimado)'
+    });
+
+    // Mínimo de 20 g/día, partiendo de la última pesada real
+    dsPeso.push({
+      label: 'Mínimo 20 g/día',
+      data: [
+        { x: iso(tend.ultimo.t), y: tend.ultimo.g },
+        { x: iso(tFin), y: Math.round(tend.ultimo.g + OBJETIVO_G_DIA * DIAS_PROYECCION) }
+      ],
+      borderColor: '#f59e0b',
+      backgroundColor: 'transparent',
+      borderDash: [3, 4],
+      borderWidth: 2,
+      pointRadius: 0, pointHoverRadius: 0,
+      showLine: true,
+      unidad: ' g (objetivo)'
+    });
+
+    // Sólo esta gráfica alarga el eje X: si lo hicieran las tres,
+    // las otras dos quedarían con una semana de hueco vacío.
+    ejeXPeso = Object.assign(ejeX(), { max: new Date(tFin) });
+  }
+
   if (charts.peso) charts.peso.destroy();
   charts.peso = new Chart(document.getElementById('chartPeso'), {
     type: 'scatter',
-    data: {
-      datasets: [{
-        label: 'Peso',
-        data: dPeso,
-        backgroundColor: '#059669',
-        borderColor:     '#059669',
-        pointStyle: 'rect',          // ■ cuadrado → distinguible en B&N
-        pointRadius: 7, pointHoverRadius: 9,
-        showLine: true,
-        tension: 0.3,
-        unidad: ' g'
-      }]
-    },
+    data: { datasets: dsPeso },
     options: Object.assign({}, base, {
       plugins: pluginsCfg,
-      scales: { x: ejeX(), y: ejeY('gramos', { beginAtZero: false }) }
+      scales: { x: ejeXPeso, y: ejeY('gramos', { beginAtZero: false }) }
     })
   });
+
+  // Texto explicativo bajo la gráfica
+  const nota = document.getElementById('notaTendencia');
+  if (nota) {
+    nota.textContent = tend
+      ? `Estimación a partir de ${tend.n} pesadas de los últimos `
+        + `${tend.dias.toFixed(1)} días (${Math.round(tend.gPorDia)} g/día). `
+        + 'Es una simple recta de tendencia, no una predicción: con pocas '
+        + 'pesadas cambia mucho de un día para otro.'
+      : 'Hacen falta al menos dos pesadas separadas entre sí para estimar la tendencia.';
+  }
 
   /* ── Pañales ── */
   // Sin línea: son eventos sueltos, no una tendencia.
