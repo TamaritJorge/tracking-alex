@@ -1,0 +1,574 @@
+    /* ═══════════════════════════════════════════
+       VARIABLES DE COLOR
+       ═══════════════════════════════════════════ */
+    :root {
+      --bg:       #f1f5f9;
+      --surface:  #ffffff;
+      --surface2: #f8fafc;
+      --border:   #e2e8f0;
+      --text:     #0f172a;
+      --text2:    #64748b;
+      --primary:  #2563eb;
+      --primary-h:#1d4ed8;
+      --danger:   #dc2626;
+      --left:     #2563eb;   /* pecho izquierdo: azul   */
+      --right:    #dc2626;   /* pecho derecho:  rojo    */
+      --weight:   #059669;   /* peso:           verde   */
+      --caca:     #8a5a34;   /* caca:           marrón  */
+      --pipi:     #38bdf8;   /* pipí:           celeste */
+      --target:   #f59e0b;   /* mínimo 20 g/día: ámbar  */
+      --ok:       #059669;   /* va bien:         verde  */
+      --r:        14px;
+    }
+
+    /* Modo oscuro automático (sigue el sistema operativo) */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg:       #0f172a;
+        --surface:  #1e293b;
+        --surface2: #334155;
+        --border:   #475569;
+        --text:     #f1f5f9;
+        --text2:    #94a3b8;
+      }
+    }
+
+    /* Modo oscuro forzado por el usuario */
+    :root[data-theme="dark"] {
+      --bg:       #0f172a;
+      --surface:  #1e293b;
+      --surface2: #334155;
+      --border:   #475569;
+      --text:     #f1f5f9;
+      --text2:    #94a3b8;
+    }
+
+    /* ═══════════════════════════════════════════
+       BASE
+       ═══════════════════════════════════════════ */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100dvh;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ═══════════════════════════════════════════
+       CABECERA
+       El título ya NO usa position:absolute, así que nunca
+       puede solaparse con los botones en pantallas estrechas
+       (era el fallo que se veía en Android).
+       ═══════════════════════════════════════════ */
+    .header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: env(safe-area-inset-top, 0px) 12px 0;
+      height: calc(56px + env(safe-area-inset-top, 0px));
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .header-title {
+      flex: 1;
+      min-width: 0;              /* necesario para que funcione el ellipsis */
+      font-size: 1.05rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .header-right {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;            /* los botones nunca se comprimen */
+    }
+
+    .icon-btn {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      min-width: 44px;           /* objetivo táctil cómodo */
+      min-height: 40px;
+      padding: 6px 10px;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 1rem;
+      font-family: inherit;
+      line-height: 1;
+    }
+
+    /* En pantallas muy estrechas acortamos el título */
+    @media (max-width: 380px) {
+      .hide-narrow { display: none; }
+    }
+
+    /* ═══════════════════════════════════════════
+       MODAL DE EDICIÓN
+       ═══════════════════════════════════════════ */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      padding: 16px;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      border-radius: var(--r);
+      padding: 20px;
+      width: 100%;
+      max-width: 500px;
+      margin: 0 auto;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+
+    .modal-title { font-size: 1rem; font-weight: 600; margin-bottom: 16px; }
+    .modal-btns  { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
+
+    .btn-edit-sm {
+      display: inline-block;
+      padding: 5px 10px;
+      background: var(--surface2);
+      color: var(--text);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    /* ═══════════════════════════════════════════
+       PANTALLA DE LOGIN
+       ═══════════════════════════════════════════ */
+    .login-wrap  { padding: 48px 16px 32px; max-width: 420px; margin: 0 auto; }
+    .login-title { text-align: center; font-size: 2rem; margin-bottom: 6px; }
+    .login-sub {
+      text-align: center;
+      color: var(--text2);
+      margin-bottom: 28px;
+      font-size: 0.9rem;
+    }
+
+    /* ═══════════════════════════════════════════
+       TARJETA
+       ═══════════════════════════════════════════ */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card-title { font-size: 1rem;   font-weight: 600; margin-bottom: 2px; }
+    .card-sub   { font-size: 0.8rem; color: var(--text2); margin-bottom: 16px; }
+
+    /* ═══════════════════════════════════════════
+       RESUMEN DE HOY
+       ═══════════════════════════════════════════ */
+    .sum-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    @media (min-width: 480px) {
+      .sum-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .sum-item {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .sum-val   { font-size: 1.25rem; font-weight: 700; line-height: 1.2; }
+    .sum-lbl   { font-size: 0.72rem; color: var(--text2); margin-top: 2px; }
+    .sum-extra { font-size: 0.7rem;  color: var(--text2); margin-top: 3px; }
+
+    /* Ganancia de peso al día, justo debajo del peso actual */
+    .sum-trend {
+      font-size: 0.82rem;
+      font-weight: 600;
+      line-height: 1.2;
+      margin-top: 3px;
+    }
+
+    .sum-trend.ok   { color: var(--ok); }
+    .sum-trend.bajo { color: var(--danger); }
+    .sum-trend.nd   { color: var(--text2); font-weight: 500; }
+
+    /* Percentil OMS, debajo de la ganancia diaria */
+    .sum-pct {
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.2;
+      margin-top: 2px;
+    }
+
+    .sum-pct-lbl { font-weight: 500; color: var(--text2); font-size: 0.68rem; }
+    .sum-pct.nd  { font-weight: 500; color: var(--text2); font-size: 0.7rem; }
+
+    /* ═══════════════════════════════════════════
+       FORMULARIOS
+       ═══════════════════════════════════════════ */
+    .field { margin-bottom: 16px; }
+
+    label {
+      display: block;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text2);
+      margin-bottom: 6px;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="number"],
+    input[type="text"],
+    input[type="datetime-local"],
+    input[type="date"],
+    textarea {
+      display: block;
+      width: 100%;
+      padding: 14px 12px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 1rem;
+      font-family: inherit;
+      appearance: none;
+      -webkit-appearance: none;
+      outline: none;
+      transition: border-color .2s;
+    }
+
+    textarea { resize: vertical; min-height: 44px; }
+
+    input:focus, textarea:focus { border-color: var(--primary); }
+
+    /* ═══════════════════════════════════════════
+       BOTONES
+       ═══════════════════════════════════════════ */
+    .btn {
+      display: block;
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: opacity .2s, background .2s;
+    }
+
+    .btn:disabled { opacity: .55; cursor: not-allowed; }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-h); }
+
+    .btn-danger-sm {
+      display: inline-block;
+      padding: 5px 10px;
+      background: var(--danger);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .error-txt { color: var(--danger); font-size: 0.85rem; margin-top: 8px; }
+
+    .hint-txt {
+      font-size: 0.75rem;
+      color: var(--text2);
+      margin: -8px 0 16px;
+      line-height: 1.4;
+    }
+
+    /* ═══════════════════════════════════════════
+       SELECTOR DE DOS OPCIONES (pecho, transparente)
+       ═══════════════════════════════════════════ */
+    .toggle-row { display: flex; gap: 10px; }
+
+    .toggle-opt {
+      flex: 1;
+      padding: 14px 8px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      text-align: center;
+      transition: all .2s;
+    }
+
+    .toggle-opt.sel {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* ═══════════════════════════════════════════
+       SELECTOR DE CANTIDAD 0-10
+       11 botones en lugar de un input numérico: en el móvil
+       se registra de un toque y sin abrir el teclado.
+       ═══════════════════════════════════════════ */
+    .qty-row { display: flex; flex-wrap: wrap; gap: 6px; }
+
+    .qty-btn {
+      flex: 1 0 calc(16.66% - 6px);
+      min-width: 42px;
+      padding: 11px 0;
+      border: 2px solid var(--border);
+      border-radius: 9px;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 0.95rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .qty-btn.sel {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* ═══════════════════════════════════════════
+       SELECTOR DE COLOR DE CACA
+       ═══════════════════════════════════════════ */
+    .color-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 6px;
+    }
+
+    @media (min-width: 420px) {
+      .color-row { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .color-btn {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 10px 8px;
+      border: 2px solid var(--border);
+      border-radius: 9px;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 0.74rem;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .color-btn.sel {
+      border-color: var(--primary);
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .color-swatch {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      /* borde propio: si no, el blanquecino desaparece sobre fondo claro */
+      border: 1px solid rgba(128,128,128,.55);
+    }
+
+    /* ═══════════════════════════════════════════
+       CONTENIDO PRINCIPAL Y TABS
+       ═══════════════════════════════════════════ */
+    main {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 16px 16px 96px; /* hueco para la barra de tabs */
+    }
+
+    .tab-panel        { display: none; }
+    .tab-panel.active { display: block; }
+
+    .tab-bar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: flex;
+      z-index: 50;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    .tab-btn {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      padding: 10px 8px 8px;
+      background: none;
+      border: none;
+      color: var(--text2);
+      font-size: 0.7rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: color .2s;
+    }
+
+    .tab-btn.active { color: var(--primary); }
+    .tab-icon { font-size: 1.35rem; }
+
+    /* ═══════════════════════════════════════════
+       GRÁFICAS
+       ═══════════════════════════════════════════ */
+    .chart-wrap { position: relative; height: 230px; margin-top: 12px; }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin: 10px 0 4px;
+      font-size: 0.82rem;
+      color: var(--text2);
+    }
+
+    .legend-item { display: flex; align-items: center; gap: 6px; }
+
+    .legend-dot {
+      width: 11px; height: 11px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      border: 1px solid rgba(128,128,128,.35);
+    }
+
+    /* Guion para las series que se dibujan como línea discontinua.
+       El patrón de rayas llega en el atributo style de cada leyenda. */
+    .legend-dash {
+      width: 18px;
+      height: 3px;
+      border-radius: 2px;
+      flex-shrink: 0;
+    }
+
+    /* Muestra de las curvas de percentiles: tres rayitas apiladas */
+    .legend-band {
+      width: 18px;
+      height: 10px;
+      flex-shrink: 0;
+      background:
+        linear-gradient(rgba(100,116,139,.45) 0 0) 0 1px  / 18px 1px no-repeat,
+        linear-gradient(rgba(100,116,139,.45) 0 0) 0 5px  / 18px 1px no-repeat,
+        linear-gradient(rgba(100,116,139,.45) 0 0) 0 9px  / 18px 1px no-repeat;
+    }
+
+    /* ═══════════════════════════════════════════
+       HISTORIAL
+       ═══════════════════════════════════════════ */
+    .chip-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 12px;
+    }
+
+    .chip {
+      padding: 8px 13px;
+      border: 1.5px solid var(--border);
+      border-radius: 999px;
+      background: var(--surface);
+      color: var(--text2);
+      font-size: 0.82rem;
+      font-family: inherit;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .chip.sel {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
+    .card-no-pad { padding: 0; overflow: hidden; }
+    .table-wrap  { overflow-x: auto; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+
+    thead th {
+      text-align: left;
+      padding: 10px 12px;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      font-weight: 600;
+    }
+
+    tbody td { padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    tbody tr:last-child td { border-bottom: none; }
+
+    .nota-txt {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--text2);
+      margin-top: 3px;
+      font-style: italic;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 32px;
+      color: var(--text2);
+      font-size: 0.9rem;
+    }
+
+    /* ═══════════════════════════════════════════
+       TOAST (notificación flotante)
+       ═══════════════════════════════════════════ */
+    .toast {
+      position: fixed;
+      top: calc(64px + env(safe-area-inset-top, 0px));
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--text);
+      color: var(--bg);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      z-index: 999;
+      pointer-events: none;
+      max-width: calc(100vw - 32px);
+      text-align: center;
+      opacity: 0;
+      transition: opacity .25s;
+    }
+
+    .toast.show { opacity: 1; }
