@@ -448,7 +448,17 @@ function renderResumen() {
   const pesos  = registros.filter(r => r.tipo === 'peso');
   const ultimo = pesos.length ? pesos[pesos.length - 1] : null;
 
-  // Ganancia diaria frente al mínimo de 20 g/día que marcó la pediatra
+  // Cuánto necesita ganar al día para no bajar de percentil.
+  // Cambia mucho con la edad (~40 g/día a las 3 semanas, ~12 a los
+  // 6 meses), así que se recalcula en cada pesada.
+  const necesario = ultimo
+    ? gananciaParaMantener(ultimo.fecha_hora, ultimo.datos.gramos)
+    : null;
+
+  // Ganancia diaria observada, con tres estados:
+  //   ok    → mantiene percentil
+  //   justo → pasa el suelo de 20 g/día de la pediatra, pero bajará de percentil
+  //   bajo  → por debajo del suelo de la pediatra
   const tend = tendenciaPeso();
   let trend;
   if (!tend) {
@@ -459,11 +469,30 @@ function renderResumen() {
       : `<div class="sum-trend nd">g/día: faltan pesadas</div>`;
   } else {
     const g     = Math.round(tend.gPorDia);
-    const clase = g >= OBJETIVO_G_DIA ? 'ok' : 'bajo';
     const signo = g > 0 ? '+' : '';
-    trend = `<div class="sum-trend ${clase}" title="Ajuste sobre ${tend.n} pesadas de los últimos ${tend.dias.toFixed(1)} días">`
+
+    let clase, porque;
+    if (necesario !== null && g >= Math.round(necesario)) {
+      clase  = 'ok';
+      porque = 'Mantiene su percentil';
+    } else if (g >= OBJETIVO_G_DIA) {
+      clase  = 'justo';
+      porque = 'Pasa los ' + OBJETIVO_G_DIA + ' g/día de la pediatra, '
+             + 'pero por debajo de lo que haría falta para no bajar de percentil';
+    } else {
+      clase  = 'bajo';
+      porque = 'Por debajo de los ' + OBJETIVO_G_DIA + ' g/día que marcó la pediatra';
+    }
+
+    trend = `<div class="sum-trend ${clase}" title="${porque}. Ajuste sobre ${tend.n} pesadas de los últimos ${tend.dias.toFixed(1)} días">`
           + `${signo}${g} g/día</div>`;
   }
+
+  // Línea de referencia: lo que pide su percentil a día de hoy
+  const needTxt = (tend && necesario !== null)
+    ? `<div class="sum-need" title="Pendiente de la curva de la OMS en su punto actual. A esta edad sube hasta las 3 semanas y luego baja; sobre los 3 meses y medio se cruza con los ${OBJETIVO_G_DIA} g/día de la pediatra.">`
+      + `necesita ${Math.round(necesario)} g/día</div>`
+    : '';
 
   // Percentil OMS de la última pesada (peso para la edad, niños)
   let pctTxt = '';
@@ -487,6 +516,7 @@ function renderResumen() {
     <div class="sum-item">
       <div class="sum-val">${ultimo ? ultimo.datos.gramos + ' g' : '—'}</div>
       ${trend}
+      ${needTxt}
       ${pctTxt}
       <div class="sum-lbl">Último peso</div>
       <div class="sum-extra">${ultimo ? esc(fmtFechaHora(ultimo.fecha_hora)) : 'sin datos'}</div>

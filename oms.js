@@ -155,3 +155,36 @@ function textoPercentil(pct) {
   if (pct > 99)   return 'P' + pct.toFixed(1);
   return 'P' + Math.round(pct);
 }
+
+
+/* ─────────────────────────────────────────────────────────────
+   GANANCIA NECESARIA PARA NO BAJAR DE PERCENTIL
+
+   Es la pendiente de la curva de la OMS que pasa por el punto
+   actual: cuántos gramos al día tiene que ganar para quedarse
+   donde está.
+
+   No es constante ni de lejos. Para el percentil de Álex:
+     1 semana  ~31 g/día      2 meses  ~28 g/día
+     3 semanas ~40 g/día      3 meses  ~22 g/día
+     1 mes     ~39 g/día      6 meses  ~12 g/día
+
+   Por eso los 20 g/día de la pediatra no mantienen el percentil
+   hasta pasados los ~3,3 meses: antes de esa edad son un suelo
+   de alarma, no un objetivo.
+   ───────────────────────────────────────────────────────────── */
+function gananciaParaMantener(fechaISO, gramos) {
+  const dias = edadEnDias(fechaISO);
+  const lms  = lmsEn(dias);
+  if (!lms || !(gramos > 0)) return null;
+
+  const z = zDePeso(lms, gramos / 1000);
+
+  // Derivada centrada en ±3 días, recortada a los bordes de la tabla
+  const a = Math.max(0, dias - 3);
+  const b = Math.min(EDAD_MAX_DIAS, dias + 3);
+  const lmsA = lmsEn(a), lmsB = lmsEn(b);
+  if (!lmsA || !lmsB || b - a <= 0) return null;
+
+  return (pesoDeZ(lmsB, z) - pesoDeZ(lmsA, z)) / (b - a) * 1000;
+}

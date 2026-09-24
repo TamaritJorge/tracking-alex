@@ -209,9 +209,21 @@
       margin-top: 3px;
     }
 
-    .sum-trend.ok   { color: var(--ok); }
-    .sum-trend.bajo { color: var(--danger); }
-    .sum-trend.nd   { color: var(--text2); font-weight: 500; }
+    /* ok    = mantiene percentil
+       justo = pasa los 20 g/día de la pediatra pero bajará de percentil
+       bajo  = por debajo del suelo de la pediatra */
+    .sum-trend.ok    { color: var(--ok); }
+    .sum-trend.justo { color: var(--target); }
+    .sum-trend.bajo  { color: var(--danger); }
+    .sum-trend.nd    { color: var(--text2); font-weight: 500; }
+
+    /* Lo que pide su percentil a día de hoy */
+    .sum-need {
+      font-size: 0.7rem;
+      color: var(--text2);
+      line-height: 1.2;
+      margin-top: 1px;
+    }
 
     /* Percentil OMS, debajo de la ganancia diaria */
     .sum-pct {
