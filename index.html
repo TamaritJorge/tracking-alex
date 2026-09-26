@@ -286,7 +286,72 @@
       </div>
     </div>
 
+
+    <!-- ── TAB: COMIDA ───────────────────────── -->
+    <div id="tab-comida" class="tab-panel">
+
+      <p id="comidaError" class="error-txt" style="display:none"></p>
+
+      <div class="card" id="comidaEstado"></div>
+
+      <div id="comidaVentana" style="display:none"></div>
+
+      <div class="card" id="comidaCola"></div>
+
+      <div class="card" id="comidaCatalogo"></div>
+
+      <!-- Información fija: qué mirar y qué no confundir -->
+      <div class="card">
+        <p class="card-title">🚨 Si algo va mal</p>
+        <p class="card-sub">Merece la pena leerlo antes de empezar, no durante</p>
+
+        <div class="field">
+          <label>Arcada y atragantamiento no son lo mismo</label>
+          <p class="ficha-txt">
+            La <strong>arcada</strong> es ruidosa: tose, se pone rojo, hace aspavientos.
+            Es normal y frecuente al principio, es el cuerpo protegiéndose. No hay que
+            hacer nada salvo mantener la calma y no meterle los dedos en la boca.<br><br>
+            El <strong>atragantamiento</strong> es silencioso: no sale aire, no tose, se
+            queda callado y cambia de color. Ahí sí hay que actuar de inmediato.
+          </p>
+        </div>
+
+        <div class="field">
+          <label>Señales de reacción alérgica grave</label>
+          <p class="ficha-txt">
+            Dificultad para respirar, pitidos, hinchazón de labios, lengua o cara,
+            vómitos repetidos, palidez o decaimiento súbito, ronchas por todo el cuerpo.
+          </p>
+        </div>
+
+        <div class="aviso aviso-stop">
+          Ante cualquiera de esas señales: <strong>112</strong>.
+        </div>
+
+        <p class="hint-txt" style="margin-top:12px">
+          Un curso de RCP para bebés dura un par de horas y se olvida mucho menos que
+          un texto. Esta app es un registro: no sustituye a la pediatra.
+        </p>
+      </div>
+
+      <div class="card" id="comidaDiario"></div>
+    </div>
+
   </main>
+
+  <!-- ── MODAL DE COMIDA ───────────────────── -->
+  <!-- Propio, y no el de edición, para no pisarse con registros.js -->
+  <div id="comidaModal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <p class="modal-title" id="comidaModalTitulo"></p>
+      <div id="comidaModalCuerpo"></div>
+      <div class="modal-btns" id="comidaModalBtns"></div>
+      <div class="modal-btns">
+        <button class="btn" onclick="cerrarComidaModal()"
+                style="background:var(--surface2);color:var(--text)">Cerrar</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ── MODAL DE EDICIÓN ───────────────────── -->
   <div id="editModal" class="modal-overlay" style="display:none">
@@ -308,6 +373,9 @@
     </button>
     <button class="tab-btn" data-tab="graficas">
       <span class="tab-icon">📊</span><span>Gráficas</span>
+    </button>
+    <button class="tab-btn" data-tab="comida">
+      <span class="tab-icon">🥑</span><span>Comida</span>
     </button>
     <button class="tab-btn" data-tab="historial">
       <span class="tab-icon">📋</span><span>Historial</span>
@@ -334,8 +402,10 @@
      ═══════════════════════════════════════════ -->
 <script src="app.js"></script>
 <script src="oms.js"></script>
+<script src="alimentos.js"></script>
 <script src="graficas.js"></script>
 <script src="historial.js"></script>
 <script src="registros.js"></script>
+<script src="comida.js"></script>
 </body>
 </html>

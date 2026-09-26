@@ -584,3 +584,187 @@
     }
 
     .toast.show { opacity: 1; }
+
+    /* ═══════════════════════════════════════════
+       PESTAÑA COMIDA
+       ═══════════════════════════════════════════ */
+
+    /* Checklist de señales de que está listo */
+    .check-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .check-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 0.88rem;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: all .15s;
+    }
+
+    .check-item.sel { border-color: var(--ok); color: var(--text); }
+
+    .check-box {
+      width: 22px; height: 22px;
+      flex-shrink: 0;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .check-item.sel .check-box { background: var(--ok); border-color: var(--ok); }
+
+    .check-inline { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; }
+
+    /* Avisos, por nivel de gravedad */
+    .aviso {
+      border-radius: 10px;
+      padding: 12px 14px;
+      font-size: 0.85rem;
+      line-height: 1.45;
+      border: 1px solid;
+      margin-bottom: 12px;
+    }
+
+    .aviso-stop   { background: rgba(220,38,38,.08);  border-color: rgba(220,38,38,.45);  color: var(--text); }
+    .aviso-ojo    { background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.5);  color: var(--text); }
+    .aviso-espera { background: rgba(245,158,11,.10); border-color: rgba(245,158,11,.5);  color: var(--text); }
+    .aviso-suave  { background: var(--surface2);      border-color: var(--border);        color: var(--text2); }
+    .aviso-ok     { background: rgba(5,150,105,.10);  border-color: rgba(5,150,105,.45);  color: var(--text); }
+
+    .aviso-fuente { font-size: 0.72rem; color: var(--text2); margin-top: 6px; }
+
+    /* Distintivos */
+    .tag {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 999px;
+      font-size: 0.65rem;
+      font-weight: 600;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    .tag-hierro   { background: rgba(220,38,38,.14);  color: #dc2626; }
+    .tag-alergeno { background: rgba(245,158,11,.16); color: #b45309; }
+    .tag-stop     { background: rgba(220,38,38,.14);  color: #dc2626; }
+    .tag-pronto   { background: var(--surface2);      color: var(--text2); }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .tag-hierro   { color: #f87171; }
+      :root:not([data-theme="light"]) .tag-alergeno { color: #fbbf24; }
+      :root:not([data-theme="light"]) .tag-stop     { color: #f87171; }
+    }
+
+    :root[data-theme="dark"] .tag-hierro   { color: #f87171; }
+    :root[data-theme="dark"] .tag-alergeno { color: #fbbf24; }
+    :root[data-theme="dark"] .tag-stop     { color: #f87171; }
+
+    /* Cola de "qué toca" */
+    .cola-item {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 10px;
+      background: var(--surface2);
+    }
+
+    .cola-item.cola-espera { opacity: .72; }
+
+    .cola-nom {
+      font-size: 0.98rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    .cola-aviso { font-size: 0.75rem; color: var(--text2); margin-top: 4px; }
+
+    .cola-btns { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+    .btn-mini {
+      padding: 8px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: var(--surface);
+      color: var(--text);
+      font-size: 0.8rem;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .btn-mini-pri { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+
+    /* Catálogo plegable */
+    .cat-cab {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      padding: 13px 12px;
+      margin-top: 8px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 0.92rem;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+
+    .cat-cuenta { font-size: 0.78rem; color: var(--text2); font-weight: 500; }
+
+    .cat-lista { padding: 4px 0 8px; }
+
+    .ali-fila {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      width: 100%;
+      padding: 11px 10px;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      background: none;
+      color: var(--text);
+      font-size: 0.87rem;
+      font-family: inherit;
+      text-align: left;
+      cursor: pointer;
+    }
+
+    .ali-nom   { flex: 1; min-width: 0; }
+    .ali-veces { font-size: 0.72rem; color: var(--text2); }
+
+    .pt { width: 14px; flex-shrink: 0; font-weight: 700; text-align: center; }
+    .pt-ok  { color: var(--ok); }
+    .pt-med { color: var(--text2); }
+    .pt-mal { color: var(--danger); }
+
+    /* Texto de las fichas */
+    .ficha-txt {
+      font-size: 0.87rem;
+      line-height: 1.5;
+      color: var(--text);
+      margin: 0;
+    }
+
+    /* Alimentos añadidos por la familia */
+    .tag-mio { background: rgba(37,99,235,.14); color: #2563eb; }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .tag-mio { color: #93c5fd; }
+    }
+    :root[data-theme="dark"] .tag-mio { color: #93c5fd; }

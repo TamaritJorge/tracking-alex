@@ -224,8 +224,10 @@ document.addEventListener('click', e => {
   btn.classList.add('sel');
   btn.setAttribute('aria-pressed', 'true');
 
-  // Los chips del historial además filtran
-  if (btn.classList.contains('chip')) {
+  // Los chips del historial además filtran. Acotado a #filtroRow a
+  // propósito: si no, cualquier .chip de otra pestaña machacaría el
+  // filtro del historial sin que se note.
+  if (btn.classList.contains('chip') && btn.closest('#filtroRow')) {
     filtroHist = btn.dataset.f;
     renderTabla();
   }
@@ -284,13 +286,17 @@ function mostrarApp(soloLectura) {
 
   if (soloLectura) {
     document.getElementById('logoutBtn').style.display = 'none';
-    // Ocultar la pestaña "Registrar" en modo solo lectura
-    document.querySelector('[data-tab="registrar"]').style.display = 'none';
+    // Pestañas de registro ocultas en el enlace de la matrona
+    ['registrar', 'comida'].forEach(t => {
+      const b = document.querySelector(`[data-tab="${t}"]`);
+      if (b) b.style.display = 'none';
+    });
   }
 
   resetFechas();
   cargarDatos();
   configurarRealtime();
+  iniciarComida();          // se encarga de sus propias tablas (comida.js)
   switchTab(tabActual);
 }
 
