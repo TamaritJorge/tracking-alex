@@ -497,6 +497,7 @@ function renderCola() {
 
   const c = cola();
   const v = ventanaAlergeno();
+  const estAl = estadoAlergenos();
 
   if (!c.length) {
     cont.innerHTML = `<p class="card-title">👉 Siguiente</p>
@@ -517,7 +518,7 @@ function renderCola() {
         <div class="cola-nom">
           ${CATEGORIAS[a.cat].emoji} ${esc(a.nombre)}
           ${a.hierro === 'alto' ? '<span class="tag tag-hierro">hierro</span>' : ''}
-          ${a.alergeno ? `<span class="tag tag-alergeno">${esc(ALERGENOS[a.alergeno].nombre)}</span>` : ''}
+          ${etiquetaAlergeno(a, estAl)}
         </div>
         ${bloqueado
           ? `<div class="cola-aviso">Espera a que cierre la ventana de ${esc(v.nombre)}</div>`
@@ -540,6 +541,7 @@ function renderCatalogo() {
   // `todos` y no `cat`: dentro del bucle `cat` ya es la categoría
   const todos = catalogo();
   const mios  = todos.filter(a => a.mio).length;
+  const estAl = estadoAlergenos();   // se calcula una vez, no por fila
 
   cont.innerHTML = `
     <p class="card-title">📚 Catálogo</p>
@@ -557,14 +559,35 @@ function renderCatalogo() {
           <span>${cat.emoji} ${esc(cat.nombre)}</span>
           <span class="cat-cuenta">${hechos}/${items.length} ${abierta ? '▾' : '▸'}</span>
         </button>
-        ${abierta ? `<div class="cat-lista">${items.map(a => filaAlimento(a)).join('')}</div>` : ''}`;
+        ${abierta ? `<div class="cat-lista">${items.map(a => filaAlimento(a, estAl)).join('')}</div>` : ''}`;
     }).join('')}
     ${modoVer ? '' : `
       <button class="btn" style="margin-top:14px;background:var(--surface2);color:var(--text)"
               onclick="nuevoAlimento()">➕ Añadir un alimento vuestro</button>`}`;
 }
 
-function filaAlimento(a) {
+/* Etiqueta de alérgeno, que sólo sale cuando dice algo útil.
+
+   Antes ponía "alérgeno" en los 56 alimentos que lo llevan, sin
+   decir cuál y siguiera introducido o no. Con 20 pescados seguidos
+   la etiqueta dejaba de significar nada. Ahora:
+
+     · sin introducir → nombre del alérgeno: registrarlo abrirá la
+                        ventana de 3 días. Es lo accionable.
+     · con reacción   → en rojo, que eso sí hay que verlo siempre.
+     · ya tolerado    → nada: no es una primera exposición.          */
+function etiquetaAlergeno(a, estAl) {
+  if (!a.alergeno) return '';
+  const e = (estAl || estadoAlergenos())[a.alergeno];
+  if (!e) return '';
+  const nombre = esc(ALERGENOS[a.alergeno].nombre);
+
+  if (e.conReaccion) return `<span class="tag tag-stop">⚠ ${nombre}</span>`;
+  if (!e.introducido) return `<span class="tag tag-alergeno">${nombre}</span>`;
+  return '';
+}
+
+function filaAlimento(a, estAl) {
   const e  = estadoAlimento(a.id);
   const av = avisosEdad(a);
 
@@ -585,7 +608,7 @@ function filaAlimento(a) {
       ${marca}
       <span class="ali-nom">${esc(a.nombre)}</span>
       ${a.hierro === 'alto' ? '<span class="tag tag-hierro">Fe</span>' : ''}
-      ${a.alergeno ? '<span class="tag tag-alergeno">alérgeno</span>' : ''}
+      ${etiquetaAlergeno(a, estAl)}
       ${a.mio ? '<span class="tag tag-mio">vuestro</span>' : ''}
       ${etiquetaEdad}
       ${e.veces ? `<span class="ali-veces">×${e.veces}</span>` : ''}

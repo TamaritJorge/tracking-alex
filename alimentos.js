@@ -17,6 +17,20 @@
    · restriccion → seguridad (tóxicos, atragantamiento, infección).
                    Aviso fuerte con motivo y fuente. Se puede
                    registrar igualmente: la decisión es de los padres.
+
+   CRITERIO PARA `desdeMeses`
+   Para que no se descuadre al añadir alimentos nuevos:
+     6 m  → se puede ofrecer desde el inicio con la textura adecuada.
+            Es el valor por defecto, incluidos TODOS los alérgenos:
+            retrasarlos no previene alergias (ESPGHAN, LEAP).
+     9 m  → necesita más habilidad para masticar (calamar) o es un
+            riesgo de atragantamiento que no se quita cortando
+            (pepitas de granada).
+     12 m → hay un motivo real: sal alta, o una `restriccion`.
+     +    → lo que diga la restricción.
+
+   Si un alimento está a 9 o 12 meses "porque suena prudente" pero
+   no se puede escribir el motivo en una línea, va a 6.
    ═════════════════════════════════════════════════════════════ */
 
 
@@ -96,6 +110,36 @@ const RESTRICCIONES = {
     etiqueta: 'No añadir en el primer año',
     motivo: 'No aporta nada y acostumbra al sabor. La sal además sobrecarga el riñón.',
     fuente: 'AEPap / OMS'
+  },
+  sinValorNutritivo: {
+    edadMeses: 24,
+    etiqueta: 'Mejor evitarlo',
+    motivo: 'Bebidas de escaso valor nutritivo: llenan sin alimentar y desplazan '
+          + 'a la leche y a la comida. Las infusiones además pueden llevar azúcar '
+          + 'y algunas plantas no son inocuas en lactantes.',
+    fuente: 'AEPap'
+  },
+  azucarAnadido: {
+    edadMeses: 24,
+    etiqueta: 'Mejor evitarlo en los primeros años',
+    motivo: 'Azúcar añadido. Que algo se venda como "de bebé" no lo hace adecuado: '
+          + 'acostumbra al sabor dulce y favorece la caries.',
+    fuente: 'AEPap / OMS'
+  },
+  embutidos: {
+    edadMeses: 12,
+    etiqueta: 'No antes de los 12 meses',
+    motivo: 'Mucha sal y nitritos, y ningún nutriente que no dé la carne de verdad. '
+          + 'Los curados y las lonchas enteras añaden riesgo de atragantamiento.',
+    fuente: 'Recomendación general (no se ha podido verificar la fuente primaria)'
+  },
+  bebidaVegetal: {
+    edadMeses: 12,
+    etiqueta: 'No como sustituto de la leche antes de los 12 meses',
+    motivo: 'No sustituyen a la leche materna ni a la fórmula: llevan muy poca '
+          + 'proteína, grasa y calcio. En una receta puntual no pasa nada; como '
+          + 'bebida principal, no.',
+    fuente: 'AEPap'
   }
 };
 
@@ -111,10 +155,20 @@ const ALERGENOS = {
   cacahuete:  { nombre: 'Cacahuete' },
   frutosSecos:{ nombre: 'Frutos de cáscara' },
   pescado:    { nombre: 'Pescado' },
-  marisco:    { nombre: 'Marisco' },
+  crustaceos: { nombre: 'Crustáceos' },
+  moluscos:   { nombre: 'Moluscos' },
   soja:       { nombre: 'Soja' },
-  sesamo:     { nombre: 'Sésamo' }
+  sesamo:     { nombre: 'Sésamo' },
+  apio:       { nombre: 'Apio' },       // alérgeno oficial y muy común en caldos
+  mostaza:    { nombre: 'Mostaza' },
+  altramuces: { nombre: 'Altramuces' },
+  sulfitos:   { nombre: 'Sulfitos' }
 };
+// Los 14 del reglamento europeo 1169/2011, completos. Crustáceos y
+// moluscos van separados porque la UE los separa y porque no son lo
+// mismo: se puede ser alérgico a las gambas y tolerar los mejillones.
+// Los sulfitos son un aditivo y no un alimento, así que van colgados
+// de la fruta desecada, que es donde un bebé se los encuentra.
 
 const DIAS_VENTANA_ALERGENO = 3;   // la "regla de los 3 días"
 
@@ -305,11 +359,11 @@ const ALIMENTOS = [
     blw:'Compactada en bolitas o mezclada con verdura chafada.',
     cuchara:'Bien cocida y chafada.' },
 
-  { id:'pasta', nombre:'Pasta', cat:'cereal', hierro:'medio', alergeno:'gluten', desdeMeses:9, orden:34,
+  { id:'pasta', nombre:'Pasta', cat:'cereal', hierro:'medio', alergeno:'gluten', desdeMeses:6, orden:34,
     blw:'Formas grandes (espirales, lazos) muy cocidas, fáciles de agarrar.',
     cuchara:'Cortada pequeña con salsa de verdura.' },
 
-  { id:'cuscus', nombre:'Cuscús', cat:'cereal', hierro:'medio', alergeno:'gluten', desdeMeses:9, orden:35,
+  { id:'cuscus', nombre:'Cuscús', cat:'cereal', hierro:'medio', alergeno:'gluten', desdeMeses:6, orden:35,
     blw:'Compactado con verdura en bolitas.',
     cuchara:'Hidratado y mezclado.' },
 
@@ -357,20 +411,20 @@ const ALIMENTOS = [
     blw:'Asada en bastones, sin piel.',
     cuchara:'Asada y chafada.' },
 
-  { id:'alcachofa', nombre:'Alcachofa', cat:'verdura', hierro:'medio', desdeMeses:9, orden:50,
+  { id:'alcachofa', nombre:'Alcachofa', cat:'verdura', hierro:'medio', desdeMeses:6, orden:50,
     blw:'Corazón cocido en gajos.',
     cuchara:'Cocida y triturada.' },
 
-  { id:'esparrago', nombre:'Espárrago', cat:'verdura', hierro:null, desdeMeses:9, orden:51,
+  { id:'esparrago', nombre:'Espárrago', cat:'verdura', hierro:null, desdeMeses:6, orden:51,
     blw:'Cocido, la parte tierna de la punta.',
     cuchara:'Cocido y triturado.' },
 
-  { id:'champinon', nombre:'Champiñón', cat:'verdura', hierro:'medio', desdeMeses:9, orden:52,
+  { id:'champinon', nombre:'Champiñón', cat:'verdura', hierro:'medio', desdeMeses:6, orden:52,
     blw:'Salteado y cortado en cuartos, no entero.',
     cuchara:'Salteado y triturado.',
     atragantamiento:'Entero es resbaladizo y del tamaño justo. Corta siempre.' },
 
-  { id:'pepino', nombre:'Pepino', cat:'verdura', hierro:null, desdeMeses:9, orden:53,
+  { id:'pepino', nombre:'Pepino', cat:'verdura', hierro:null, desdeMeses:6, orden:53,
     blw:'Bastones pelados. Frío va bien cuando le salen los dientes.',
     cuchara:'Rallado.' },
 
@@ -541,24 +595,24 @@ const ALIMENTOS = [
     nota:'El bonito y el atún claro no están en la lista de mercurio. El que hay '
        + 'que evitar es el atún ROJO.' },
 
-  { id:'gambas', nombre:'Gambas y langostinos', cat:'pescado', hierro:'medio', alergeno:'marisco', desdeMeses:12, orden:90,
+  { id:'gambas', nombre:'Gambas y langostinos', cat:'pescado', hierro:'medio', alergeno:'crustaceos', desdeMeses:6, orden:90,
     blw:'Cola pelada, bien cocida, cortada a lo largo.',
     cuchara:'Picada muy fina.',
     atragantamiento:'La textura elástica cuesta de masticar. Corta pequeño.',
     nota:'Sólo la cola. La cabeza, no: ahí se concentra el cadmio.' },
 
-  { id:'mejillones', nombre:'Mejillones y almejas', cat:'pescado', hierro:'alto', alergeno:'marisco', desdeMeses:12, orden:91,
+  { id:'mejillones', nombre:'Mejillones y almejas', cat:'pescado', hierro:'alto', alergeno:'moluscos', desdeMeses:6, orden:91,
     blw:'Bien cocidos y picados, no enteros.',
     cuchara:'Picados muy finos.',
     atragantamiento:'Elásticos y resbaladizos. Picar siempre.' },
 
-  { id:'calamar', nombre:'Calamar y pulpo', cat:'pescado', hierro:'medio', alergeno:'marisco', desdeMeses:12, orden:92,
+  { id:'calamar', nombre:'Calamar y pulpo', cat:'pescado', hierro:'medio', alergeno:'moluscos', desdeMeses:9, orden:92,
     blw:'Muy cocido y en tiras finas.',
     cuchara:'Picado fino.',
     atragantamiento:'De los alimentos más elásticos que hay. Cocción larga y trozo '
                   + 'pequeño.' },
 
-  { id:'cabezas-marisco', nombre:'Cabezas de marisco', cat:'pescado', hierro:null, alergeno:'marisco',
+  { id:'cabezas-marisco', nombre:'Cabezas de marisco', cat:'pescado', hierro:null, alergeno:'crustaceos',
     desdeMeses:36, restriccion:'cadmio', orden:93,
     blw:'—', cuchara:'—' },
 
@@ -579,7 +633,7 @@ const ALIMENTOS = [
     blw:'—', cuchara:'—' },
 
   /* ── Huevo y lácteos ──────────────────────────────────────── */
-  { id:'tortilla', nombre:'Tortilla', cat:'huevo', hierro:'medio', alergeno:'huevo', desdeMeses:9, orden:100,
+  { id:'tortilla', nombre:'Tortilla', cat:'huevo', hierro:'medio', alergeno:'huevo', desdeMeses:6, orden:100,
     blw:'Cuajada del todo, en tiras.',
     cuchara:'Chafada.',
     nota:'Bien cuajada, nada de tortilla poco hecha.' },
@@ -594,7 +648,7 @@ const ALIMENTOS = [
     cuchara:'Rallado sobre la pasta.',
     nota:'En poca cantidad: lleva bastante sal.' },
 
-  { id:'requeson', nombre:'Requesón', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:9, orden:103,
+  { id:'requeson', nombre:'Requesón', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:103,
     blw:'Sobre tostada.', cuchara:'Tal cual, sin azúcar.' },
 
   { id:'mantequilla', nombre:'Mantequilla', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:104,
@@ -675,7 +729,193 @@ const ALIMENTOS = [
   { id:'zumo', nombre:'Zumo de fruta', cat:'otros', hierro:null, desdeMeses:12, orden:131,
     blw:'En vaso, nunca en biberón.', cuchara:'—',
     nota:'Máximo 180 ml al día (AAP) y siempre mejor la fruta entera: el zumo tiene '
-       + 'el azúcar sin la fibra y favorece la caries.' }
+       + 'el azúcar sin la fibra y favorece la caries.' },
+
+  /* ══ Bebidas ══════════════════════════════════════════════ */
+  { id:'agua', nombre:'Agua', cat:'otros', hierro:null, desdeMeses:6, orden:19,
+    blw:'En vaso abierto o de aprendizaje, con las comidas. Pequeños sorbos.',
+    cuchara:'Unos sorbos entre cucharadas.',
+    nota:'Desde que empieza la complementaria hay que ofrecerle agua en las comidas. '
+       + 'AEPap: los líquidos en taza o vaso desde los 6 meses, no en biberón. No '
+       + 'sustituye tomas de leche: es un acompañamiento.' },
+
+  { id:'infusiones', nombre:'Infusiones, té y café', cat:'otros', hierro:null,
+    desdeMeses:24, restriccion:'sinValorNutritivo', orden:132,
+    blw:'—', cuchara:'—' },
+
+  { id:'bebida-avena', nombre:'Bebida de avena', cat:'otros', hierro:null, alergeno:'gluten',
+    desdeMeses:12, restriccion:'bebidaVegetal', orden:133,
+    blw:'—', cuchara:'—' },
+
+  { id:'bebida-almendra', nombre:'Bebida de almendra', cat:'otros', hierro:null,
+    alergeno:'frutosSecos', desdeMeses:12, restriccion:'bebidaVegetal', orden:134,
+    blw:'—', cuchara:'—' },
+
+  { id:'bebida-soja', nombre:'Bebida de soja', cat:'otros', hierro:null, alergeno:'soja',
+    desdeMeses:12, restriccion:'bebidaVegetal', orden:135,
+    blw:'—', cuchara:'—',
+    nota:'De las vegetales es la única con proteína comparable a la de la leche, pero '
+       + 'aun así no sustituye a la fórmula en el primer año. Si hay que retirar los '
+       + 'lácteos, que lo dirija la pediatra.' },
+
+  /* ══ Fiambres y procesados ════════════════════════════════ */
+  { id:'jamon-cocido', nombre:'Jamón cocido y fiambre de pavo', cat:'carne', hierro:'medio',
+    desdeMeses:12, restriccion:'embutidos', orden:136,
+    blw:'Si lo dais pasado el año, en tiras finas, no en lonchas enteras.',
+    cuchara:'Picado muy fino.',
+    atragantamiento:'La loncha entera puede pegarse al paladar. Córtala en tiras.',
+    nota:'Si lo compráis, mirad la etiqueta: más del 90 % de carne, sal por debajo de '
+       + '1,2 g/100 g y sin azúcares añadidos. La mayoría del "jamón de york" del '
+       + 'supermercado no llega.' },
+
+  { id:'jamon-serrano', nombre:'Jamón serrano y curados', cat:'carne', hierro:'medio',
+    desdeMeses:12, restriccion:'embutidos', orden:137,
+    blw:'—', cuchara:'—',
+    atragantamiento:'Fibroso y difícil de masticar sin muelas.',
+    nota:'Muchísima sal. Conviene retrasarlo bastante más allá del año.' },
+
+  /* ══ Dulces y ultraprocesados ═════════════════════════════ */
+  { id:'fruta-desecada', nombre:'Fruta desecada (dátiles, pasas, orejones)', cat:'fruta',
+    hierro:'medio', alergeno:'sulfitos', desdeMeses:12, orden:138,
+    blw:'Remojada y cortada muy pequeña, nunca entera.',
+    cuchara:'Remojada y triturada con el yogur.',
+    atragantamiento:'Pegajosa y del tamaño justo de la vía aérea. Remojar y picar.',
+    nota:'Azúcar muy concentrado y se pega a los dientes. Además suele llevar '
+       + 'sulfitos como conservante, que son alérgeno declarable.' },
+
+  { id:'galletas', nombre:'Galletas (incluidas las "de bebé")', cat:'otros', hierro:null,
+    alergeno:'gluten', desdeMeses:24, restriccion:'azucarAnadido', orden:139,
+    blw:'—', cuchara:'—',
+    nota:'Las galletas infantiles llevan azúcar aunque el envase diga otra cosa. Para '
+       + 'mordisquear, mejor una tira de pan tostado o de fruta.' },
+
+  { id:'papilla-azucarada', nombre:'Papillas y potitos azucarados', cat:'otros', hierro:null,
+    desdeMeses:24, restriccion:'azucarAnadido', orden:140,
+    blw:'—', cuchara:'—',
+    nota:'Revisad la etiqueta: muchas papillas de cereales llevan azúcar o cereales '
+       + 'hidrolizados, que es azúcar con otro nombre.' },
+
+  /* ══ Alérgenos que faltaban del listado europeo ═══════════ */
+  { id:'apio', nombre:'Apio', cat:'verdura', hierro:null, alergeno:'apio',
+    desdeMeses:6, orden:59,
+    blw:'Sólo cocido y sin hebras, en bastones.',
+    cuchara:'Cocido y triturado, o como base del caldo.',
+    atragantamiento:'Crudo tiene hebras duras que no puede masticar.',
+    nota:'Es alérgeno oficial y pasa desapercibido: está en casi todos los caldos y '
+       + 'sofritos. Si lo usáis para el caldo, cuenta como introducción.' },
+
+  { id:'mostaza', nombre:'Mostaza', cat:'otros', hierro:null, alergeno:'mostaza',
+    desdeMeses:12, orden:141,
+    blw:'—', cuchara:'—',
+    nota:'Alérgeno oficial. Poco habitual a esta edad, pero aparece en salsas y '
+       + 'algunos embutidos.' },
+
+  { id:'altramuces', nombre:'Altramuces y harina de altramuz', cat:'legumbre',
+    hierro:'medio', alergeno:'altramuces', desdeMeses:12, orden:31,
+    blw:'Pelados, sin piel y chafados. Los de bote hay que enjuagarlos mucho.',
+    cuchara:'Chafados y mezclados con el puré.',
+    atragantamiento:'Redondos, firmes y con una piel dura que no puede masticar. '
+                  + 'Pelar y chafar siempre.',
+    nota:'Ojo con este, que pasa desapercibido: es alérgeno oficial en la UE y '
+       + 'tiene reactividad cruzada alta con el cacahuete — en pruebas de '
+       + 'provocación, el 44 % de los alérgicos al cacahuete reaccionaron también '
+       + 'al altramuz. Si Álex reacciona al cacahuete, consultad antes de darle '
+       + 'altramuces. Aparece además como harina en panes sin gluten y en productos '
+       + 'veganos, así que mirad la etiqueta. Los de aperitivo van en salmuera y '
+       + 'llevan muchísima sal.' },
+
+  /* ══ Más verdura ══════════════════════════════════════════ */
+  { id:'nabo', nombre:'Nabo', cat:'verdura', hierro:null, desdeMeses:6, orden:44,
+    blw:'Cocido en bastones.', cuchara:'Cocido y triturado con patata.' },
+
+  { id:'chirivia', nombre:'Chirivía', cat:'verdura', hierro:null, desdeMeses:6, orden:45,
+    blw:'Asada en bastones, sale dulce.', cuchara:'Cocida y triturada.' },
+
+  { id:'col', nombre:'Col o repollo', cat:'verdura', hierro:null, desdeMeses:6, orden:46,
+    blw:'Hoja cocida hasta que esté muy blanda, en tiras.',
+    cuchara:'Cocida y triturada.' },
+
+  { id:'coles-bruselas', nombre:'Coles de Bruselas', cat:'verdura', hierro:null,
+    desdeMeses:6, orden:47,
+    blw:'Cocidas y cortadas por la mitad, no enteras.',
+    cuchara:'Cocidas y trituradas.',
+    atragantamiento:'Enteras son redondas y del tamaño justo. Partir siempre.' },
+
+  { id:'ajo', nombre:'Ajo', cat:'verdura', hierro:null, desdeMeses:6, orden:48,
+    blw:'En el sofrito, no en trozo.', cuchara:'Como base del guiso.',
+    nota:'Da sabor sin sal, que es justo lo que interesa.' },
+
+  /* ══ Más fruta ════════════════════════════════════════════ */
+  { id:'caqui', nombre:'Caqui', cat:'fruta', hierro:null, desdeMeses:6, orden:80,
+    blw:'Muy maduro, en gajos. El persimon, más firme, va mejor para agarrar.',
+    cuchara:'Chafado.',
+    nota:'Si está poco maduro es muy áspero y lo va a rechazar.' },
+
+  { id:'chirimoya', nombre:'Chirimoya', cat:'fruta', hierro:null, desdeMeses:6, orden:81,
+    blw:'En trozos, quitando todas las pepitas.',
+    cuchara:'Chafada y colada.',
+    atragantamiento:'Las pepitas son grandes, duras y negras: repásalas una a una.' },
+
+  { id:'nispero', nombre:'Níspero', cat:'fruta', hierro:null, desdeMeses:6, orden:82,
+    blw:'Pelado, sin huesos, en mitades.', cuchara:'Chafado.',
+    atragantamiento:'Los huesos son grandes y lisos.' },
+
+  { id:'coco', nombre:'Coco', cat:'fruta', hierro:'medio', desdeMeses:6, orden:83,
+    blw:'Rallado fino sobre la fruta, o en crema.',
+    cuchara:'Rallado en el yogur.',
+    atragantamiento:'En trozo es durísimo. Sólo rallado fino.',
+    nota:'En algunos países se clasifica como fruto de cáscara. En la UE no, pero si '
+       + 'hay alergia a frutos secos en la familia, coméntalo con la pediatra.' },
+
+  /* ══ Más cereal ═══════════════════════════════════════════ */
+  { id:'trigo-sarraceno', nombre:'Trigo sarraceno', cat:'cereal', hierro:'medio',
+    desdeMeses:6, orden:36,
+    blw:'Bien cocido y compactado en bolitas, o en tortita.',
+    cuchara:'Cocido y chafado.',
+    nota:'A pesar del nombre no lleva gluten ni es trigo.' },
+
+  { id:'mijo', nombre:'Mijo', cat:'cereal', hierro:'medio', desdeMeses:6, orden:37,
+    blw:'Compactado con verdura.', cuchara:'Bien cocido y chafado.' },
+
+  { id:'espelta', nombre:'Espelta', cat:'cereal', hierro:'medio', alergeno:'gluten',
+    desdeMeses:6, orden:38,
+    blw:'Pan de espelta tostado, en tiras.', cuchara:'En papilla.' },
+
+  { id:'centeno', nombre:'Centeno', cat:'cereal', hierro:'medio', alergeno:'gluten',
+    desdeMeses:6, orden:39,
+    blw:'Pan de centeno tostado, en tiras.', cuchara:'Miga en el puré.' },
+
+  /* ══ Otros ════════════════════════════════════════════════ */
+  { id:'edamame', nombre:'Edamame', cat:'legumbre', hierro:'medio', alergeno:'soja',
+    desdeMeses:6, orden:30,
+    blw:'Fuera de la vaina y chafado, nunca entero.',
+    cuchara:'Chafado con patata.',
+    atragantamiento:'La vaina no, y el grano entero tampoco: es redondo y firme.' },
+
+  { id:'kefir', nombre:'Kéfir', cat:'lacteo', hierro:null, alergeno:'leche',
+    desdeMeses:6, orden:107,
+    blw:'Para mojar tiras de fruta.', cuchara:'Natural, sin azúcar.' },
+
+  { id:'conserva-pescado', nombre:'Pescado en conserva', cat:'pescado', hierro:'alto',
+    alergeno:'pescado', desdeMeses:6, orden:98,
+    blw:'Sardinillas o atún claro al natural, escurridos y desmenuzados.',
+    cuchara:'Desmenuzado en el puré.',
+    nota:'Al natural mejor que en aceite, y escurrido para quitar sal. El atún claro '
+       + 'y el bonito no tienen el problema de mercurio del atún rojo.' },
+
+  { id:'caldo-casero', nombre:'Caldo casero', cat:'otros', hierro:null, desdeMeses:6,
+    orden:121,
+    blw:'—',
+    cuchara:'Como base del puré, en vez de agua.',
+    nota:'Sin sal y sin pastilla de caldo, que es prácticamente sal. Si lleva apio, '
+       + 'cuenta como introducción de un alérgeno.' },
+
+  { id:'hierbas-especias', nombre:'Hierbas y especias suaves', cat:'otros', hierro:null,
+    desdeMeses:6, orden:122,
+    blw:'Una pizca sobre la verdura: orégano, perejil, comino, canela, pimentón dulce.',
+    cuchara:'Una pizca en el puré.',
+    nota:'Recomendación positiva: exponerle a sabores variados sin recurrir a la sal '
+       + 'ni al azúcar. Evita sólo el picante.' }
 ];
 
 
