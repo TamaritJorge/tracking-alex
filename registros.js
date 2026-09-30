@@ -2,6 +2,50 @@
    Alta de registros (los cuatro formularios) y modal de edición.
    ═════════════════════════════════════════════════════════════ */
 
+/* ──────────────────────────────────────────────────────────
+   QUÉ FORMULARIO SE VE
+
+   Antes estaban los cuatro apilados y había que bajar hasta el de peso.
+   Ahora se elige arriba y sólo se ve uno.
+
+   El selector NO desaparece al elegir: pasar de pipí a caca es un toque.
+   Con una pantalla aparte y botón de volver serían tres, y entre pipí y
+   caca está el 90 % de lo que se apunta.
+
+   Las tarjetas se ocultan, no se quitan del DOM: los listeners de este
+   fichero y los ids que busca resetFechas() se enganchan una sola vez al
+   cargar la página y petarían si el nodo desapareciera.
+   ────────────────────────────────────────────────────────── */
+let formRegistro = 'pipi';
+
+function mostrarFormulario(cual) {
+  const cards = Array.from(document.querySelectorAll('#tab-registrar .card[data-reg]'));
+  if (!cards.length) return;
+
+  const hay = r => {
+    const c = cards.find(x => x.dataset.reg === r);
+    return !!c && moduloActivo(c.dataset.modulo);
+  };
+
+  // Si el pedido está apagado (o no se pide ninguno), el primero que quede
+  if (!hay(cual)) {
+    const primera = cards.find(c => moduloActivo(c.dataset.modulo));
+    cual = primera ? primera.dataset.reg : null;
+  }
+  formRegistro = cual;
+
+  cards.forEach(c => { c.style.display = (c.dataset.reg === cual) ? '' : 'none'; });
+
+  document.querySelectorAll('#selectorRegistro .chip').forEach(b => {
+    const sel = b.dataset.reg === cual;
+    b.classList.toggle('sel', sel);
+    b.setAttribute('aria-pressed', String(sel));
+  });
+
+  const vacio = document.getElementById('registrarVacio');
+  if (vacio) vacio.style.display = cual ? 'none' : '';
+}
+
 /* ─────────────────────────────────────────────────────────────
    GUARDAR — helper común a los cuatro formularios
    ───────────────────────────────────────────────────────────── */

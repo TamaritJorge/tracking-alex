@@ -22,7 +22,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 const COLORES_CACA = {
   mostaza:     { label: 'Amarillo mostaza', hex: '#d4a017' },
   amarillo:    { label: 'Amarillo claro',   hex: '#f2c94c' },
-  verde:       { label: 'Verde',            hex: '#4d9c5a' },
+  verde:       { label: 'Verdoso',          hex: '#4d9c5a' },
   marron:      { label: 'Marrón',           hex: '#8a5a34' },
   naranja:     { label: 'Naranja',          hex: '#e07b39' },
   negro:       { label: 'Negro (meconio)',  hex: '#3b3b3b' },
@@ -233,6 +233,11 @@ document.addEventListener('click', e => {
   if (btn.classList.contains('chip') && btn.closest('#filtroRow')) {
     filtroHist = btn.dataset.f;
     renderTabla();
+  }
+
+  // Y los de la pestaña Registrar eligen qué formulario se ve
+  if (btn.classList.contains('chip') && btn.closest('#selectorRegistro')) {
+    mostrarFormulario(btn.dataset.reg);
   }
 });
 

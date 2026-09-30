@@ -467,12 +467,14 @@ function serie24h(registrosDelTipo, metaDe) {
    durante ese rato. Un cambio a mitad de tramo se ve en el
    siguiente, que es cuando de verdad pasó a ser el último.
    ───────────────────────────────────────────────────────────── */
-// Violeta, y no el ámbar que pide la intuición para un pipí concentrado:
-// el ámbar quedaba calcado al mostaza de las cacas, que es el color de caca
-// más frecuente con diferencia. Dos líneas distintas del mismo color en la
-// misma gráfica es justo lo que no puede pasar. Toda la gama cálida está
-// ocupada por las cacas, así que los pipís se quedan en fríos.
-const COLOR_PIPI_NO = '#a855f7';
+// Rosa. Dos descartes antes de llegar aquí:
+//   · el ámbar que pide la intuición para un pipí concentrado quedaba
+//     calcado al mostaza de las cacas, con diferencia el más frecuente;
+//   · el violeta que lo sustituyó ha pasado a ser el color de MARCA, y un
+//     dato pintado del color de la marca deja de leerse como dato.
+// El rosa separa de los dos y del celeste del pipí transparente: comprobado
+// con el validador de paletas, incluyendo daltonismo.
+const COLOR_PIPI_NO = '#db2777';
 
 /* Los colores van LITERALES, sin retocar. Se probo a oscurecerlos o
    aclararlos hasta llegar a 3:1 contra el fondo, y el remedio era peor: al

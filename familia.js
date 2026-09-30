@@ -319,7 +319,7 @@ window.abrirAjustes = function() {
     </div>
 
     <details style="margin-bottom:16px">
-      <summary style="cursor:pointer;font-size:.9rem;color:var(--primary)">➕ Añadir otro hijo</summary>
+      <summary style="cursor:pointer;font-size:.9rem;color:var(--primary-txt)">➕ Añadir otro hijo</summary>
       <div style="margin-top:12px">
         <div class="field">
           <label for="nuevoHijoNombre">Nombre</label>

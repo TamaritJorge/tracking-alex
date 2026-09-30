@@ -8,8 +8,17 @@
       --border:   #e2e8f0;
       --text:     #0f172a;
       --text2:    #64748b;
-      --primary:  #2563eb;
-      --primary-h:#1d4ed8;
+      /* La accion es morada y la define marca.css. Se deja el azul como
+         color de dato (--left, pecho izquierdo), que es cosa distinta.
+
+         Dos tokens y no uno porque hacen trabajos opuestos:
+           --primary     es FONDO, y lleva texto blanco encima
+           --primary-txt es TEXTO, y va sobre la superficie
+         En claro coinciden; en oscuro tiran en direcciones contrarias y
+         con un solo token uno de los dos se queda sin contraste. */
+      --primary:    var(--m-700);   /* blanco encima: 7,1:1  */
+      --primary-h:  var(--m-800);   /* blanco encima: 9,0:1  */
+      --primary-txt:var(--m-700);   /* sobre papel:   7,1:1  */
       --danger:   #dc2626;
       --left:     #2563eb;   /* pecho izquierdo: azul   */
       --right:    #dc2626;   /* pecho derecho:  rojo    */
@@ -24,6 +33,9 @@
     /* Modo oscuro automático (sigue el sistema operativo) */
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) {
+        --primary:    var(--m-600);
+        --primary-h:  var(--m-700);
+        --primary-txt:var(--m-400);
         --bg:       #0f172a;
         --surface:  #1e293b;
         --surface2: #334155;
@@ -35,6 +47,9 @@
 
     /* Modo oscuro forzado por el usuario */
     :root[data-theme="dark"] {
+      --primary:    var(--m-600);   /* blanco encima: 5,7:1 */
+      --primary-h:  var(--m-700);
+      --primary-txt:var(--m-400);   /* sobre superficie: 5,4:1 */
       --bg:       #0f172a;
       --surface:  #1e293b;
       --surface2: #334155;
@@ -457,7 +472,7 @@
       transition: color .2s;
     }
 
-    .tab-btn.active { color: var(--primary); }
+    .tab-btn.active { color: var(--primary-txt); }
     .tab-icon { font-size: 1.35rem; }
 
     /* ═══════════════════════════════════════════
@@ -894,3 +909,23 @@
     }
 
     .legend-nota { font-size: 0.78rem; opacity: .85; }
+
+    /* ═══════════════════════════════════════════
+       MARCA EN LA PANTALLA DE ENTRADA
+       ═══════════════════════════════════════════ */
+    .login-logo {
+      display: block;
+      margin: 0 auto 14px;
+      border-radius: 20px;
+      box-shadow: 0 8px 24px rgba(109, 40, 217, .28);
+    }
+
+    .login-nombre {
+      text-align: center;
+      font-size: 1.45rem;
+      font-weight: 680;
+      letter-spacing: -0.025em;
+      margin-bottom: 6px;
+    }
+
+    .login-nombre em { font-style: normal; color: var(--marca); }

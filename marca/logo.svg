@@ -1,0 +1,21 @@
+<!-- Tracking Álex · marca principal
+     Λ con acento agudo. El contraste de grosores (13 en las patas, 8,5 en el
+     acento) es lo que hace que se lea como letra y no como icono.
+
+     El degradado va en userSpaceOnUse y no en el objectBoundingBox por
+     defecto: con coordenadas relativas a la caja de cada trazo, un trazo
+     casi plano degenera y no se pinta. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"
+     width="100" height="100" role="img" aria-label="Tracking Álex">
+  <title>Tracking Álex</title>
+  <defs>
+    <linearGradient id="ta-g" gradientUnits="userSpaceOnUse" x1="14" y1="90" x2="86" y2="10">
+      <stop offset="0" stop-color="#6d28d9"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+  </defs>
+  <path d="M20 86 L50 36 L80 86" fill="none" stroke="url(#ta-g)" stroke-width="13"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M41 21 L64 8" fill="none" stroke="#a855f7" stroke-width="8.5"
+        stroke-linecap="round"/>
+</svg>

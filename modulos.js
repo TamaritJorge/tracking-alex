@@ -116,9 +116,15 @@ async function guardarModulos() {
    ───────────────────────────────────────────────────────────── */
 function aplicarModulos() {
   document.querySelectorAll('[data-modulo]').forEach(el => {
+    // Las tarjetas de Registrar las manda mostrarFormulario(): ahí no basta
+    // con que el módulo esté encendido, además tiene que ser la elegida.
+    if (el.matches('#tab-registrar .card[data-reg]')) return;
     const visible = el.dataset.modulo.split(/\s+/).some(m => moduloActivo(m));
     el.style.display = visible ? '' : 'none';
   });
+
+  // Va después de los chips, para que pueda caer en uno que siga encendido
+  mostrarFormulario(formRegistro);
 
   // Si el filtro del historial apuntaba a un tipo que se acaba de
   // apagar, la tabla saldría vacía sin explicar por qué.

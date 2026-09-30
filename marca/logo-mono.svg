@@ -1,0 +1,15 @@
+<!-- Tracking Álex · versión de un solo color
+     Para cuando el morado no está disponible o estorba: impresión en negro,
+     sellos, fondos de color, o incrustado en HTML donde deba heredar el color
+     del texto.
+
+     Usa currentColor, así que toma el color de su contenedor. Si se abre
+     suelto en el navegador se verá negro, que es el comportamiento correcto. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"
+     width="100" height="100" role="img" aria-label="Tracking Álex">
+  <title>Tracking Álex</title>
+  <path d="M20 86 L50 36 L80 86" fill="none" stroke="currentColor" stroke-width="13"
+        stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M41 21 L64 8" fill="none" stroke="currentColor" stroke-width="8.5"
+        stroke-linecap="round"/>
+</svg>

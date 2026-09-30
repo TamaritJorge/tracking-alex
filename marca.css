@@ -1,0 +1,81 @@
+/* ═══════════════════════════════════════════════════════════════
+   TRACKING ÁLEX · TOKENS DE MARCA
+
+   Único sitio donde viven los colores de marca. Se carga ANTES que
+   estilos.css, que los consume: así el landing, la app y las páginas
+   legales comparten paleta sin repetir ni un hex.
+
+   Regla que conviene no romper: los colores de MARCA y los de DATOS
+   viven en sitios distintos. Si el morado de marca se cuela en una
+   gráfica, deja de distinguirse lo que es cromo de lo que es dato.
+   Por eso el morado #a855f7, que antes usaba la gráfica de pipís,
+   ahora es exclusivo de la marca.
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Escala de morados ──────────────────────────────────────── */
+  --m-900: #3b0764;
+  --m-800: #4c1d95;
+  --m-700: #6d28d9;   /* color de acción: botones, enlaces          */
+  --m-600: #7c3aed;
+  --m-500: #8b5cf6;   /* el mismo papel que el 700, en modo oscuro  */
+  --m-400: #a78bfa;
+  --m-300: #c4b5fd;
+
+  /* ── Papeles de marca ───────────────────────────────────────── */
+  --marca:        var(--m-700);
+  --marca-fuerte: var(--m-800);
+  --marca-suave:  var(--m-300);
+
+  /* El acento del logo. Sólo para la marca: nunca para un dato. */
+  --acento: #a855f7;
+
+  /* Degradado de la marca, para cabeceras y la pastilla */
+  --marca-grad: linear-gradient(135deg, var(--m-700) 0%, var(--m-400) 100%);
+
+  /* Fondo teñido para zonas destacadas del landing */
+  --marca-lavado: #faf8fd;
+  --marca-borde:  #e9e3f2;
+}
+
+/* En oscuro el 700 se apaga contra el fondo: sube al 400, que mantiene
+   el tono y da 5,4:1 sobre la superficie oscura. Con el 500 se quedaba
+   en 3,45:1, por debajo del minimo para texto. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --marca:       var(--m-400);   /* texto sobre oscuro: 5,4:1 */
+    --marca-suave: var(--m-700);
+    --marca-lavado:#1a1230;
+    --marca-borde: #3b2d5c;
+  }
+}
+
+:root[data-theme="dark"] {
+  --marca:       var(--m-400);   /* texto sobre oscuro: 5,4:1 */
+  --marca-suave: var(--m-700);
+  --marca-lavado:#1a1230;
+  --marca-borde: #3b2d5c;
+}
+
+/* ═══════════════════════════════════════════
+   EL LOGO EN LÍNEA
+   ═══════════════════════════════════════════ */
+.logo-marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.logo-marca svg,
+.logo-marca img { display: block; flex: none; }
+
+.logo-txt {
+  font-weight: 680;
+  letter-spacing: -0.025em;
+  white-space: nowrap;
+}
+
+/* «Álex» va en el color de marca: es la mitad que da nombre */
+.logo-txt em { font-style: normal; color: var(--marca); }
