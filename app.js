@@ -312,6 +312,7 @@ function mostrarApp() {
   avisarSuscripcion();
 
   resetFechas();
+  ponerBotonesCompartir();
   cargarDatos();
   configurarRealtime();
   iniciarComida();          // se encarga de sus propias tablas (comida.js)

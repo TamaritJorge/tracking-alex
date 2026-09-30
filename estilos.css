@@ -833,3 +833,31 @@
     }
 
     .hijo-select option { background: var(--surface); color: var(--text); }
+
+    /* ═══════════════════════════════════════════
+       BOTÓN DE COMPARTIR EN LAS TARJETAS
+       ═══════════════════════════════════════════ */
+    .btn-compartir {
+      position: absolute;
+      top: 14px;
+      right: 14px;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 1rem;
+      line-height: 1;
+      cursor: pointer;
+      opacity: .6;
+      transition: opacity .15s;
+    }
+
+    .btn-compartir:hover  { opacity: 1; }
+    .btn-compartir:active { opacity: 1; }
+    .btn-compartir:disabled { cursor: wait; opacity: .4; }
+
+    /* Que el título no se meta debajo del botón */
+    [data-captura] .card-title { padding-right: 44px; }

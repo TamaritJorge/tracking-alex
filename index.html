@@ -9,6 +9,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
   <!-- Chart.js (gráficas) -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <!-- Capturas compartibles -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <!-- Adaptador de fechas para Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
 
@@ -264,13 +266,13 @@
     <div id="tab-graficas" class="tab-panel">
 
       <!-- Mismo resumen que en la pestaña Registrar -->
-      <div class="card">
+      <div class="card" data-captura="Resumen de 24 horas">
         <p class="card-title">🕐 Últimas 24 h</p>
         <p class="card-sub" data-resumen-desde>—</p>
         <div class="sum-grid" data-resumen></div>
       </div>
 
-      <div class="card">
+      <div class="card" data-captura="Peso">
         <p class="card-title">Peso</p>
         <div class="legend">
           <div class="legend-item">
@@ -296,7 +298,7 @@
         <p class="hint-txt" id="notaTendencia" style="margin:10px 0 0"></p>
       </div>
 
-      <div class="card">
+      <div class="card" data-captura="Pañales">
         <p class="card-title">Pañales</p>
         <div class="legend">
           <div class="legend-item">
@@ -312,7 +314,7 @@
         <div class="chart-wrap"><canvas id="chartPanal"></canvas></div>
       </div>
 
-      <div class="card">
+      <div class="card" data-captura="Extracciones de leche">
         <p class="card-title">Extracciones de leche</p>
         <div class="legend">
           <div class="legend-item">
@@ -480,5 +482,6 @@
 <script src="historial.js"></script>
 <script src="registros.js"></script>
 <script src="comida.js"></script>
+<script src="compartir.js"></script>
 </body>
 </html>
