@@ -1,0 +1,22 @@
+{
+  // Configuración de Cloudflare Workers para servir la web.
+  //
+  // Es un sitio puramente estático: no hay código de servidor, así que
+  // no lleva "main". Sólo se sirven los ficheros del repositorio.
+  //
+  // Si algún día se añaden las funciones de Stripe, NO van aquí: van
+  // como Edge Functions de Supabase, para que la clave secreta viva
+  // donde ya viven los datos y el hosting siga siendo intercambiable.
+
+  "name": "tracking-alex",
+  "compatibility_date": "2026-09-30",
+
+  "assets": {
+    // Los ficheros están en la raíz del repo, no en una carpeta de build
+    "directory": "./",
+
+    // Si alguien entra a una ruta que no existe, devolver index.html
+    // en vez de un 404 de Cloudflare
+    "not_found_handling": "single-page-application"
+  }
+}

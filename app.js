@@ -38,13 +38,16 @@ function infoColor(clave) {
 }
 
 /* ── Estado ────────────────────────────────────────────────── */
-const params  = new URLSearchParams(location.search);
-const modoVer = params.get('modo') === 'ver';   // URL de la matrona
+// El antiguo modo matrona (?modo=ver) se ha retirado: funcionaba porque
+// TODA la base de datos era de lectura pública, que es justo lo que había
+// que cerrar al pasar a varias familias. Para enseñar datos en la consulta
+// están las capturas compartibles.
+const modoVer = false;          // se conserva la constante para no romper llamadas
 let registros  = [];
 let charts     = {};            // { ext, peso, panal }
 let filtroHist = 'todo';
 let canalRT    = null;
-let tabActual  = modoVer ? 'graficas' : 'registrar';
+let tabActual  = 'registrar';
 
 /* ─────────────────────────────────────────────────────────────
    UTILIDADES
@@ -113,7 +116,7 @@ function enVentana(iso, desde) {
    Recta de mínimos cuadrados sobre las pesadas recientes.
 
    Sólo se usan los últimos DIAS_TENDENCIA días a propósito: los
-   primeros días el bebé PIERDE peso (Álex bajó de 3050 a 2840),
+   primeros días el bebé PIERDE peso y luego lo recupera,
    y meter esa bajada en el ajuste aplanaría la pendiente y daría
    una estimación falsamente mala.
    ───────────────────────────────────────────────────────────── */
@@ -248,8 +251,12 @@ function aplicarTema(t) {
   document.documentElement.dataset.theme = t;
   localStorage.setItem('tema', t);
   const icono = esDark() ? '☀️' : '🌙';
-  document.getElementById('themeBtn1').textContent = icono;
-  document.getElementById('themeBtn2').textContent = icono;
+  // Los tres botones: login, app y alta. Recorrido en vez de uno a uno,
+  // para que añadir una pantalla nueva no deje su icono desincronizado.
+  ['themeBtn1', 'themeBtn2', 'themeBtn3'].forEach(id => {
+    const b = document.getElementById(id);
+    if (b) b.textContent = icono;
+  });
   if (tabActual === 'graficas' && charts.ext) renderCharts();
 }
 
@@ -268,36 +275,62 @@ async function init() {
   document.getElementById('rowPipiQty').innerHTML   = htmlCantidad(1);
   document.getElementById('rowCacaColor').innerHTML = htmlColores();
 
-  if (modoVer) { mostrarApp(true); return; }
+  // Antes la sesión sólo se miraba al arrancar: si caducaba, la app no se
+  // enteraba y los guardados fallaban en silencio.
+  sb.auth.onAuthStateChange((evento) => {
+    if (evento === 'SIGNED_OUT') { limpiarEstado(); mostrarLogin(); }
+    if (evento === 'SIGNED_IN')  entrar();
+  });
+
+  engancharAlta();
 
   const { data: { session } } = await sb.auth.getSession();
-  if (session) mostrarApp(false);
+  if (session) await entrar();
   else mostrarLogin();
 }
 
-function mostrarLogin() {
-  document.getElementById('loginScreen').style.display = '';
-  document.getElementById('appScreen').style.display   = 'none';
+/* Con sesión iniciada: o tienes familia y entras, o hay que crearla */
+async function entrar() {
+  await cargarFamilia();
+  if (!hayFamilia() || !hayHijo()) { mostrarAlta(); return; }
+  mostrarApp();
 }
 
-function mostrarApp(soloLectura) {
-  document.getElementById('loginScreen').style.display = 'none';
-  document.getElementById('appScreen').style.display   = '';
+function pantalla(cual) {
+  ['loginScreen', 'altaScreen', 'appScreen'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.style.display = (id === cual) ? '' : 'none';
+  });
+}
 
-  if (soloLectura) {
-    document.getElementById('logoutBtn').style.display = 'none';
-    // Pestañas de registro ocultas en el enlace de la matrona
-    ['registrar', 'comida'].forEach(t => {
-      const b = document.querySelector(`[data-tab="${t}"]`);
-      if (b) b.style.display = 'none';
-    });
-  }
+function mostrarLogin() { pantalla('loginScreen'); }
+function mostrarAlta()  { pantalla('altaScreen'); }
+
+function mostrarApp() {
+  pantalla('appScreen');
+  pintarCabecera();
+  avisarSuscripcion();
 
   resetFechas();
   cargarDatos();
   configurarRealtime();
   iniciarComida();          // se encarga de sus propias tablas (comida.js)
   switchTab(tabActual);
+}
+
+/* Aviso de los días de prueba que quedan */
+function avisarSuscripcion() {
+  const el = document.getElementById('avisoPlan');
+  if (!el || !familia) return;
+
+  if (familia.plan === 'activo') { el.style.display = 'none'; return; }
+
+  const dias = diasDePrueba();
+  el.style.display = '';
+  el.className = 'aviso ' + (dias > 3 ? 'aviso-suave' : dias > 0 ? 'aviso-ojo' : 'aviso-stop');
+  el.textContent = dias > 0
+    ? `Prueba gratuita: quedan ${dias} ${dias === 1 ? 'día' : 'días'}.`
+    : 'La prueba ha terminado. Puedes consultar y exportar todo, pero no añadir registros nuevos.';
 }
 
 // Todos los formularios arrancan en "ahora"
@@ -325,8 +358,8 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
   btn.disabled = false;
   btn.textContent = 'Entrar';
 
-  if (error) errEl.style.display = '';
-  else       mostrarApp(false);
+  // De entrar() se encarga onAuthStateChange, que salta con SIGNED_IN
+  if (error) { errEl.textContent = traducirAuth(error); errEl.style.display = ''; }
 });
 
 // Pulsar Enter en el campo contraseña hace login
@@ -334,10 +367,56 @@ document.getElementById('loginPwd').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('loginBtn').click();
 });
 
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-  await sb.auth.signOut();
-  mostrarLogin();
+/* ── Google ── */
+document.getElementById('googleBtn').addEventListener('click', async () => {
+  const { error } = await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.origin + window.location.pathname }
+  });
+  if (error) {
+    const errEl = document.getElementById('loginErr');
+    errEl.textContent = traducirAuth(error);
+    errEl.style.display = '';
+  }
 });
+
+/* ── Registrarse con correo ── */
+document.getElementById('registroBtn').addEventListener('click', async () => {
+  const email = document.getElementById('loginEmail').value.trim();
+  const pwd   = document.getElementById('loginPwd').value;
+  const errEl = document.getElementById('loginErr');
+
+  if (!email || pwd.length < 8) {
+    errEl.textContent = 'Pon un correo y una contraseña de al menos 8 caracteres.';
+    errEl.style.display = '';
+    return;
+  }
+
+  const { error } = await sb.auth.signUp({ email, password: pwd });
+  errEl.style.display = '';
+  errEl.textContent = error
+    ? traducirAuth(error)
+    : 'Cuenta creada. Mira el correo para confirmarla y luego entra.';
+});
+
+function traducirAuth(error) {
+  const m = (error && error.message) || '';
+  if (/Invalid login credentials/i.test(m)) return 'Correo o contraseña incorrectos.';
+  if (/already registered/i.test(m))        return 'Ese correo ya tiene cuenta. Entra en vez de registrarte.';
+  if (/Email not confirmed/i.test(m))       return 'Confirma el correo antes de entrar.';
+  if (/provider is not enabled/i.test(m))   return 'El acceso con Google aún no está configurado en Supabase.';
+  if (/rate limit|too many/i.test(m))       return 'Demasiados intentos. Espera un minuto.';
+  return m || 'No se ha podido completar.';
+}
+
+document.getElementById('logoutBtn').addEventListener('click', async () => {
+  await sb.auth.signOut();      // limpiarEstado() lo hace onAuthStateChange
+});
+
+// Envuelto en una funcion a proposito: abrirAjustes() vive en familia.js,
+// que se carga DESPUES que este fichero. Pasarla por referencia aqui
+// lanzaba "abrirAjustes is not defined" y abortaba el resto de app.js.
+document.getElementById('ajustesBtn').addEventListener('click', () => abrirAjustes());
 
 /* ─────────────────────────────────────────────────────────────
    TABS
@@ -387,9 +466,12 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
    CARGAR DATOS
    ───────────────────────────────────────────────────────────── */
 async function cargarDatos() {
+  if (!ninoActivo) { registros = []; return; }
+
   const { data, error } = await sb
     .from('registros')
     .select('*')
+    .eq('nino_id', ninoActivo.id)
     .order('fecha_hora', { ascending: true });
 
   if (error) {
@@ -412,9 +494,12 @@ async function cargarDatos() {
    ───────────────────────────────────────────────────────────── */
 function configurarRealtime() {
   if (canalRT) return;          // no re-suscribir si ya hay canal
-  canalRT = sb.channel('tracking-alex')
+  if (!ninoActivo) return;
+  // El filtro evita que los cambios de otro hijo recarguen esta vista
+  canalRT = sb.channel('registros-' + ninoActivo.id)
     .on('postgres_changes',
-        { event: '*', schema: 'public', table: 'registros' },
+        { event: '*', schema: 'public', table: 'registros',
+          filter: 'nino_id=eq.' + ninoActivo.id },
         () => cargarDatos())
     .subscribe();
 }

@@ -3,7 +3,8 @@
 
    Se apoya en:
      · alimentos.js  → catálogo, restricciones, alérgenos
-     · oms.js        → edadEnDias() y FECHA_NACIMIENTO
+     · familia.js    → ninoActivo, nombreHijo()
+     · oms.js        → edadEnDias()
      · app.js        → sb, esc(), toast(), fechas
 
    Tiene su propia carga y su propio canal de realtime contra las
@@ -24,9 +25,12 @@ const MS_DIA = 864e5;
    CARGA Y REALTIME
    ───────────────────────────────────────────────────────────── */
 async function cargarComida() {
+  if (!ninoActivo) { comidas = []; return; }
+
   const [regs, ajs] = await Promise.all([
-    sb.from('alim_registros').select('*').order('fecha_hora', { ascending: true }),
-    sb.from('alim_ajustes').select('*')
+    sb.from('alim_registros').select('*')
+      .eq('nino_id', ninoActivo.id).order('fecha_hora', { ascending: true }),
+    sb.from('alim_ajustes').select('*').eq('nino_id', ninoActivo.id)
   ]);
 
   if (regs.error || ajs.error) {
@@ -68,10 +72,12 @@ async function cargarComida() {
 
 function configurarRealtimeComida() {
   if (canalRTComida) return;
-  canalRTComida = sb.channel('tracking-alex-comida')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'alim_registros' },
+  if (!ninoActivo) return;
+  const f = 'nino_id=eq.' + ninoActivo.id;
+  canalRTComida = sb.channel('comida-' + ninoActivo.id)
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'alim_registros', filter: f },
         () => cargarComida())
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'alim_ajustes' },
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'alim_ajustes', filter: f },
         () => cargarComida())
     .subscribe();
 }
@@ -93,8 +99,10 @@ function mensajeError(error) {
 
 // Guarda una clave de ajustes (upsert sobre la PK `clave`)
 async function guardarAjuste(clave, valor) {
+  if (!ninoActivo) return false;
   const { error } = await sb.from('alim_ajustes')
-    .upsert({ clave, valor, actualizado_en: new Date().toISOString() }, { onConflict: 'clave' });
+    .upsert({ clave, valor, nino_id: ninoActivo.id, actualizado_en: new Date().toISOString() },
+            { onConflict: 'nino_id,clave' });
   if (error) {
     console.error(error);
     toast('❌ No se pudo guardar: ' + mensajeError(error), 5000);
@@ -360,7 +368,7 @@ function renderEstado() {
 
       <p class="hint-txt" style="margin-top:0">
         Los 6 meses son la referencia, no una fecha exacta. Lo que manda es que
-        Álex esté listo:
+        ${esc(nombreHijo())} esté listo:
       </p>
 
       <div class="check-list">
@@ -849,6 +857,7 @@ async function guardarComida(id) {
   // `revisado: false` a propósito: cómo le ha sentado se marca luego,
   // desde el diario, cuando ya ha dado tiempo a que se vea.
   const fila = {
+    nino_id: ninoActivo.id,
     alimento_id: id,
     nombre: a.nombre,
     fecha_hora: fecha,
@@ -1162,7 +1171,7 @@ window.copiarResumen = async function() {
     .sort((x, y) => x.e.primera - y.e.primera);
 
   const f = t => new Date(t).toLocaleDateString('es-ES');
-  let txt = 'ALIMENTACIÓN COMPLEMENTARIA — Álex\n';
+  let txt = 'ALIMENTACIÓN COMPLEMENTARIA — ' + nombreHijo() + '\n';
   txt += 'Inicio: ' + (ajustes.inicio ? f(new Date(ajustes.inicio)) : '—') + '\n';
   txt += 'Edad actual: ' + mesesAlex().toFixed(1) + ' meses\n\n';
 

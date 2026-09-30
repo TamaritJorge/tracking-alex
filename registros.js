@@ -10,8 +10,10 @@ async function guardarRegistro(btnId, textoBtn, tipo, fechaISO, datos, alTermina
   btn.disabled = true;
   btn.textContent = 'Guardando…';
 
+  if (!ninoActivo) { toast('⚠️ No hay ningún hijo seleccionado.'); return; }
+
   const { error } = await sb.from('registros')
-    .insert({ tipo, fecha_hora: fechaISO, datos });
+    .insert({ tipo, fecha_hora: fechaISO, datos, nino_id: ninoActivo.id });
 
   btn.disabled = false;
   btn.textContent = textoBtn;

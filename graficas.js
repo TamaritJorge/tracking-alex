@@ -156,7 +156,7 @@ function renderCharts() {
   if (hayCurvas) {
     // Líneas finas sin relleno, al estilo de la cartilla pediátrica.
     // Se probó con bandas sombreadas y obligaban al eje Y a llegar
-    // hasta el P97 (5,5 kg), lo que aplastaba la curva de Álex.
+    // hasta el P97, lo que aplastaba la curva del bebé.
     const linea = esDark() ? 'rgba(148,163,184,.42)' : 'rgba(100,116,139,.35)';
 
     const basePct = {
@@ -237,7 +237,7 @@ function renderCharts() {
     ejeXPeso = Object.assign(ejeX(), { max: new Date(tFin) });
   }
 
-  // El eje Y lo mandan los datos de Álex, NO las curvas de la OMS.
+  // El eje Y lo mandan los datos del bebé, NO las curvas de la OMS.
   // Si se dejara autoescalar, el P97 (5,5 kg) estiraría la escala y su
   // curva quedaría aplastada abajo. Las curvas simplemente se recortan.
   let rangoY = {};

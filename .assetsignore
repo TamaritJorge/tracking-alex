@@ -1,0 +1,10 @@
+# Cosas que NO deben publicarse como parte de la web.
+# La carpeta de assets es la raíz del repo, así que conviene ser explícito.
+
+.git
+.gitignore
+.assetsignore
+wrangler.jsonc
+README.md
+*.sql
+*.md

@@ -255,7 +255,7 @@ const ALIMENTOS = [
     cuchara:'Una cucharadita diluida en yogur, papilla o agua tibia.',
     atragantamiento:'Espesa y pegajosa, se pega al paladar. Siempre diluida o en '
                   + 'capa fina, jamás un pegote.',
-    nota:'Si Álex tuviera eczema grave o alergia al huevo ya conocida, LEAP indica '
+    nota:'Si el bebé tuviera eczema grave o alergia al huevo ya conocida, LEAP indica '
        + 'consultarlo con la pediatra antes de introducirlo, no por libre.' },
 
   { id:'pan', nombre:'Pan', cat:'cereal', hierro:'medio', alergeno:'gluten', desdeMeses:6, orden:13,
@@ -819,7 +819,7 @@ const ALIMENTOS = [
     nota:'Ojo con este, que pasa desapercibido: es alérgeno oficial en la UE y '
        + 'tiene reactividad cruzada alta con el cacahuete — en pruebas de '
        + 'provocación, el 44 % de los alérgicos al cacahuete reaccionaron también '
-       + 'al altramuz. Si Álex reacciona al cacahuete, consultad antes de darle '
+       + 'al altramuz. Si reacciona al cacahuete, consultad antes de darle '
        + 'altramuces. Aparece además como harina en panes sin gluten y en productos '
        + 'veganos, así que mirad la etiqueta. Los de aperitivo van en salmuera y '
        + 'llevan muchísima sal.' },
