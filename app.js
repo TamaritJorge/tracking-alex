@@ -257,7 +257,10 @@ function aplicarTema(t) {
     const b = document.getElementById(id);
     if (b) b.textContent = icono;
   });
-  if (tabActual === 'graficas' && charts.ext) renderCharts();
+  // Antes se miraba charts.ext como prueba de "ya se ha dibujado alguna
+  // vez". Con módulos ocultables esa gráfica puede no existir nunca, así
+  // que el cambio de tema dejaba de repintar las demás.
+  if (tabActual === 'graficas' && Object.keys(charts).length) renderCharts();
 }
 
 function toggleTema() { aplicarTema(esDark() ? 'light' : 'dark'); }
@@ -284,6 +287,13 @@ async function init() {
 
   engancharAlta();
 
+  // Cerrar el modal tocando fuera. Va aquí y no en iniciarComida() porque
+  // ese mismo modal lo reutiliza Ajustes, que existe aunque la pestaña de
+  // comida esté apagada.
+  document.getElementById('comidaModal').addEventListener('click', e => {
+    if (e.target.id === 'comidaModal') cerrarComidaModal();
+  });
+
   const { data: { session } } = await sb.auth.getSession();
   if (session) await entrar();
   else mostrarLogin();
@@ -293,6 +303,7 @@ async function init() {
 async function entrar() {
   await cargarFamilia();
   if (!hayFamilia() || !hayHijo()) { mostrarAlta(); return; }
+  await cargarModulos();     // qué se enseña y qué no, antes de pintar nada
   mostrarApp();
 }
 
@@ -311,11 +322,15 @@ function mostrarApp() {
   pintarCabecera();
   avisarSuscripcion();
 
+  // Antes que nada: esconder lo que la familia no use, para que no
+  // se dibujen gráficas de módulos apagados ni parpadeen sus tarjetas.
+  aplicarModulos();
+
   resetFechas();
   ponerBotonesCompartir();
   cargarDatos();
   configurarRealtime();
-  iniciarComida();          // se encarga de sus propias tablas (comida.js)
+  if (moduloActivo('comida')) iniciarComida();   // sus propias tablas (comida.js)
   switchTab(tabActual);
 }
 
@@ -596,15 +611,27 @@ function renderResumen() {
       : '<div class="sum-pct nd">percentil n/d</div>';
   }
 
-  const html = `
+  // Cada casilla depende de su módulo: si la familia no se saca leche,
+  // no tiene sentido una casilla de mililitros siempre a cero. Se montan
+  // en una lista para que la rejilla se recoloque sola en vez de dejar
+  // huecos donde estaba la que falta.
+  const casillas = [];
+
+  if (moduloActivo('panales')) {
+    casillas.push(`
     <div class="sum-item">
       <div class="sum-val">${pipis}</div>
       <div class="sum-lbl">💧 Pipís</div>
-    </div>
+    </div>`);
+    casillas.push(`
     <div class="sum-item">
       <div class="sum-val">${cacas}</div>
       <div class="sum-lbl">💩 Cacas</div>
-    </div>
+    </div>`);
+  }
+
+  if (moduloActivo('peso')) {
+    casillas.push(`
     <div class="sum-item">
       <div class="sum-val">${ultimo ? ultimo.datos.gramos + ' g' : '—'}</div>
       ${trend}
@@ -612,14 +639,30 @@ function renderResumen() {
       ${pctTxt}
       <div class="sum-lbl">Último peso</div>
       <div class="sum-extra">${ultimo ? esc(fmtFechaHora(ultimo.fecha_hora)) : 'sin datos'}</div>
-    </div>
+    </div>`);
+  }
+
+  if (moduloActivo('extraccion')) {
+    casillas.push(`
     <div class="sum-item">
       <div class="sum-val">${mlIzq + mlDer} ml</div>
       <div class="sum-lbl">🍼 Leche</div>
       <div class="sum-extra">Izq ${mlIzq} · Der ${mlDer}</div>
-    </div>`;
+    </div>`);
+  }
 
-  conts.forEach(c => { c.innerHTML = html; });
+  const html = casillas.length
+    ? casillas.join('')
+    : '<p class="hint-txt" style="margin:0">Todo está oculto. Se enciende de nuevo en ⚙️ Ajustes.</p>';
+
+  conts.forEach(c => {
+    c.innerHTML = html;
+    // La rejilla es de 4 columnas fijas: con menos casillas quedaba un
+    // hueco a la derecha, así que se le dice cuántas hay de verdad.
+    const n = Math.max(casillas.length, 1);
+    c.style.setProperty('--sum-cols', n);
+    c.style.setProperty('--sum-cols-estrecho', Math.min(n, 2));
+  });
 }
 
 /* ─────────────────────────────────────────────────────────────

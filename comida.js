@@ -1219,8 +1219,4 @@ function iniciarComida() {
   if (modoVer) return;          // la pestaña no existe en el enlace público
   cargarComida();
   configurarRealtimeComida();
-
-  document.getElementById('comidaModal').addEventListener('click', e => {
-    if (e.target.id === 'comidaModal') cerrarComidaModal();
-  });
 }

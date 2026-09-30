@@ -44,14 +44,19 @@ function renderTabla() {
   const thAcc = document.getElementById('thAcc');
   if (modoVer) thAcc.style.display = 'none';
 
+  // tipoVisible() descarta lo de los módulos apagados. Las filas siguen
+  // en la base de datos: volver a encender el módulo las devuelve todas.
   const filas = registros
+    .filter(r => tipoVisible(r.tipo))
     .filter(r => filtroHist === 'todo' || r.tipo === filtroHist)
     .sort((a, b) => new Date(b.fecha_hora) - new Date(a.fecha_hora));  // más reciente primero
 
   if (!filas.length) {
-    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">
-      ${filtroHist === 'todo' ? 'No hay registros todavía.' : 'No hay registros de este tipo.'}
-    </td></tr>`;
+    const vacio = !Object.keys(MODULO_DE_TIPO).some(t => tipoVisible(t))
+      ? 'Están todos los módulos ocultos. Se encienden en ⚙️ Ajustes.'
+      : filtroHist === 'todo' ? 'No hay registros todavía.'
+      : 'No hay registros de este tipo.';
+    tbody.innerHTML = `<tr><td colspan="4" class="empty-state">${vacio}</td></tr>`;
     return;
   }
 

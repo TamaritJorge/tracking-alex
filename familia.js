@@ -87,13 +87,13 @@ async function cambiarHijo(id) {
   pintarCabecera();
 
   await cargarDatos();
-  await cargarComida();
+  if (moduloActivo('comida')) await cargarComida();
 
   // limpiarEstado() cierra los canales porque van filtrados por nino_id.
   // Sin volver a suscribirse aquí, el tiempo real dejaba de funcionar en
   // cuanto se cambiaba de hijo una vez.
   configurarRealtime();
-  configurarRealtimeComida();
+  if (moduloActivo('comida')) configurarRealtimeComida();
 
   if (tabActual === 'graficas') renderCharts();
 }
@@ -299,6 +299,16 @@ window.abrirAjustes = function() {
           <span class="ali-veces">${esc(new Date(n.fecha_nacimiento + 'T12:00:00')
             .toLocaleDateString('es-ES'))}</span>
         </div>`).join('')}
+    </div>
+
+    <div class="field">
+      <label>Qué quieres llevar</label>
+      <p class="hint-txt" style="margin:0 0 10px">
+        Lo que apagues desaparece de Registrar, Gráficas e Historial.
+        <strong>No se borra nada</strong>: si lo vuelves a encender,
+        todo lo guardado sigue ahí.
+      </p>
+      ${htmlModulos()}
     </div>
 
     <details style="margin-bottom:16px">

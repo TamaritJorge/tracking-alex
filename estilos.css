@@ -180,14 +180,17 @@
     /* ═══════════════════════════════════════════
        RESUMEN DE HOY
        ═══════════════════════════════════════════ */
+    /* Las columnas las fija renderResumen() segun cuantas casillas
+       queden encendidas: con 4 fijas, apagar un modulo dejaba un
+       hueco vacio a la derecha. */
     .sum-grid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(var(--sum-cols-estrecho, 2), 1fr);
       gap: 10px;
     }
 
     @media (min-width: 480px) {
-      .sum-grid { grid-template-columns: repeat(4, 1fr); }
+      .sum-grid { grid-template-columns: repeat(var(--sum-cols, 4), 1fr); }
     }
 
     .sum-item {
@@ -861,3 +864,24 @@
 
     /* Que el título no se meta debajo del botón */
     [data-captura] .card-title { padding-right: 44px; }
+
+    /* ═══════════════════════════════════════════
+       INTERRUPTORES DE MÓDULOS (ajustes)
+       ═══════════════════════════════════════════ */
+    .modulo-fila {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      margin-bottom: 8px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      cursor: pointer;
+    }
+
+    .modulo-fila input { margin-top: 3px; flex: none; width: 18px; height: 18px; }
+
+    .modulo-txt  { display: flex; flex-direction: column; gap: 2px; }
+    .modulo-nom  { font-size: .9rem; font-weight: 600; }
+    .modulo-desc { font-size: .78rem; color: var(--text2); line-height: 1.35; }

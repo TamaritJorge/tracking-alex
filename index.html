@@ -153,7 +153,7 @@
       </div>
 
       <!-- Pipí -->
-      <div class="card">
+      <div class="card" data-modulo="panales">
         <p class="card-title">💧 Pipí</p>
         <p class="card-sub">Cantidad y aspecto</p>
 
@@ -183,7 +183,7 @@
         <button class="btn btn-primary" id="btnPipi">Guardar pipí</button>
       </div>
       <!-- Caca -->
-      <div class="card">
+      <div class="card" data-modulo="panales">
         <p class="card-title">💩 Caca</p>
         <p class="card-sub">Cantidad y color</p>
 
@@ -214,7 +214,7 @@
       </div>
 
       <!-- Peso -->
-      <div class="card">
+      <div class="card" data-modulo="peso">
         <p class="card-title">⚖️ Peso del bebé</p>
         <p class="card-sub">En gramos</p>
 
@@ -233,7 +233,7 @@
       </div>
 
       <!-- Extracción -->
-      <div class="card">
+      <div class="card" data-modulo="extraccion">
         <p class="card-title">🍼 Extracción de leche</p>
         <p class="card-sub">Registra el pecho y los ml extraídos</p>
 
@@ -272,7 +272,7 @@
         <div class="sum-grid" data-resumen></div>
       </div>
 
-      <div class="card" data-captura="Peso">
+      <div class="card" data-modulo="peso" data-captura="Peso">
         <p class="card-title">Peso</p>
         <div class="legend">
           <div class="legend-item">
@@ -298,7 +298,7 @@
         <p class="hint-txt" id="notaTendencia" style="margin:10px 0 0"></p>
       </div>
 
-      <div class="card" data-captura="Pañales">
+      <div class="card" data-modulo="panales" data-captura="Pañales">
         <p class="card-title">Pañales</p>
         <div class="legend">
           <div class="legend-item">
@@ -314,7 +314,7 @@
         <div class="chart-wrap"><canvas id="chartPanal"></canvas></div>
       </div>
 
-      <div class="card" data-captura="Extracciones de leche">
+      <div class="card" data-modulo="extraccion" data-captura="Extracciones de leche">
         <p class="card-title">Extracciones de leche</p>
         <div class="legend">
           <div class="legend-item">
@@ -335,10 +335,10 @@
     <div id="tab-historial" class="tab-panel">
       <div class="chip-row" id="filtroRow">
         <button type="button" class="chip sel" data-f="todo"       aria-pressed="true">Todo</button>
-        <button type="button" class="chip"     data-f="extraccion" aria-pressed="false">🍼 Leche</button>
-        <button type="button" class="chip"     data-f="peso"       aria-pressed="false">⚖️ Peso</button>
-        <button type="button" class="chip"     data-f="caca"       aria-pressed="false">💩 Caca</button>
-        <button type="button" class="chip"     data-f="pipi"       aria-pressed="false">💧 Pipí</button>
+        <button type="button" class="chip"     data-f="extraccion" aria-pressed="false" data-modulo="extraccion">🍼 Leche</button>
+        <button type="button" class="chip"     data-f="peso"       aria-pressed="false" data-modulo="peso">⚖️ Peso</button>
+        <button type="button" class="chip"     data-f="caca"       aria-pressed="false" data-modulo="panales">💩 Caca</button>
+        <button type="button" class="chip"     data-f="pipi"       aria-pressed="false" data-modulo="panales">💧 Pipí</button>
       </div>
 
       <div class="card card-no-pad">
@@ -362,7 +362,7 @@
 
 
     <!-- ── TAB: COMIDA ───────────────────────── -->
-    <div id="tab-comida" class="tab-panel">
+    <div id="tab-comida" class="tab-panel" data-modulo="comida">
 
       <p id="comidaError" class="error-txt" style="display:none"></p>
 
@@ -448,7 +448,7 @@
     <button class="tab-btn" data-tab="graficas">
       <span class="tab-icon">📊</span><span>Gráficas</span>
     </button>
-    <button class="tab-btn" data-tab="comida">
+    <button class="tab-btn" data-tab="comida" data-modulo="comida">
       <span class="tab-icon">🥑</span><span>Comida</span>
     </button>
     <button class="tab-btn" data-tab="historial">
@@ -476,6 +476,7 @@
      ═══════════════════════════════════════════ -->
 <script src="app.js"></script>
 <script src="familia.js"></script>
+<script src="modulos.js"></script>
 <script src="oms.js"></script>
 <script src="alimentos.js"></script>
 <script src="graficas.js"></script>

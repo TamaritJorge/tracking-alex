@@ -12,12 +12,16 @@ function coloresEjes() {
 }
 
 function rangoFechas() {
-  // Mismo rango en las tres gráficas → se comparan de un vistazo
-  if (!registros.length) {
+  // Mismo rango en las tres gráficas → se comparan de un vistazo.
+  // Sólo cuentan los tipos de módulos encendidos: si no, dejar de usar
+  // el sacaleches seguiría estirando el eje X de las demás gráficas
+  // hasta la última extracción, con semanas de hueco vacío.
+  const visibles = registros.filter(r => tipoVisible(r.tipo));
+  if (!visibles.length) {
     const hoy = new Date();
     return { min: new Date(hoy - 7 * 864e5), max: new Date(hoy.getTime() + 864e5) };
   }
-  const ts  = registros.map(r => +new Date(r.fecha_hora));
+  const ts  = visibles.map(r => +new Date(r.fecha_hora));
   const min = new Date(Math.min(...ts));
   const max = new Date(Math.max(...ts));
   // Margen de medio día a cada lado
@@ -88,8 +92,10 @@ function renderCharts() {
   const base = { responsive: true, maintainAspectRatio: false };
 
   /* ── Extracciones ── */
-  if (charts.ext) charts.ext.destroy();
-  charts.ext = new Chart(document.getElementById('chartExt'), {
+  // Los módulos apagados no se dibujan: un canvas dentro de un
+  // display:none mide cero y saldría una gráfica rota al reactivarlo.
+  if (charts.ext) { charts.ext.destroy(); delete charts.ext; }
+  if (moduloActivo('extraccion')) charts.ext = new Chart(document.getElementById('chartExt'), {
     type: 'scatter',
     data: {
       datasets: [
@@ -151,7 +157,8 @@ function renderCharts() {
     return pts;
   };
 
-  const hayCurvas = lmsEn(edadEnDias(+rng.min)) || lmsEn(edadEnDias(tFinPeso));
+  const hayCurvas = moduloActivo('peso')
+    && (lmsEn(edadEnDias(+rng.min)) || lmsEn(edadEnDias(tFinPeso)));
 
   if (hayCurvas) {
     // Líneas finas sin relleno, al estilo de la cartilla pediátrica.
@@ -278,8 +285,8 @@ function renderCharts() {
     }
   };
 
-  if (charts.peso) charts.peso.destroy();
-  charts.peso = new Chart(document.getElementById('chartPeso'), {
+  if (charts.peso) { charts.peso.destroy(); delete charts.peso; }
+  if (moduloActivo('peso')) charts.peso = new Chart(document.getElementById('chartPeso'), {
     type: 'scatter',
     data: { datasets: dsPeso },
     options: Object.assign({}, base, {
@@ -320,8 +327,8 @@ function renderCharts() {
 
   /* ── Pañales ── */
   // Sin línea: son eventos sueltos, no una tendencia.
-  if (charts.panal) charts.panal.destroy();
-  charts.panal = new Chart(document.getElementById('chartPanal'), {
+  if (charts.panal) { charts.panal.destroy(); delete charts.panal; }
+  if (moduloActivo('panales')) charts.panal = new Chart(document.getElementById('chartPanal'), {
     type: 'scatter',
     data: {
       datasets: [
