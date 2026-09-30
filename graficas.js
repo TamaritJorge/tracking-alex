@@ -45,20 +45,6 @@ function renderCharts() {
                    .map(r => ({ x: r.fecha_hora, y: r.datos.ml }));
   const dPeso = pesos.map(r => ({ x: r.fecha_hora, y: r.datos.gramos }));
 
-  const dCaca = cacas.map(r => ({
-    x: r.fecha_hora,
-    y: r.datos.cantidad,
-    meta: { color: infoColor(r.datos.color).label, nota: r.datos.nota }
-  }));
-  const dPipi = pipis.map(r => ({
-    x: r.fecha_hora,
-    y: r.datos.cantidad,
-    meta: { transparente: !!r.datos.transparente, nota: r.datos.nota }
-  }));
-
-  // Cada punto de caca se pinta de su propio color
-  const coloresPuntosCaca = cacas.map(r => infoColor(r.datos.color).hex);
-
   // Eje X idéntico en las tres gráficas
   const ejeX = () => ({
     type: 'time',
@@ -325,31 +311,85 @@ function renderCharts() {
       : 'Hacen falta al menos dos pesadas separadas entre sí para estimar la tendencia.';
   }
 
-  /* ── Pañales ── */
-  // Sin línea: son eventos sueltos, no una tendencia.
+  /* ── Pipís y cacas en 24 h ────────────────────────────────────
+     Dos líneas con la misma unidad —cuántos hubo en las 24 h
+     anteriores a ese punto— y por tanto un solo eje.
+
+     El color de cada tramo dice en qué estado se estaba durante ese
+     rato: para los pipís, si el último fue transparente o no; para
+     las cacas, de qué color fue la última. Así la altura cuenta el
+     ritmo y el color cuenta el aviso.
+     ────────────────────────────────────────────────────────────── */
+  const serieP = serie24h(pipis, r => ({
+    cantidad:     r.datos.cantidad,
+    transparente: !!r.datos.transparente,
+    nota:         r.datos.nota
+  }));
+  const serieC = serie24h(cacas, r => ({
+    cantidad: r.datos.cantidad,
+    color:    r.datos.color,
+    nota:     r.datos.nota
+  }));
+
+
+  // Puntos pequeños a propósito: son unos seis pipís al día y con marcas
+  // grandes se solapan y tapan la línea, que es la que lleva el dato.
+  // El tamaño es la cantidad: canal impreciso adrede, porque la cantidad
+  // es una apreciación de quien cambia el pañal, no una medida.
+  const radio = pts => pts.map(p =>
+    2 + (Math.min(Math.max(Number(p.meta.cantidad) || 0, 0), 10) / 10) * 2.5);
+
+  const halo = colorHalo();
+
+  // El contorno es un dataset aparte y va el primero del array, que es como
+  // Chart.js decide quien queda debajo. Sin puntos y fuera del tooltip.
+  const contorno = pts => ({
+    label: '', data: pts, esHalo: true,
+    borderColor: halo, borderWidth: 4.5,
+    pointRadius: 0, pointHoverRadius: 0,
+    tension: 0, fill: false
+  });
+
+  pintarLeyendaPanal(serieC, halo);
+
   if (charts.panal) { charts.panal.destroy(); delete charts.panal; }
   if (moduloActivo('panales')) charts.panal = new Chart(document.getElementById('chartPanal'), {
-    type: 'scatter',
+    type: 'line',
     data: {
       datasets: [
+        contorno(serieP),
+        contorno(serieC),
         {
-          label: 'Caca',
-          data: dCaca,
-          backgroundColor: coloresPuntosCaca,   // un color por punto
-          borderColor: esDark() ? '#e2e8f0' : '#334155',
-          borderWidth: 1.5,                     // así el blanquecino se ve siempre
-          pointStyle: 'circle',
-          pointRadius: 8, pointHoverRadius: 10,
-          showLine: false
+          label: 'Pipís',
+          tipo:  'pipi',
+          data:  serieP,
+          borderColor: colorPipi(serieP[0]),     // lo pisa segment.borderColor
+          borderWidth: 3,
+          pointRadius: radio(serieP),
+          pointHoverRadius: radio(serieP).map(r => r + 3),
+          pointBackgroundColor: serieP.map(colorPipi),
+          pointBorderColor: halo,                // se ven aunque el color sea palido
+          pointBorderWidth: 1.25,
+          pointStyle: 'triangle',                // ▲ distinguible en blanco y negro
+          tension: 0,
+          fill: false,
+          segment: { borderColor: ctx => colorPipi(serieP[ctx.p0DataIndex]) }
         },
         {
-          label: 'Pipí',
-          data: dPipi,
-          backgroundColor: COLOR_PIPI,
-          borderColor:     COLOR_PIPI,
-          pointStyle: 'triangle',
-          pointRadius: 8, pointHoverRadius: 10,
-          showLine: false
+          label: 'Cacas',
+          tipo:  'caca',
+          data:  serieC,
+          borderColor: colorCaca(serieC[0]),
+          borderWidth: 3,
+          pointRadius: radio(serieC),
+          pointHoverRadius: radio(serieC).map(r => r + 3),
+          pointBackgroundColor: serieC.map(colorCaca),
+          pointBorderColor: halo,
+          pointBorderWidth: 1.25,
+          pointStyle: 'circle',                  // ● distinguible en blanco y negro
+          tension: 0,
+          fill: false,
+          segment: { borderColor: ctx => colorCaca(serieC[ctx.p0DataIndex]) }
         }
       ]
     },
@@ -357,23 +397,140 @@ function renderCharts() {
       plugins: {
         legend: { display: false },
         tooltip: {
+          filter: item => !item.dataset.esHalo,
           callbacks: {
             label: ctx => {
               const m = ctx.raw.meta || {};
-              let s = `${ctx.dataset.label}: ${ctx.parsed.y}`;
-              if (m.color) s += ' · ' + m.color;
-              if (m.transparente !== undefined) {
-                s += ' · ' + (m.transparente ? 'transparente' : 'no transparente');
+              const n = ctx.parsed.y;
+              const l = [];
+
+              if (ctx.dataset.tipo === 'pipi') {
+                l.push(`${n} ${n === 1 ? 'pipí' : 'pipís'} en 24 h`);
+                l.push(`Éste: cantidad ${m.cantidad} · `
+                     + (m.transparente ? 'transparente' : 'no transparente'));
+              } else {
+                l.push(`${n} ${n === 1 ? 'caca' : 'cacas'} en 24 h`);
+                l.push(`Ésta: cantidad ${m.cantidad} · ${infoColor(m.color).label}`);
               }
-              return m.nota ? [s, '📝 ' + m.nota] : s;
+              if (m.nota) l.push('📝 ' + m.nota);
+              return l;
             }
           }
         }
       },
       scales: {
         x: ejeX(),
-        y: ejeY('cantidad', { min: 0, max: 10, ticks: { color: c.tick, stepSize: 2 } })
+        y: ejeY('pañales en 24 h', {
+          beginAtZero: true,
+          ticks: { color: c.tick, precision: 0, stepSize: 1 }
+        })
       }
     })
   });
+
+  const notaPanal = document.getElementById('notaPanal');
+  if (notaPanal) {
+    notaPanal.textContent = (serieP.length || serieC.length)
+      ? 'Cada punto es un pañal y su altura son los de las 24 h anteriores, '
+        + 'él incluido. El primer día siempre sube desde 1 porque la ventana '
+        + 'todavía no está llena: esa subida no significa nada.'
+      : 'Todavía no hay pañales registrados.';
+  }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   RECUENTO MÓVIL DE 24 H
+
+   Ventana deslizante: una sola pasada por la lista en vez de
+   contar hacia atrás en cada punto.
+   ───────────────────────────────────────────────────────────── */
+function serie24h(registrosDelTipo, metaDe) {
+  const ev = registrosDelTipo
+    .map(r => ({ t: +new Date(r.fecha_hora), r }))
+    .sort((a, b) => a.t - b.t);
+
+  const pts = [];
+  let desde = 0;
+
+  ev.forEach((e, i) => {
+    while (ev[desde].t <= e.t - VENTANA_MS) desde++;
+    pts.push({ x: e.r.fecha_hora, y: i - desde + 1, meta: metaDe(e.r) });
+  });
+
+  return pts;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   COLOR DE CADA TRAMO
+
+   El tramo toma el color vigente al EMPEZAR: es el estado que hubo
+   durante ese rato. Un cambio a mitad de tramo se ve en el
+   siguiente, que es cuando de verdad pasó a ser el último.
+   ───────────────────────────────────────────────────────────── */
+// Violeta, y no el ámbar que pide la intuición para un pipí concentrado:
+// el ámbar quedaba calcado al mostaza de las cacas, que es el color de caca
+// más frecuente con diferencia. Dos líneas distintas del mismo color en la
+// misma gráfica es justo lo que no puede pasar. Toda la gama cálida está
+// ocupada por las cacas, así que los pipís se quedan en fríos.
+const COLOR_PIPI_NO = '#a855f7';
+
+/* Los colores van LITERALES, sin retocar. Se probo a oscurecerlos o
+   aclararlos hasta llegar a 3:1 contra el fondo, y el remedio era peor: al
+   oscurecer el mostaza para que se viera sobre blanco, se acercaba tanto al
+   verde que dejaban de distinguirse entre si (delta-E 13,5 en vision normal,
+   por debajo del suelo de 15). Un color de caca tiene que parecerse a la caca
+   que viste, asi que el tono manda; la visibilidad la da el contorno. */
+function colorPipi(p) {
+  if (!p) return COLOR_PIPI;
+  return p.meta.transparente ? COLOR_PIPI : COLOR_PIPI_NO;
+}
+
+function colorCaca(p) {
+  if (!p) return esDark() ? 'rgba(148,163,184,.55)' : 'rgba(100,116,139,.45)';
+  return infoColor(p.meta.color).hex;
+}
+
+/* Contorno: oscuro sobre fondo claro y claro sobre fondo oscuro. Es lo que
+   hace visible el blanquecino sobre blanco y el negro sobre el tema oscuro,
+   que son dos de los colores que justamente hay que mirar. */
+function colorHalo() {
+  // Fino y discreto: a 5,5 px y opacidad alta el contorno se comia el color y
+  // toda la grafica salia lavada. Basta con perfilar el borde.
+  return esDark() ? 'rgba(226,232,240,.38)' : 'rgba(51,65,85,.32)';
+}
+
+/* ─────────────────────────────────────────────────────────────
+   LEYENDA
+
+   Se genera aqui y no en el HTML porque depende de los datos: solo
+   se listan los colores de caca que existen de verdad. Con los ocho
+   posibles seria casi toda ruido.
+   ───────────────────────────────────────────────────────────── */
+function pintarLeyendaPanal(serieC, halo) {
+  const cont = document.getElementById('leyendaPanal');
+  if (!cont) return;
+
+  const vistos = [];
+  serieC.forEach(p => {
+    if (p.meta.color && vistos.indexOf(p.meta.color) === -1) vistos.push(p.meta.color);
+  });
+
+  // Mismo contorno que en la grafica: sin el, el blanquecino desaparece
+  const marca = (color, texto) =>
+    `<div class="legend-item">
+       <div class="legend-dash" style="background:${color};box-shadow:0 0 0 1.5px ${halo}"></div>
+       <span>${texto}</span>
+     </div>`;
+
+  cont.innerHTML =
+    `<div class="legend-item"><span class="legend-nota">▲ Pipís:</span></div>` +
+    marca(COLOR_PIPI,    'transparente') +
+    marca(COLOR_PIPI_NO, 'no transparente') +
+    '<div class="legend-sep"></div>' +
+    `<div class="legend-item"><span class="legend-nota">● Cacas:</span></div>` +
+    (vistos.length
+      ? vistos.map(k => marca(infoColor(k).hex, esc(infoColor(k).label))).join('')
+      : `<div class="legend-item"><span class="legend-nota">ninguna todavía</span></div>`) +
+    '<div class="legend-sep"></div>' +
+    `<div class="legend-item"><span class="legend-nota">El tamaño del punto es la cantidad</span></div>`;
 }

@@ -885,3 +885,12 @@
     .modulo-txt  { display: flex; flex-direction: column; gap: 2px; }
     .modulo-nom  { font-size: .9rem; font-weight: 600; }
     .modulo-desc { font-size: .78rem; color: var(--text2); line-height: 1.35; }
+
+    /* Leyenda de la grafica de pipis: separador y textos sueltos */
+    .legend-sep {
+      flex-basis: 100%;
+      height: 0;
+      margin: -6px 0 0;
+    }
+
+    .legend-nota { font-size: 0.78rem; opacity: .85; }

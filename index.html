@@ -298,20 +298,13 @@
         <p class="hint-txt" id="notaTendencia" style="margin:10px 0 0"></p>
       </div>
 
-      <div class="card" data-modulo="panales" data-captura="Pañales">
-        <p class="card-title">Pañales</p>
-        <div class="legend">
-          <div class="legend-item">
-            <div class="legend-dot"
-                 style="background:linear-gradient(135deg,#d4a017 0%,#4d9c5a 50%,#8a5a34 100%)"></div>
-            <span>Caca (cada punto, con su color)</span>
-          </div>
-          <div class="legend-item">
-            <div class="legend-dot" style="background:var(--pipi)"></div>
-            <span>Pipí</span>
-          </div>
-        </div>
+      <div class="card" data-modulo="panales" data-captura="Pipís y cacas en 24 h">
+        <p class="card-title">Pipís y cacas en 24 h</p>
+        <!-- La leyenda la pinta graficas.js: depende de qué colores de caca
+             existan de verdad en los datos. -->
+        <div class="legend" id="leyendaPanal"></div>
         <div class="chart-wrap"><canvas id="chartPanal"></canvas></div>
+        <p class="hint-txt" id="notaPanal" style="margin:10px 0 0"></p>
       </div>
 
       <div class="card" data-modulo="extraccion" data-captura="Extracciones de leche">

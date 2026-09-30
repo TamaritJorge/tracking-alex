@@ -287,7 +287,12 @@ window.abrirAjustes = function() {
   document.getElementById('comidaModalCuerpo').innerHTML = `
     <div class="field">
       <label>Familia</label>
-      <p class="ficha-txt">${esc(familia.nombre)} · ${plan}</p>
+      <div class="ali-fila" style="cursor:default">
+        <span class="ali-nom">${esc(familia.nombre)}</span>
+        <span class="ali-veces">${plan}</span>
+        <button class="btn-edit-sm" onclick="editarFamilia()"
+                aria-label="Cambiar el nombre de la familia">✏️</button>
+      </div>
     </div>
 
     <div class="field">
@@ -298,6 +303,8 @@ window.abrirAjustes = function() {
           <span class="tag tag-pronto">${n.sexo === 'nina' ? 'niña' : 'niño'}</span>
           <span class="ali-veces">${esc(new Date(n.fecha_nacimiento + 'T12:00:00')
             .toLocaleDateString('es-ES'))}</span>
+          <button class="btn-edit-sm" onclick="editarHijo('${n.id}')"
+                  aria-label="Editar a ${esc(n.nombre)}">✏️</button>
         </div>`).join('')}
     </div>
 
@@ -335,9 +342,8 @@ window.abrirAjustes = function() {
 
     <div class="field">
       <label>Segundo adulto</label>
-      ${hijos.length === 0 ? '' : ''}
       <p class="ficha-txt" id="estadoInvitacion">
-        ${'Genera un código y pásaselo. Una familia admite dos adultos como máximo.'}
+        Genera un código y pásaselo. Una familia admite dos adultos como máximo.
       </p>
       <button class="btn btn-secundario" style="margin-top:8px"
               onclick="generarInvitacion()">Generar código de invitación</button>
@@ -347,6 +353,260 @@ window.abrirAjustes = function() {
 
   document.getElementById('comidaModalBtns').innerHTML = '';
   document.getElementById('comidaModal').style.display = '';
+};
+
+/* ─────────────────────────────────────────────────────────────
+   NOMBRE DE LA FAMILIA
+
+   Salía «Familia Tamarit» porque lo escribí yo en la migración del
+   30/09: había que meter los registros de Álex en alguna familia y
+   nadie había elegido nombre todavía. Ahora se puede cambiar.
+   ───────────────────────────────────────────────────────────── */
+window.editarFamilia = function() {
+  document.getElementById('comidaModalTitulo').textContent = '✏️ Nombre de la familia';
+  document.getElementById('comidaModalCuerpo').innerHTML = `
+    <div class="field">
+      <label for="famNombre">Nombre</label>
+      <input type="text" id="famNombre" maxlength="60" value="${esc(familia.nombre)}">
+      <p class="hint-txt" style="margin:8px 0 0">
+        Es sólo una etiqueta vuestra: no sale en las capturas ni la ve nadie de fuera.
+      </p>
+    </div>
+    <p id="ajustesErr" class="error-txt" style="display:none"></p>`;
+
+  document.getElementById('comidaModalBtns').innerHTML = `
+    <button class="btn btn-primary" onclick="guardarFamilia()">Guardar</button>
+    <button class="btn" onclick="abrirAjustes()"
+            style="background:var(--surface2);color:var(--text)">← Volver</button>`;
+};
+
+window.guardarFamilia = async function() {
+  const err    = document.getElementById('ajustesErr');
+  const nombre = document.getElementById('famNombre').value.trim();
+  if (!nombre) { err.textContent = 'El nombre no puede quedar vacío.'; err.style.display = ''; return; }
+
+  // .select() para detectar el caso de 0 filas afectadas: si RLS bloqueara el
+  // UPDATE, Supabase no devuelve error, devuelve una lista vacía.
+  const { data, error } = await sb.from('familias')
+    .update({ nombre }).eq('id', familia.id).select();
+
+  if (error || !data || !data.length) {
+    err.textContent = error ? mensajeFamilia(error) : 'No se pudo guardar (sin permiso).';
+    err.style.display = '';
+    return;
+  }
+
+  familia.nombre = nombre;
+  toast('✅ Nombre actualizado');
+  abrirAjustes();
+};
+
+/* ─────────────────────────────────────────────────────────────
+   EDITAR UN HIJO
+
+   El sexo y la fecha de nacimiento no son cosméticos: de ellos salen
+   la edad en días y la curva de la OMS con la que se calcula el
+   percentil. Cambiarlos recalcula todo, por eso al guardar se
+   repintan el resumen y las gráficas.
+   ───────────────────────────────────────────────────────────── */
+window.editarHijo = function(id) {
+  const n = hijos.find(x => x.id === id);
+  if (!n) return;
+
+  const esUnico = hijos.length <= 1;
+
+  document.getElementById('comidaModalTitulo').textContent = '✏️ ' + n.nombre;
+  document.getElementById('comidaModalCuerpo').innerHTML = `
+    <div class="field">
+      <label for="edHijoNombre">Nombre</label>
+      <input type="text" id="edHijoNombre" maxlength="40" value="${esc(n.nombre)}">
+    </div>
+
+    <div class="field">
+      <label for="edHijoFecha">Fecha de nacimiento</label>
+      <input type="date" id="edHijoFecha" value="${esc(n.fecha_nacimiento)}">
+    </div>
+
+    <div class="field">
+      <label>Sexo</label>
+      <div class="toggle-row" id="rowEdHijoSexo">
+        <button type="button" class="toggle-opt${n.sexo !== 'nina' ? ' sel' : ''}" data-v="nino">Niño</button>
+        <button type="button" class="toggle-opt${n.sexo === 'nina' ? ' sel' : ''}" data-v="nina">Niña</button>
+      </div>
+      <p class="hint-txt" style="margin:8px 0 0">
+        La fecha y el sexo cambian el percentil: la OMS tiene una curva
+        distinta para cada sexo, y la edad en días sale de la fecha.
+      </p>
+    </div>
+
+    <p id="ajustesErr" class="error-txt" style="display:none"></p>
+
+    <div class="field" style="margin-top:20px">
+      <label>Zona peligrosa</label>
+      <p class="hint-txt" style="margin:0 0 10px" id="avisoBorrado">Comprobando registros…</p>
+      <button class="btn btn-secundario" id="btnBorrarHijo"
+              style="color:var(--danger);border-color:var(--danger)"
+              onclick="pedirBorradoHijo('${n.id}')" disabled>🗑️ Borrar a ${esc(n.nombre)}</button>
+    </div>`;
+
+  document.getElementById('comidaModalBtns').innerHTML = `
+    <button class="btn btn-primary" onclick="guardarHijo('${n.id}')">Guardar</button>
+    <button class="btn" onclick="abrirAjustes()"
+            style="background:var(--surface2);color:var(--text)">← Volver</button>`;
+
+  // El recuento se pide aparte para no retrasar la apertura del formulario
+  contarRegistrosDe(n.id).then(total => {
+    const aviso = document.getElementById('avisoBorrado');
+    const btn   = document.getElementById('btnBorrarHijo');
+    if (!aviso || !btn) return;              // se cerró el modal mientras tanto
+
+    if (esUnico) {
+      aviso.innerHTML = 'Es el único hijo de la familia. Si lo borras, la app se '
+        + 'queda sin nada que mostrar y no hay pantalla para volver a empezar. '
+        + 'Para corregir un nombre o una fecha, edítalo aquí arriba.';
+      return;
+    }
+    btn.disabled = false;
+    aviso.innerHTML =
+        total < 0 ? 'No se ha podido comprobar cuántos registros tiene. '
+                  + 'Borrarlo se llevaría todo su historial.'
+      : total > 0 ? `Tiene <strong>${total}</strong> ${total === 1 ? 'registro' : 'registros'}. `
+                  + 'Borrarlo los borra todos, y eso no se puede deshacer.'
+      : 'No tiene ningún registro todavía.';
+  });
+};
+
+/* Cuántas filas cuelgan de este niño, en las tres tablas */
+async function contarRegistrosDe(id) {
+  let total = 0;
+  for (const t of ['registros', 'alim_registros', 'alim_ajustes']) {
+    const { count, error } = await sb.from(t)
+      .select('*', { count: 'exact', head: true }).eq('nino_id', id);
+    if (error) { console.error(error); return -1; }
+    total += count || 0;
+  }
+  return total;
+}
+
+window.guardarHijo = async function(id) {
+  const err    = document.getElementById('ajustesErr');
+  const nombre = document.getElementById('edHijoNombre').value.trim();
+  const fecha  = document.getElementById('edHijoFecha').value;
+  const sexo   = valorSel('rowEdHijoSexo', 'nino');
+
+  const fallo = !nombre ? 'Ponle nombre.'
+              : !fecha  ? 'Falta la fecha de nacimiento.'
+              : new Date(fecha) > new Date() ? 'La fecha no puede ser futura.' : null;
+  if (fallo) { err.textContent = fallo; err.style.display = ''; return; }
+
+  const { data, error } = await sb.from('ninos')
+    .update({ nombre, fecha_nacimiento: fecha, sexo }).eq('id', id).select();
+
+  if (error || !data || !data.length) {
+    err.textContent = error ? mensajeFamilia(error) : 'No se pudo guardar (sin permiso).';
+    err.style.display = '';
+    return;
+  }
+
+  await cargarFamilia();
+  pintarCabecera();
+  renderResumen();
+  renderTabla();
+  if (tabActual === 'graficas') renderCharts();
+
+  toast('✅ Datos actualizados');
+  abrirAjustes();
+};
+
+/* ─────────────────────────────────────────────────────────────
+   BORRAR UN HIJO
+
+   Es la operación más destructiva de la app: se lleva por delante
+   todo su historial. Por eso no basta un confirm():
+     · si tiene registros, hay que teclear su nombre;
+     · y el borrado va en orden, porque las claves ajenas NO son
+       ON DELETE CASCADE. Eso conviene dejarlo así: sin ese orden
+       explícito Postgres se niega, que es justo la red que impide
+       que un toque accidental se lleve un historial entero.
+   ───────────────────────────────────────────────────────────── */
+window.pedirBorradoHijo = async function(id) {
+  const n = hijos.find(x => x.id === id);
+  if (!n || hijos.length <= 1) return;
+
+  const total = await contarRegistrosDe(id);
+
+  document.getElementById('comidaModalTitulo').textContent = '🗑️ Borrar a ' + n.nombre;
+  document.getElementById('comidaModalCuerpo').innerHTML = `
+    <div class="aviso aviso-stop" style="margin-bottom:14px">
+      ${total < 0
+        ? `No se ha podido comprobar cuántos registros tiene ${esc(n.nombre)}. Se borrará todo lo suyo. No se puede deshacer.`
+        : total > 0
+        ? `Se borrarán <strong>${total}</strong> ${total === 1 ? 'registro' : 'registros'} de ${esc(n.nombre)}. No se puede deshacer.`
+        : `Se borrará a ${esc(n.nombre)}. Segun la base de datos no tiene ningún registro.`}
+    </div>
+    <div class="field">
+      <label for="confBorrado">Escribe <strong>${esc(n.nombre)}</strong> para confirmar</label>
+      <input type="text" id="confBorrado" autocomplete="off" placeholder="${esc(n.nombre)}">
+    </div>
+    <p id="ajustesErr" class="error-txt" style="display:none"></p>`;
+
+  document.getElementById('comidaModalBtns').innerHTML = `
+    <button class="btn" onclick="borrarHijo('${n.id}')"
+            style="background:var(--danger);color:#fff">Sí, borrar</button>
+    <button class="btn" onclick="editarHijo('${n.id}')"
+            style="background:var(--surface2);color:var(--text)">Cancelar</button>`;
+};
+
+window.borrarHijo = async function(id) {
+  const n   = hijos.find(x => x.id === id);
+  const err = document.getElementById('ajustesErr');
+  if (!n) return;
+
+  // Se pide el nombre SIEMPRE, tenga registros o no. El recuento se lee con
+  // la sesion del usuario: si esta caducada, RLS devuelve cero filas y ningun
+  // error, o sea que un historial entero parecia estar vacio. Confiar en ese
+  // cero para saltarse la confirmacion era la peor forma posible de fallar.
+  const campo = document.getElementById('confBorrado');
+  if (!campo || campo.value.trim() !== n.nombre) {
+    err.textContent = 'El nombre no coincide.';
+    err.style.display = '';
+    return;
+  }
+
+  // Orden obligatorio: primero lo que apunta al niño, el niño al final
+  for (const t of ['alim_registros', 'alim_ajustes', 'registros']) {
+    const { error } = await sb.from(t).delete().eq('nino_id', id);
+    if (error) {
+      err.textContent = 'No se pudo borrar de ' + t + ': ' + (error.message || '');
+      err.style.display = '';
+      return;
+    }
+  }
+
+  const { error } = await sb.from('ninos').delete().eq('id', id);
+  if (error) { err.textContent = mensajeFamilia(error); err.style.display = ''; return; }
+
+  // Si el borrado era el hijo que se estaba viendo hay que soltarlo antes de
+  // recargar: si no, cargarFamilia() lo buscaría por el id guardado y no existe.
+  if (ninoActivo && ninoActivo.id === id) {
+    localStorage.removeItem(CLAVE_ULTIMO_HIJO);
+    limpiarEstado();
+    ninoActivo = null;
+  }
+
+  await cargarFamilia();
+  if (ninoActivo) localStorage.setItem(CLAVE_ULTIMO_HIJO, ninoActivo.id);
+
+  pintarCabecera();
+  await cargarDatos();
+  configurarRealtime();
+  if (moduloActivo('comida')) { await cargarComida(); configurarRealtimeComida(); }
+  renderResumen();
+  renderTabla();
+  if (tabActual === 'graficas') renderCharts();
+
+  toast('🗑️ ' + n.nombre + ' borrado');
+  abrirAjustes();
 };
 
 window.guardarNuevoHijo = async function() {
