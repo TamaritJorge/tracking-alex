@@ -141,23 +141,30 @@ function pintarCabecera() {
 /* ─────────────────────────────────────────────────────────────
    ALTA DE FAMILIA Y DE HIJOS
    ───────────────────────────────────────────────────────────── */
+/* Va por RPC, igual que unirseAFamilia(), y por un motivo parecido.
+
+   Antes eran tres escrituras seguidas desde aquí, y la primera no podía
+   funcionar: para LEER la familia recién creada hay que ser miembro, para
+   ser miembro hace falta su id, y el id sólo llega leyendo la fila. El
+   .select() del insert chocaba con la política de SELECT.
+
+   Comprobado suplantando a un usuario real: el INSERT a secas pasaba, el
+   INSERT con RETURNING no. Nadie lo había visto porque la única familia
+   que existía la creé en SQL durante la migración, y el segundo adulto
+   entró por código de invitación, que ya iba por RPC.
+
+   De paso, las tres altas ocurren ahora en una sola transacción: se acabó
+   la posibilidad de dejar una familia a medio crear si se corta la red. */
 async function crearFamilia(nombreFamilia, hijo) {
-  const { data: { user } } = await sb.auth.getUser();
-  if (!user) return { error: 'Sin sesión' };
-
-  const { data: f, error: e1 } = await sb
-    .from('familias').insert({ nombre: nombreFamilia }).select().single();
-  if (e1) return { error: mensajeFamilia(e1) };
-
-  const { error: e2 } = await sb
-    .from('familia_miembros').insert({ familia_id: f.id, user_id: user.id });
-  if (e2) return { error: mensajeFamilia(e2) };
-
-  const { error: e3 } = await sb.from('ninos').insert({
-    familia_id: f.id, nombre: hijo.nombre,
-    fecha_nacimiento: hijo.fecha, sexo: hijo.sexo
+  const { data, error } = await sb.rpc('crear_familia', {
+    p_familia:    nombreFamilia,
+    p_hijo:       hijo.nombre,
+    p_nacimiento: hijo.fecha,
+    p_sexo:       hijo.sexo
   });
-  if (e3) return { error: mensajeFamilia(e3) };
+
+  if (error) return { error: mensajeFamilia(error) };
+  if (data && data.error) return { error: data.error };
 
   await cargarFamilia();
   return { ok: true };
