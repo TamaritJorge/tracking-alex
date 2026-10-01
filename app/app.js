@@ -25,6 +25,25 @@ const SUPABASE_KEY = 'sb_publishable_IliCiFj7DM6UHxL4YxlnNw_57j6pW5z';
    llegamos tarde al evento. */
 let recuperandoPwd = /type=recovery/.test(location.hash + location.search);
 
+/* Y el caso contrario: el enlace que ya no vale.
+
+   Cuando el enlace del correo ha caducado o ya se usó, Supabase devuelve
+   #error=access_denied&error_code=otp_expired  y ahí NO viene type=recovery.
+   Sin leerlo, el usuario aterriza en la pantalla de entrar sin ninguna
+   explicación — o, si ya tenía sesión abierta, directamente dentro de la
+   aplicación preguntandose qué ha pasado con su contraseña. */
+const errorEnlace = (() => {
+  const h = new URLSearchParams((location.hash || '').replace(/^#/, ''));
+  const code = h.get('error_code') || h.get('error');
+  return code || null;
+})();
+
+/* Se limpia la dirección para que al recargar no reaparezca el aviso de
+   algo que ya se contó. */
+if (errorEnlace) {
+  history.replaceState(null, '', location.pathname + location.search);
+}
+
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -347,6 +366,9 @@ async function init() {
   if (session && recuperandoPwd) modoRecuperacion(true);
   else if (session) await entrar();
   else mostrarLogin();
+
+  // Después de elegir pantalla: si veníamos de un enlace roto, explicarlo
+  if (errorEnlace) avisarEnlaceRoto(session);
 }
 
 /* Con sesión iniciada: o tienes familia y entras, o hay que crearla */
@@ -505,6 +527,24 @@ function traducirAuth(error) {
    tres de la mañana.
    ──────────────────────────────────────────────────── */
 
+/* Explica por qué el enlace del correo no ha hecho nada.
+
+   Si ya había sesión no se le echa de la aplicación: ya está dentro y
+   sacarlo sería más molesto que útil. Basta con contárselo. */
+function avisarEnlaceRoto(hayCesion) {
+  const caducado = /expired/i.test(errorEnlace);
+  const texto = caducado
+    ? t('enlace.caducado', 'Ese enlace ya no vale: había caducado o ya se había usado. Pide uno nuevo.')
+    : t('enlace.invalido', 'Ese enlace no es válido. Pide uno nuevo.');
+
+  if (hayCesion) { toast(texto, 6000); return; }
+
+  const el = document.getElementById('avisoEnlace');
+  if (!el) return;
+  el.textContent = texto;
+  el.style.display = '';
+}
+
 /* Alterna entre el formulario de entrar y el de elegir contraseña nueva */
 function modoRecuperacion(activo) {
   pantalla('loginScreen');
@@ -524,6 +564,9 @@ document.getElementById('olvideBtn').addEventListener('click', async (e) => {
     errEl.textContent = t('recup.falta', 'Escribe tu correo arriba y vuelve a pulsar.');
     return;
   }
+
+  const aviso = document.getElementById('avisoEnlace');
+  if (aviso) aviso.style.display = 'none';   // ya no viene a cuento
 
   const { error } = await sb.auth.resetPasswordForEmail(email, {
     redirectTo: window.location.origin + window.location.pathname

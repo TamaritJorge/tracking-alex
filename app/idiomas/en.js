@@ -65,6 +65,10 @@ TEXTOS.en = {
   'recup.corta':     'At least 8 characters.',
   'recup.lista':     '✅ Password changed',
 
+  /* ── Enlaces de correo ─────────────────────────────────────── */
+  'enlace.caducado': 'That link is no longer valid: it expired or had already been used. Ask for a new one.',
+  'enlace.invalido': 'That link is not valid. Ask for a new one.',
+
   /* ── Botones generales ─────────────────────────────────────── */
   'btn.salir': 'Sign out'
 };
