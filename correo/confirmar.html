@@ -1,0 +1,105 @@
+<!--
+  Plantilla de &laquo;Confirma tu correo&raquo; para Supabase.
+  Se pega en: Authentication -> Emails -> Templates -> Confirm signup
+  Asunto sugerido: Confirma tu correo &middot; Tracking &Aacute;lex
+
+  Por qu&eacute; est&aacute; escrito as&iacute; de anticuado (tablas, estilos en l&iacute;nea, nada de
+  flex ni de hojas externas): los clientes de correo no son navegadores.
+  Outlook usa el motor de Word, Gmail recorta el <head> y muchos bloquean
+  las im&aacute;genes por defecto. Nada de esto es por gusto.
+
+  El logo va como PNG y no como SVG porque el SVG no se ve en la mayor&iacute;a
+  de clientes. Y si la imagen no carga, el correo se sigue entendiendo:
+  el alt lleva el nombre y el bot&oacute;n no depende de ella.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background:#faf8fd;margin:0;padding:24px 12px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <tr>
+    <td align="center">
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:460px;background:#ffffff;border:1px solid #e9e3f2;border-radius:16px;">
+
+        <!-- Cabecera -->
+        <tr>
+          <td align="center" style="padding:32px 28px 8px;">
+            <img src="https://trackingalex.app/marca/icono-180.png"
+                 width="56" height="56" alt="Tracking &Aacute;lex"
+                 style="display:block;border:0;border-radius:14px;">
+          </td>
+        </tr>
+
+        <tr>
+          <td align="center" style="padding:14px 28px 0;">
+            <div style="font-size:19px;font-weight:700;color:#1a1024;letter-spacing:-0.3px;">
+              Tracking <span style="color:#6d28d9;">&Aacute;lex</span>
+            </div>
+          </td>
+        </tr>
+
+        <!-- Cuerpo -->
+        <tr>
+          <td style="padding:22px 28px 0;">
+            <h1 style="margin:0 0 12px;font-size:17px;font-weight:650;color:#1a1024;">
+              Confirma tu correo
+            </h1>
+            <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#5f5870;">
+              Alguien ha creado una cuenta en Tracking &Aacute;lex con esta direcci&oacute;n.
+              Si has sido t&uacute;, conf&iacute;rmalo y ya puedes empezar.
+            </p>
+          </td>
+        </tr>
+
+        <!-- Bot&oacute;n. Va en una tabla y no como <a> con estilos porque en
+             Outlook un enlace con padding se desmonta. -->
+        <tr>
+          <td align="center" style="padding:0 28px 20px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" bgcolor="#6d28d9" style="border-radius:11px;">
+                  <a href="{{ .ConfirmationURL }}"
+                     style="display:inline-block;padding:14px 30px;font-size:15px;font-weight:650;
+                            color:#ffffff;text-decoration:none;border-radius:11px;">
+                    Confirmar mi correo
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:0 28px 26px;">
+            <p style="margin:0 0 6px;font-size:12.5px;line-height:1.55;color:#8b8398;">
+              Si el bot&oacute;n no funciona, copia y pega esta direcci&oacute;n en el navegador:
+            </p>
+            <p style="margin:0;font-size:12px;line-height:1.5;word-break:break-all;">
+              <a href="{{ .ConfirmationURL }}" style="color:#6d28d9;">{{ .ConfirmationURL }}</a>
+            </p>
+          </td>
+        </tr>
+
+        <!-- Pie -->
+        <tr>
+          <td style="padding:18px 28px 26px;border-top:1px solid #e9e3f2;">
+            <p style="margin:0 0 10px;font-size:12.5px;line-height:1.55;color:#8b8398;">
+              <strong style="color:#5f5870;">&iquest;No has sido t&uacute;?</strong>
+              Ignora este correo. Sin confirmar, la cuenta no se activa y nadie
+              accede a nada.
+            </p>
+            <p style="margin:0;font-size:12px;color:#8b8398;">
+              <a href="https://trackingalex.app/privacidad" style="color:#8b8398;">Privacidad</a> &middot;
+              <a href="https://trackingalex.app/terminos" style="color:#8b8398;">Condiciones</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+      <p style="margin:16px 0 0;font-size:11.5px;color:#a79fb8;">
+        Tracking &Aacute;lex &middot; seguimiento diario de tu beb&eacute;
+      </p>
+
+    </td>
+  </tr>
+</table>

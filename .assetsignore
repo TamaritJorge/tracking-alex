@@ -14,3 +14,7 @@ README.md
 # viva de Supabase, que se mantiene actualizada; una copia congelada aqui
 # acabaria contradiciendola.
 *.pdf
+
+# Las plantillas de correo viven en el repositorio para tener historial,
+# pero no son paginas de la web: se pegan en el panel de Supabase.
+correo

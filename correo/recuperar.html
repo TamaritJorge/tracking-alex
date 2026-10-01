@@ -1,0 +1,96 @@
+<!--
+  Plantilla de &laquo;Recuperar contrase&ntilde;a&raquo; para Supabase.
+  Se pega en: Authentication -> Emails -> Templates -> Reset password
+  Asunto sugerido: Recupera tu contrase&ntilde;a &middot; Tracking &Aacute;lex
+
+  Misma estructura que confirmar.html. El tono cambia a prop&oacute;sito: un
+  correo de recuperaci&oacute;n le llega a mucha gente que NO lo ha pedido,
+  porque alguien se equivoc&oacute; de direcci&oacute;n o lo intent&oacute; a prop&oacute;sito. Por
+  eso el aviso de &laquo;no has sido t&uacute;&raquo; va antes y pesa m&aacute;s que en el otro.
+-->
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+       style="background:#faf8fd;margin:0;padding:24px 12px;font-family:-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+  <tr>
+    <td align="center">
+
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+             style="max-width:460px;background:#ffffff;border:1px solid #e9e3f2;border-radius:16px;">
+
+        <tr>
+          <td align="center" style="padding:32px 28px 8px;">
+            <img src="https://trackingalex.app/marca/icono-180.png"
+                 width="56" height="56" alt="Tracking &Aacute;lex"
+                 style="display:block;border:0;border-radius:14px;">
+          </td>
+        </tr>
+
+        <tr>
+          <td align="center" style="padding:14px 28px 0;">
+            <div style="font-size:19px;font-weight:700;color:#1a1024;letter-spacing:-0.3px;">
+              Tracking <span style="color:#6d28d9;">&Aacute;lex</span>
+            </div>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:22px 28px 0;">
+            <h1 style="margin:0 0 12px;font-size:17px;font-weight:650;color:#1a1024;">
+              Recupera tu contrase&ntilde;a
+            </h1>
+            <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#5f5870;">
+              Has pedido cambiar la contrase&ntilde;a de tu cuenta. Pulsa el bot&oacute;n y
+              elige una nueva.
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td align="center" style="padding:0 28px 20px;">
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td align="center" bgcolor="#6d28d9" style="border-radius:11px;">
+                  <a href="{{ .ConfirmationURL }}"
+                     style="display:inline-block;padding:14px 30px;font-size:15px;font-weight:650;
+                            color:#ffffff;text-decoration:none;border-radius:11px;">
+                    Elegir contrase&ntilde;a nueva
+                  </a>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:0 28px 26px;">
+            <p style="margin:0 0 6px;font-size:12.5px;line-height:1.55;color:#8b8398;">
+              Si el bot&oacute;n no funciona, copia y pega esta direcci&oacute;n en el navegador:
+            </p>
+            <p style="margin:0;font-size:12px;line-height:1.5;word-break:break-all;">
+              <a href="{{ .ConfirmationURL }}" style="color:#6d28d9;">{{ .ConfirmationURL }}</a>
+            </p>
+          </td>
+        </tr>
+
+        <tr>
+          <td style="padding:18px 28px 26px;border-top:1px solid #e9e3f2;">
+            <p style="margin:0 0 10px;font-size:12.5px;line-height:1.55;color:#5f5870;">
+              <strong>&iquest;No has pedido t&uacute; este cambio?</strong>
+              Ignora este correo y no pasar&aacute; nada: tu contrase&ntilde;a sigue siendo la
+              de siempre. S&oacute;lo cambia si pulsas el enlace.
+            </p>
+            <p style="margin:0;font-size:12px;color:#8b8398;">
+              <a href="https://trackingalex.app/privacidad" style="color:#8b8398;">Privacidad</a> &middot;
+              <a href="https://trackingalex.app/terminos" style="color:#8b8398;">Condiciones</a>
+            </p>
+          </td>
+        </tr>
+
+      </table>
+
+      <p style="margin:16px 0 0;font-size:11.5px;color:#a79fb8;">
+        Tracking &Aacute;lex &middot; seguimiento diario de tu beb&eacute;
+      </p>
+
+    </td>
+  </tr>
+</table>
