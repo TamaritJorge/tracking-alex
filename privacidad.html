@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Política de privacidad · Tracking Álex</title>
+  <meta name="robots" content="noindex">
+
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#6d28d9">
+  <link rel="stylesheet" href="marca.css">
+  <link rel="stylesheet" href="landing.css">
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="taG" gradientUnits="userSpaceOnUse" x1="14" y1="90" x2="86" y2="10">
+      <stop offset="0" stop-color="#6d28d9"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+    <symbol id="logoTA" viewBox="0 0 100 100">
+      <path d="M20 86 L50 36 L80 86" fill="none" stroke="url(#taG)" stroke-width="13"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M41 21 L64 8" fill="none" stroke="#a855f7" stroke-width="8.5"
+            stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+<header class="contenedor cab">
+  <a class="logo-marca" href="./" aria-label="Tracking Álex, inicio">
+    <svg width="30" height="30" aria-hidden="true"><use href="#logoTA"/></svg>
+    <span class="logo-txt">Tracking <em>Álex</em></span>
+  </a>
+  <a class="btn btn-sec" href="app/">Entrar</a>
+</header>
+
+<main class="contenedor legal">
+
+  <div class="borrador">
+    <strong>Borrador sin revisar por un abogado.</strong>
+    El contenido técnico es correcto y está comprobado contra cómo funciona
+    la aplicación de verdad, pero el texto legal necesita revisión profesional
+    antes de que el servicio se ofrezca a terceros o se cobre por él. Los
+    campos marcados en morado están sin rellenar.
+  </div>
+
+  <h1>Política de privacidad</h1>
+  <p class="actualizado">Última revisión: 1 de octubre de 2026</p>
+
+
+  <h2>1. Quién trata tus datos</h2>
+  <p>
+    El responsable del tratamiento es <span class="pendiente">[ Nombre y apellidos o razón social ]</span>, con NIF <span class="pendiente">[ NIF ]</span> y domicilio en
+    <span class="pendiente">[ Domicilio ]</span>. Para cualquier cosa relacionada con tus datos: <span class="pendiente">[ Correo de contacto ]</span>.
+  </p>
+
+  <h2>2. Qué datos se guardan</h2>
+  <p><strong>Tuyos, como persona que usa la aplicación:</strong></p>
+  <ul>
+    <li>Tu correo electrónico, para identificarte y poder recuperar el acceso.</li>
+    <li>Si entras con Google, lo que Google comparte al iniciar sesión: tu correo
+        y los datos básicos de tu perfil. No se pide acceso a nada más de tu cuenta.</li>
+    <li>El nombre que le pongas a tu familia.</li>
+  </ul>
+  <p><strong>De tu hijo o hija:</strong></p>
+  <ul>
+    <li>Nombre, fecha de nacimiento y sexo. El sexo se usa para una sola cosa:
+        elegir la curva de crecimiento correcta de la OMS, que es distinta para
+        niños y para niñas.</li>
+    <li>Los registros que apuntes: pañales (cantidad, color, aspecto), peso,
+        extracciones de leche, alimentos introducidos y las notas que escribas.</li>
+  </ul>
+  <p>
+    No se recoge nada más. No hay analítica, ni publicidad, ni rastreadores de
+    terceros, ni se pide la ubicación, la agenda ni las fotos.
+  </p>
+
+  <h2>3. Son datos de salud, y eso importa</h2>
+  <p>
+    El peso de un bebé, el color de sus deposiciones o una reacción a un alimento
+    son <strong>datos relativos a la salud</strong>: el artículo 9 del RGPD los
+    considera una categoría especial y les da una protección reforzada. Además son
+    datos de un menor.
+  </p>
+  <p>
+    La base que legitima tratarlos es tu <strong>consentimiento explícito</strong>
+    (artículo 9.2.a del RGPD), que das al crear la cuenta y registrar a tu hijo.
+    Puedes retirarlo cuando quieras borrando la cuenta, sin tener que dar
+    explicaciones y sin que eso afecte a lo que fuera lícito antes de retirarlo.
+  </p>
+  <p>
+    Quien ejerce estos derechos en nombre del menor es quien tiene su patria
+    potestad o tutela.
+  </p>
+
+  <h2>4. Para qué se usan</h2>
+  <p>
+    Únicamente para prestarte el servicio: guardar lo que apuntas, enseñártelo
+    ordenado, calcular percentiles y sincronizarlo entre los móviles de los dos
+    adultos de la familia.
+  </p>
+  <p>
+    <strong>No se venden, no se ceden y no se usan para entrenar nada.</strong>
+    Tampoco se usan de forma agregada o anónima para otros fines.
+  </p>
+
+  <h2>5. Quién más puede verlos</h2>
+  <p>
+    Nadie fuera de tu familia. La base de datos aplica reglas de acceso por fila
+    que impiden que una familia lea datos de otra, y están comprobadas contra la
+    API directamente, no sólo en la interfaz.
+  </p>
+  <p>Hay dos proveedores que participan técnicamente en el servicio:</p>
+  <dl>
+    <dt>Supabase</dt>
+    <dd>
+      Base de datos y gestión de cuentas. Los datos se almacenan en su región
+      <strong>eu-west-1 (Irlanda)</strong>, dentro de la Unión Europea. Supabase
+      actúa como encargado del tratamiento con un contrato que lo regula.
+    </dd>
+    <dt>Cloudflare</dt>
+    <dd>
+      Alojamiento de la web. Sirve los ficheros de la aplicación; no almacena
+      tus registros.
+    </dd>
+  </dl>
+  <p class="pendiente-nota">
+    <span class="pendiente">[ Pendiente: firmar el DPA que Supabase ofrece en su panel y anotar aquí la fecha ]</span>
+  </p>
+
+  <h2>6. Cuánto tiempo se conservan</h2>
+  <p>
+    Mientras tengas la cuenta abierta. Cuando borras la cuenta, los datos se
+    eliminan de la base de datos en ese mismo momento, no se marcan como
+    borrados ni se guardan «por si acaso».
+  </p>
+  <p>
+    Ten en cuenta que las copias de seguridad del proveedor pueden conservar una
+    instantánea durante <span class="pendiente">[ Pendiente: comprobar la retención de copias del plan de Supabase contratado ]</span>, tras lo cual también desaparecen.
+  </p>
+
+  <h2>7. Tus derechos</h2>
+  <p>Tienes derecho a acceder, rectificar, suprimir, limitar, oponerte y a la portabilidad.</p>
+  <p>Dos de ellos puedes ejercerlos tú solo, ahora mismo y sin pedirnos nada, desde <strong>⚙️ Ajustes</strong> dentro de la aplicación:</p>
+  <ul>
+    <li><strong>Portabilidad y acceso:</strong> «Descargar todo (JSON)» te da una
+        copia completa y legible por máquina de todo lo que hay guardado. El CSV
+        es lo mismo en formato de hoja de cálculo.</li>
+    <li><strong>Supresión:</strong> «Borrar mi cuenta» elimina tu cuenta y, si eres
+        el único adulto de la familia, todos los datos asociados.</li>
+  </ul>
+  <p>
+    Para el resto, o si algo no te cuadra, escribe a <span class="pendiente">[ Correo de contacto ]</span>. Si crees que no se
+    están tratando bien tus datos, puedes reclamar ante la
+    <a href="https://www.aepd.es" target="_blank" rel="noopener">Agencia Española
+    de Protección de Datos</a>.
+  </p>
+
+  <h2>8. Seguridad</h2>
+  <ul>
+    <li>Todo el tráfico va cifrado con HTTPS.</li>
+    <li>Las contraseñas no se guardan: el proveedor almacena sólo su huella criptográfica.</li>
+    <li>El acceso a los datos está restringido por reglas en la propia base de datos,
+        no sólo en la aplicación. Aunque alguien se saltara la interfaz, seguiría sin
+        poder leer datos de otra familia.</li>
+  </ul>
+
+  <h2>9. Cookies</h2>
+  <p>
+    No se usan cookies de seguimiento ni de publicidad. La aplicación guarda en el
+    almacenamiento local de tu navegador tu sesión iniciada y dos preferencias (el
+    tema claro u oscuro y qué hijo estabas mirando). Son imprescindibles para que
+    el servicio funcione tal y como lo has pedido, así que no requieren
+    consentimiento previo.
+  </p>
+
+  <h2>10. Cambios</h2>
+  <p>
+    Si esta política cambia de forma relevante, se avisará dentro de la aplicación
+    antes de que el cambio tenga efecto.
+  </p>
+
+
+</main>
+
+<footer class="contenedor pie">
+  <span>© 2026 Tracking Álex</span>
+  <span class="pie-enlaces">
+    <a href="privacidad.html">Privacidad</a>
+    <a href="terminos.html">Condiciones</a>
+    <a href="aviso-legal.html">Aviso legal</a>
+  </span>
+</footer>
+
+</body>
+</html>

@@ -349,6 +349,35 @@ window.abrirAjustes = function() {
               onclick="generarInvitacion()">Generar código de invitación</button>
     </div>
 
+    <div class="field">
+      <label>Tus datos</label>
+      <p class="hint-txt" style="margin:0 0 10px">
+        Llévatelo todo cuando quieras, sin pedir permiso a nadie. El JSON es la
+        copia completa; el CSV se abre en una hoja de cálculo.
+      </p>
+      <button class="btn btn-secundario" id="btnExportJSON"
+              onclick="exportarJSON()">⬇️ Descargar todo (JSON)</button>
+      <button class="btn btn-secundario" id="btnExportCSV" style="margin-top:8px"
+              onclick="exportarCSV()">⬇️ Registros (CSV)</button>
+    </div>
+
+    <div class="field">
+      <label>Borrar la cuenta</label>
+      <p class="hint-txt" style="margin:0 0 10px">
+        Borra tu cuenta y, si eres el único adulto de la familia, todo lo que
+        hay dentro. No se puede deshacer y nosotros tampoco podremos recuperarlo.
+      </p>
+      <button class="btn btn-secundario"
+              style="color:var(--danger);border-color:var(--danger)"
+              onclick="abrirBorradoCuenta()">🗑️ Borrar mi cuenta</button>
+    </div>
+
+    <p class="hint-txt" style="margin-top:4px">
+      <a href="../privacidad.html" target="_blank" rel="noopener">Privacidad</a> ·
+      <a href="../terminos.html" target="_blank" rel="noopener">Condiciones</a> ·
+      <a href="../aviso-legal.html" target="_blank" rel="noopener">Aviso legal</a>
+    </p>
+
     <p id="ajustesErr" class="error-txt" style="display:none"></p>`;
 
   document.getElementById('comidaModalBtns').innerHTML = '';

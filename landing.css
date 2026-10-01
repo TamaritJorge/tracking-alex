@@ -222,3 +222,89 @@ a { color: var(--marca); }
 }
 
 .simple p { color: var(--tinta2); margin-bottom: 18px; }
+
+/* ═══════════════════════════════════════════
+   PÁGINAS LEGALES
+   ═══════════════════════════════════════════ */
+.legal { max-width: 720px; padding: 10px 0 60px; }
+
+.legal h1 {
+  font-size: clamp(1.6rem, 5vw, 2.1rem);
+  letter-spacing: -0.025em;
+  margin-bottom: 6px;
+}
+
+.legal .actualizado {
+  color: var(--tinta2);
+  font-size: 0.85rem;
+  margin-bottom: 30px;
+}
+
+.legal h2 {
+  font-size: 1.08rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  margin: 32px 0 10px;
+}
+
+.legal p, .legal li, .legal dd { color: var(--tinta2); }
+.legal p  { margin-bottom: 12px; }
+.legal ul { margin: 0 0 12px 20px; }
+.legal li { margin-bottom: 7px; }
+
+.legal strong { color: var(--tinta); font-weight: 620; }
+
+.legal dl { margin-bottom: 12px; }
+.legal dt { font-weight: 620; color: var(--tinta); margin-top: 12px; }
+.legal dd { margin-left: 0; }
+
+/* El aviso de que esto es un borrador. Deliberadamente imposible de
+   pasar por alto: un texto legal a medias que parezca definitivo es
+   peor que no tener ninguno. */
+.borrador {
+  background: #fff7ed;
+  border: 1px solid #fdba74;
+  color: #7c2d12;
+  border-radius: var(--r);
+  padding: 15px 18px;
+  margin-bottom: 30px;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .borrador {
+    background: #2b1a0c; border-color: #7c4a1d; color: #fcd9b6;
+  }
+}
+:root[data-theme="dark"] .borrador {
+  background: #2b1a0c; border-color: #7c4a1d; color: #fcd9b6;
+}
+
+/* Los huecos sin rellenar, imposibles de confundir con texto real */
+.pendiente {
+  display: inline-block;
+  background: var(--marca-lavado);
+  border: 1px dashed var(--marca);
+  color: var(--marca);
+  border-radius: 7px;
+  padding: 1px 8px;
+  font-size: 0.86em;
+  font-weight: 560;
+}
+
+.pendiente-nota { font-size: 0.86rem; }
+
+/* El bloque de «esto no es un producto sanitario» */
+.aviso-fuerte {
+  background: var(--marca-lavado);
+  border-left: 4px solid var(--marca);
+  border-radius: 0 var(--r) var(--r) 0;
+  padding: 16px 18px;
+  margin: 14px 0 18px;
+}
+
+.aviso-fuerte p:last-child { margin-bottom: 0; }
+
+.pie-enlaces a { text-decoration: none; }
+.pie-enlaces a:hover { text-decoration: underline; }
