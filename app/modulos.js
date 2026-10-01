@@ -35,8 +35,18 @@ const MODULOS = {
   comida: {
     icono: '🥑', nombre: 'Alimentación complementaria',
     desc: 'Introducción de alimentos a partir de los 6 meses'
+  },
+  medicacion: {
+    icono: '💊', nombre: 'Medicinas',
+    desc: 'Pautas del pediatra y aviso de la toma que toca'
   }
 };
+
+// Los módulos que tienen pestaña propia. Antes esto estaba escrito a
+// mano dentro de aplicarModulos() y sólo contemplaba «comida»: apagar
+// cualquier otro estando dentro dejaba un panel visible sin botón que
+// lo abriera.
+const MODULOS_CON_PESTANA = ['comida', 'medicacion'];
 
 // A qué módulo pertenece cada tipo de registro. Sirve para no
 // enseñar en el historial filas de algo que está apagado.
@@ -139,7 +149,9 @@ function aplicarModulos() {
 
   // Y si estamos dentro de la pestaña que se acaba de apagar, hay
   // que salir: si no, queda un panel visible sin botón que lo abra.
-  if (tabActual === 'comida' && !moduloActivo('comida')) switchTab('registrar');
+  if (MODULOS_CON_PESTANA.indexOf(tabActual) >= 0 && !moduloActivo(tabActual)) {
+    switchTab('registrar');
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -179,6 +191,17 @@ window.cambiarModulo = async function(clave, activo) {
   if (clave === 'comida') {
     if (activo) iniciarComida();
     else if (canalRTComida) { sb.removeChannel(canalRTComida); canalRTComida = null; }
+  }
+
+  // Medicación igual, y además hay que borrar el banner: si no, al
+  // apagar el módulo se quedaría un aviso rojo en pantalla pidiendo
+  // una toma de algo que ya no se enseña.
+  if (clave === 'medicacion') {
+    if (activo) iniciarMedicacion();
+    else {
+      if (canalRTMed) { sb.removeChannel(canalRTMed); canalRTMed = null; }
+      pintarBannerMed();
+    }
   }
 
   aplicarModulos();

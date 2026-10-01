@@ -403,6 +403,7 @@ function mostrarApp() {
   cargarDatos();
   configurarRealtime();
   if (moduloActivo('comida')) iniciarComida();   // sus propias tablas (comida.js)
+  if (moduloActivo('medicacion')) iniciarMedicacion();   // idem (medicacion.js)
   switchTab(tabActual);
 }
 

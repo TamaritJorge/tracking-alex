@@ -177,6 +177,8 @@ window.cambiarIdioma = function(cual) {
         && typeof renderCharts === 'function') renderCharts();
     if (typeof moduloActivo === 'function' && moduloActivo('comida')
         && typeof renderComida === 'function') renderComida();
+  if (typeof renderMedicacion === 'function') renderMedicacion();
+  if (typeof pintarBannerMed  === 'function') pintarBannerMed();
   }
 
   // Si el modal de ajustes está abierto, se repinta para verse traducido

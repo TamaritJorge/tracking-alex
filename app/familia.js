@@ -14,6 +14,11 @@ let familia    = null;   // { id, nombre, plan, trial_hasta, ... }
 let hijos      = [];     // los de la familia, activos primero
 let ninoActivo = null;   // el que se está viendo ahora mismo
 
+// Quién eres tú. Hace falta para distinguir «lo marcaste tú» de
+// «lo marcó tu pareja»: familia_miembros guarda identificadores,
+// no nombres, y auth.users no se puede leer desde el cliente.
+let usuarioId  = null;
+
 const CLAVE_ULTIMO_HIJO = 'ultimoHijo';
 
 /* ─────────────────────────────────────────────────────────────
@@ -21,7 +26,8 @@ const CLAVE_ULTIMO_HIJO = 'ultimoHijo';
    ───────────────────────────────────────────────────────────── */
 async function cargarFamilia() {
   const { data: { user } } = await sb.auth.getUser();
-  if (!user) { familia = null; hijos = []; ninoActivo = null; return null; }
+  if (!user) { familia = null; hijos = []; ninoActivo = null; usuarioId = null; return null; }
+  usuarioId = user.id;
 
   // Una familia por usuario, así que basta con la primera
   const { data: mis, error: e1 } = await sb
@@ -88,12 +94,14 @@ async function cambiarHijo(id) {
 
   await cargarDatos();
   if (moduloActivo('comida')) await cargarComida();
+  if (moduloActivo('medicacion')) await cargarMedicacion();
 
   // limpiarEstado() cierra los canales porque van filtrados por nino_id.
   // Sin volver a suscribirse aquí, el tiempo real dejaba de funcionar en
   // cuanto se cambiaba de hijo una vez.
   configurarRealtime();
   if (moduloActivo('comida')) configurarRealtimeComida();
+  if (moduloActivo('medicacion')) configurarRealtimeMed();
 
   if (tabActual === 'graficas') renderCharts();
 }
@@ -107,9 +115,14 @@ function limpiarEstado() {
   Object.values(charts).forEach(c => { if (c) c.destroy(); });
   charts = {};
 
+  medPautas     = [];
+  medTomas      = [];
+  medPendientes = [];
+
   // Los canales van filtrados por nino_id, así que hay que rehacerlos
   if (canalRT)       { sb.removeChannel(canalRT);       canalRT = null; }
   if (canalRTComida) { sb.removeChannel(canalRTComida); canalRTComida = null; }
+  if (canalRTMed)    { sb.removeChannel(canalRTMed);    canalRTMed = null; }
 
   catAbierta = null;
   filtroHist = 'todo';
@@ -536,7 +549,8 @@ window.editarHijo = function(id) {
 /* Cuántas filas cuelgan de este niño, en las tres tablas */
 async function contarRegistrosDe(id) {
   let total = 0;
-  for (const t of ['registros', 'alim_registros', 'alim_ajustes']) {
+  for (const t of ['registros', 'alim_registros', 'alim_ajustes',
+                   'med_tomas', 'med_pautas']) {
     const { count, error } = await sb.from(t)
       .select('*', { count: 'exact', head: true }).eq('nino_id', id);
     if (error) { console.error(error); return -1; }
@@ -630,8 +644,11 @@ window.borrarHijo = async function(id) {
     return;
   }
 
-  // Orden obligatorio: primero lo que apunta al niño, el niño al final
-  for (const t of ['alim_registros', 'alim_ajustes', 'registros']) {
+  // Orden obligatorio: primero lo que apunta al niño, el niño al final.
+  // Y dentro de medicación, las tomas antes que las pautas: la cadena
+  // de claves ajenas es toma → pauta → niño.
+  for (const t of ['med_tomas', 'med_pautas',
+                   'alim_registros', 'alim_ajustes', 'registros']) {
     const { error } = await sb.from(t).delete().eq('nino_id', id);
     if (error) {
       err.textContent = 'No se pudo borrar de ' + t + ': ' + (error.message || '');
@@ -658,6 +675,7 @@ window.borrarHijo = async function(id) {
   await cargarDatos();
   configurarRealtime();
   if (moduloActivo('comida')) { await cargarComida(); configurarRealtimeComida(); }
+  if (moduloActivo('medicacion')) { await cargarMedicacion(); configurarRealtimeMed(); }
   renderResumen();
   renderTabla();
   if (tabActual === 'graficas') renderCharts();

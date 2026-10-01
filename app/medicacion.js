@@ -1,0 +1,887 @@
+/* ═════════════════════════════════════════════════════════════
+   MEDICACIÓN
+
+   Con dos padres turnándose, la pregunta no es «¿se la hemos
+   dado?» sino «¿se la has dado TÚ?». Las dos formas de fallar
+   —darla dos veces y no darla ninguna— salen del mismo sitio:
+   la información vive en dos cabezas distintas.
+
+   Esto es un tablón compartido, NO un despertador. Mientras no
+   haya notificaciones, el aviso sólo existe con la app abierta,
+   y la pantalla lo dice en voz alta en vez de dejar que se
+   suponga lo contrario.
+
+   Se apoya en:
+     · familia.js  → ninoActivo
+     · app.js      → sb, esc(), toast(), switchTab()
+     · modulos.js  → moduloActivo()
+     · idiomas.js  → t(), fechaHora(), localeActivo()
+
+   Tiene sus propias tablas (med_pautas, med_tomas) y su propio
+   canal de realtime: no toca nada de cargarDatos().
+
+   ── LO QUE NO ESTÁ AQUÍ ──
+   Qué toma toca NO se calcula en este fichero. Lo decide la
+   función med_pendientes() de la base de datos, que es la única
+   definición que hay. Cuando lleguen las notificaciones push, el
+   cron llamará exactamente a esa misma función. Si la lógica
+   estuviera escrita dos veces —una aquí y otra en SQL— acabarían
+   desincronizándose, y una desincronización aquí es una dosis
+   olvidada. Este fichero sólo decide de qué COLOR se pinta lo
+   que el servidor le dice que está pendiente.
+   ═════════════════════════════════════════════════════════════ */
+
+/* Umbrales del aviso. Están aquí arriba para que cambiarlos sea
+   una línea y no una cacería. */
+const AMBAR_MIN    = 30;    // «toca ahora»: los primeros 30 min
+const ROJO_MIN      = 150;  // 30 + 120 → dos horas de rojo
+const GRIS_MIN     = 720;   // 12 h: deja de gritar, no deja de estar
+const POSPONER_MIN = 30;
+const POSPONER_MAX = 2;     // a la tercera ya no se pospone
+
+const CLAVE_POSPUESTOS = 'med.pospuestos';
+
+let medPautas     = [];
+let medTomas      = [];
+let medPendientes = [];     // lo que ha dicho med_pendientes()
+let canalRTMed    = null;
+let medReloj      = null;
+let medFoco       = null;   // ranura a destacar al llegar desde el banner
+let medForm       = null;   // estado del formulario de alta mientras está abierto
+
+/* ─────────────────────────────────────────────────────────────
+   FECHAS
+
+   fechaLocalISO NO es toISOString().slice(0,10). Esa devuelve la
+   fecha UTC, que en España entre las 00:00 y las 02:00 es la de
+   ayer — justo la franja donde caen las tomas de madrugada.
+   ───────────────────────────────────────────────────────────── */
+function fechaLocalISO(d, zona) {
+  const opc = zona ? { timeZone: zona } : {};
+  return new Intl.DateTimeFormat('sv-SE', opc).format(d || new Date());
+}
+
+function hoyISO()  { return fechaLocalISO(new Date()); }
+function diasAtras(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  return fechaLocalISO(d);
+}
+
+/* «hace 1 h 20» / «en 25 min» */
+function desdeHace(min) {
+  const m = Math.abs(Math.round(min));
+  if (m < 60) return m + ' min';
+  const h = Math.floor(m / 60), r = m % 60;
+  return r ? h + ' h ' + r : h + ' h';
+}
+
+function claveSlot(p) {
+  return p.pauta_id + '|' + p.fecha_slot + '|' + p.hora_slot;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   EL COLOR DEL AVISO
+   ───────────────────────────────────────────────────────────── */
+function estadoSlot(momentoISO) {
+  const min = (Date.now() - new Date(momentoISO)) / 60000;
+  if (min < 0)          return 'futuro';
+  if (min < AMBAR_MIN)  return 'toca';
+  if (min < ROJO_MIN)   return 'tarde';
+  if (min < GRIS_MIN)   return 'pasada';
+  return 'vieja';       // ya no tiene sentido darla: deja de avisarse
+}
+
+const CLASE_AVISO = {
+  toca:   'aviso aviso-ojo',
+  tarde:  'aviso aviso-stop',
+  pasada: 'aviso aviso-suave'
+};
+
+/* ─────────────────────────────────────────────────────────────
+   POSPONER
+
+   Vive en localStorage, NO en la base de datos, y es a propósito.
+   Posponer es un acto personal: «ahora no, lo tengo en brazos».
+   Si se guardara en la base, callaría también el banner de tu
+   pareja, que es exactamente lo contrario de lo que este módulo
+   existe para evitar.
+
+   El límite de dos existe porque sin notificaciones posponer no
+   pospone: si pospones, cierras la app y no vuelves a abrirla,
+   nadie te avisa jamás. A la tercera hay que decidir.
+   ───────────────────────────────────────────────────────────── */
+function leerPospuestos() {
+  try { return JSON.parse(localStorage.getItem(CLAVE_POSPUESTOS) || '{}'); }
+  catch (e) { return {}; }
+}
+
+function guardarPospuestos(o) {
+  try { localStorage.setItem(CLAVE_POSPUESTOS, JSON.stringify(o)); } catch (e) {}
+}
+
+/* Las ranuras de anteayer ya no vuelven: si no se limpian, esto
+   acumula un año de entradas muertas. */
+function limpiarPospuestos() {
+  const corte = diasAtras(2);
+  const o = leerPospuestos();
+  let tocado = false;
+  Object.keys(o).forEach(k => {
+    const fecha = k.split('|')[1];
+    if (fecha && fecha < corte) { delete o[k]; tocado = true; }
+  });
+  if (tocado) guardarPospuestos(o);
+}
+
+function pospuesto(p) {
+  const e = leerPospuestos()[claveSlot(p)];
+  return !!(e && e.hasta > Date.now());
+}
+
+function vecesPospuesto(p) {
+  const e = leerPospuestos()[claveSlot(p)];
+  return e ? (e.veces || 0) : 0;
+}
+
+window.posponerSlot = function(clave) {
+  const o = leerPospuestos();
+  const e = o[clave] || { veces: 0 };
+  e.veces = (e.veces || 0) + 1;
+  e.hasta = Date.now() + POSPONER_MIN * 60000;
+  o[clave] = e;
+  guardarPospuestos(o);
+  pintarBannerMed();
+  toast(t('med.pospuesto', '⏾ Te lo recuerdo en ' + POSPONER_MIN + ' min'));
+};
+
+/* ─────────────────────────────────────────────────────────────
+   CARGA
+   ───────────────────────────────────────────────────────────── */
+async function cargarMedicacion() {
+  if (!ninoActivo) { medPautas = []; medTomas = []; medPendientes = []; return; }
+
+  const [pa, to, pe] = await Promise.all([
+    sb.from('med_pautas').select('*')
+      .eq('nino_id', ninoActivo.id).order('creada_en', { ascending: false }),
+    sb.from('med_tomas').select('*')
+      .eq('nino_id', ninoActivo.id).gte('fecha_slot', diasAtras(30))
+      .order('fecha_slot', { ascending: false }).order('hora_slot', { ascending: false }),
+    sb.rpc('med_pendientes', { p_nino: ninoActivo.id })
+  ]);
+
+  const err = pa.error || to.error || pe.error;
+  const cont = document.getElementById('medError');
+  if (cont) {
+    cont.style.display = err ? '' : 'none';
+    if (err) cont.textContent = '⚠️ ' + (err.message || 'No se pudo cargar la medicación.');
+  }
+  if (err) console.error('medicación:', err);
+
+  medPautas     = pa.data || [];
+  medTomas      = to.data || [];
+  medPendientes = pe.data || [];
+
+  limpiarPospuestos();
+  renderMedicacion();
+  pintarBannerMed();
+}
+
+/* Sólo las pendientes: es lo único que cambia solo con el reloj y
+   lo que hay que refrescar al volver a la app. */
+async function refrescarPendientes() {
+  if (!ninoActivo || !moduloActivo('medicacion')) return;
+  const { data, error } = await sb.rpc('med_pendientes', { p_nino: ninoActivo.id });
+  if (error) { console.error(error); return; }
+  medPendientes = data || [];
+  pintarBannerMed();
+  if (tabActual === 'medicacion') renderMedicacion();
+}
+
+function configurarRealtimeMed() {
+  if (canalRTMed) return;
+  if (!ninoActivo) return;
+  const f = 'nino_id=eq.' + ninoActivo.id;
+  canalRTMed = sb.channel('medicacion-' + ninoActivo.id)
+    .on('postgres_changes', { event:'*', schema:'public', table:'med_tomas',  filter:f }, () => cargarMedicacion())
+    .on('postgres_changes', { event:'*', schema:'public', table:'med_pautas', filter:f }, () => cargarMedicacion())
+    .subscribe();
+}
+
+/* El reloj del aviso. Un minuto, no cinco: la franja ámbar dura
+   treinta y con cinco minutos de grano se notaría el salto.
+
+   Se recalcula SIEMPRE desde Date.now(), nunca acumulando, porque
+   iOS congela los temporizadores en segundo plano y al volver
+   pueden haber pasado horas. Por eso también se refresca al
+   volver a primer plano. */
+function arrancarRelojMed() {
+  if (medReloj) return;
+  medReloj = setInterval(() => {
+    if (!moduloActivo('medicacion')) return;
+    pintarBannerMed();
+    if (tabActual === 'medicacion') renderMedicacion();
+  }, 60000);
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refrescarPendientes();
+});
+
+function iniciarMedicacion() {
+  cargarMedicacion();
+  configurarRealtimeMed();
+  arrancarRelojMed();
+}
+
+/* ─────────────────────────────────────────────────────────────
+   EL BANNER
+   ───────────────────────────────────────────────────────────── */
+/* El orden es por GRAVEDAD, no por antigüedad.
+
+   Ordenar por hora dejaba arriba la toma de las 08:00 —gris, hace
+   siete horas, ya casi sin remedio— y escondía detrás la que toca
+   ahora mismo. El banner enseña una sola, así que tiene que ser la
+   que más urge: primero la que va tarde (roja), luego la que toca
+   (ámbar) y al final la que ya se pasó (gris). Dentro de cada
+   grupo, la más antigua. */
+const URGENCIA = { tarde: 0, toca: 1, pasada: 2 };
+
+function pendientesVivas() {
+  return medPendientes
+    .map(p => Object.assign({}, p, { est: estadoSlot(p.momento) }))
+    .filter(p => CLASE_AVISO[p.est])          // toca, tarde o pasada
+    .sort((a, b) => (URGENCIA[a.est] - URGENCIA[b.est])
+                 || (new Date(a.momento) - new Date(b.momento)));
+}
+
+function pintarBannerMed() {
+  const el = document.getElementById('avisoMed');
+  if (!el) return;
+
+  if (!moduloActivo('medicacion')) { el.style.display = 'none'; return; }
+
+  const vivas = pendientesVivas().filter(p => !pospuesto(p));
+  if (!vivas.length) { el.style.display = 'none'; return; }
+
+  const p     = vivas[0];
+  const clave = claveSlot(p);
+  const min   = (Date.now() - new Date(p.momento)) / 60000;
+
+  const cuando = p.est === 'toca'
+    ? t('med.ahora', 'toca ahora')
+    : t('med.hace', 'hace') + ' ' + desdeHace(min);
+
+  // Si hay más de una pendiente se dice, pero el banner sigue
+  // hablando de UNA sola: un aviso que enumera no se lee.
+  const otras = vivas.length - 1;
+  const cola  = otras > 0
+    ? ` <span class="med-otras">+${otras} ${plural(otras, 'más', 'más')}</span>` : '';
+
+  const puedePosponer = vecesPospuesto(p) < POSPONER_MAX;
+
+  el.className = CLASE_AVISO[p.est];
+  el.style.display = '';
+  el.innerHTML = `
+    <div class="med-banner">
+      <span class="med-banner-txt" onclick="irAMedicacion('${clave}')">
+        💊 <strong>${esc(p.nombre)}</strong>${p.dosis ? ' · ' + esc(p.dosis) : ''}
+        · ${esc(p.hora_slot)} ${esc(cuando)}${cola}
+      </span>
+      <span class="med-banner-btns">
+        <button class="btn-mini btn-mini-pri" onclick="irAMedicacion('${clave}')"
+                >${esc(t('med.verla', 'Ver'))}</button>
+        ${puedePosponer ? `<button class="btn-mini" onclick="posponerSlot('${clave}')"
+                >${esc(t('med.ahorano', 'Ahora no'))}</button>` : ''}
+      </span>
+    </div>`;
+}
+
+window.irAMedicacion = function(clave) {
+  medFoco = clave;
+  switchTab('medicacion');
+  renderMedicacion();
+};
+
+/* ─────────────────────────────────────────────────────────────
+   MARCAR UNA TOMA
+
+   Tres cosas pasan antes de escribir, y las tres evitan una dosis
+   de más:
+
+     1. Se relee la ranura. El realtime se cae en el metro, y
+        entonces un móvil enseña rojo para una toma ya dada.
+        Avisar ANTES de que el medicamento salga del bote es mejor
+        que explicarlo después.
+     2. Barrera de proximidad: si la anterior está demasiado
+        reciente, se enseña el dato y se pregunta.
+     3. Y si aun así chocan dos móviles, el índice único de la
+        base de datos corta — pero el mensaje NO es tranquilizador:
+        si los dos han pulsado, probablemente los dos se la han
+        dado.
+   ───────────────────────────────────────────────────────────── */
+
+/* Hueco más corto entre dos horas seguidas de la pauta, en minutos.
+   Para ['08:00','16:00','00:00'] son 480. */
+function intervaloPauta(horas) {
+  if (!horas || horas.length < 2) return 24 * 60;
+  const m = horas.map(h => parseInt(h.slice(0, 2), 10) * 60 + parseInt(h.slice(3), 10))
+                 .sort((a, b) => a - b);
+  let min = 24 * 60 - (m[m.length - 1] - m[0]);     // la vuelta por medianoche
+  for (let i = 1; i < m.length; i++) min = Math.min(min, m[i] - m[i - 1]);
+  return min;
+}
+
+function ultimaDada(pautaId) {
+  return medTomas
+    .filter(x => x.pauta_id === pautaId && x.estado === 'dada')
+    .sort((a, b) => new Date(b.dada_en) - new Date(a.dada_en))[0] || null;
+}
+
+window.marcarToma = async function(clave, estado) {
+  const [pautaId, fecha, hora] = clave.split('|');
+  const pauta = medPautas.find(x => x.id === pautaId);
+  if (!pauta) return;
+
+  // 1. ¿Se nos ha adelantado alguien?
+  const { data: ya, error: errLee } = await sb.from('med_tomas')
+    .select('*').eq('pauta_id', pautaId).eq('fecha_slot', fecha)
+    .eq('hora_slot', hora).neq('estado', 'anulada').maybeSingle();
+
+  if (errLee) { toast('⚠️ ' + (errLee.message || 'No se pudo comprobar la toma'), 4500); return; }
+
+  if (ya) {
+    avisarYaMarcada(ya, pauta);
+    await cargarMedicacion();
+    return;
+  }
+
+  // 2. Barrera de proximidad (sólo al dar, no al saltar)
+  if (estado === 'dada') {
+    const ult = ultimaDada(pautaId);
+    if (ult) {
+      const minDesde = (Date.now() - new Date(ult.dada_en)) / 60000;
+      const intervalo = intervaloPauta(pauta.horas);
+      if (minDesde < intervalo / 2) {
+        const ok = confirm(
+          '⚠️ ' + pauta.nombre + '\n\n' +
+          'La anterior fue hace ' + desdeHace(minDesde) +
+          ', y entre tomas deberían pasar ' + desdeHace(intervalo) + '.\n\n' +
+          '¿Seguro que toca otra?');
+        if (!ok) return;
+      }
+    }
+  }
+
+  if (estado === 'saltada') {
+    const ok = confirm(
+      pauta.nombre + ' · ' + hora + '\n\n' +
+      'Vas a dejar constancia de que esta toma NO se ha dado.\n' +
+      'El aviso desaparecerá también del móvil de tu pareja.\n\n¿Seguir?');
+    if (!ok) return;
+  }
+
+  // 3. Escribir
+  const { error } = await sb.from('med_tomas').insert({
+    pauta_id:   pautaId,
+    nino_id:    ninoActivo.id,
+    fecha_slot: fecha,
+    hora_slot:  hora,
+    dada_en:    new Date().toISOString(),
+    estado:     estado
+  });
+
+  if (error) {
+    if (error.code === '23505') {
+      // Carrera perdida por milésimas. Esto NO es un final feliz.
+      const { data: otra } = await sb.from('med_tomas')
+        .select('*').eq('pauta_id', pautaId).eq('fecha_slot', fecha)
+        .eq('hora_slot', hora).neq('estado', 'anulada').maybeSingle();
+      if (otra) avisarYaMarcada(otra, pauta, true);
+      await cargarMedicacion();
+      return;
+    }
+    toast('❌ No se pudo guardar: ' + (error.message || 'error desconocido'), 4500);
+    return;
+  }
+
+  toast(estado === 'dada'
+    ? '✅ ' + pauta.nombre + ' · ' + hora
+    : '📝 Anotado: no se dio la de las ' + hora);
+  await cargarMedicacion();
+};
+
+/* El mensaje cambia según lo reciente que sea. Si tu pareja la
+   marcó hace un minuto y tú ibas a marcarla ahora, lo más probable
+   es que los dos se la hayáis dado: eso hay que decirlo, no
+   taparlo con un «ya estaba hecho». */
+function avisarYaMarcada(toma, pauta, carrera) {
+  const quien = quienMarco(toma);
+  const minDesde = (Date.now() - new Date(toma.dada_en)) / 60000;
+
+  if (toma.estado === 'dada' && (carrera || minDesde < 10)) {
+    alert('⚠️ ' + pauta.nombre + '\n\n' +
+          'La marcó ' + quien + ' hace ' + desdeHace(minDesde) + '.\n\n' +
+          'Si se la acabas de dar tú también, ha habido doble dosis: ' +
+          'comprobadlo antes de volver a darla.');
+    return;
+  }
+  toast(toma.estado === 'dada'
+    ? '👌 Ya la había marcado ' + quien + ' (' + fechaHora(toma.dada_en) + ')'
+    : '👌 Ya estaba anotada como no dada');
+}
+
+/* «Tú» o «tu pareja», y no un nombre: familia_miembros guarda
+   identificadores y rol, ningún nombre, y el cliente no puede
+   leer auth.users — ni debe. Decir «tu pareja» es lo único
+   honesto que se puede decir hoy. */
+function quienMarco(toma) {
+  return toma.por === usuarioId ? t('med.tu', 'tú') : t('med.pareja', 'tu pareja');
+}
+
+/* Anular en vez de borrar: borrar la fila liberaría la ranura sin
+   dejar rastro, que es justo cómo una dosis desaparece en
+   silencio. Anulada libera la ranura y se queda escrita. */
+window.anularToma = async function(id) {
+  const toma = medTomas.find(x => x.id === id);
+  if (!toma) return;
+  if (!confirm('¿Deshacer esta toma?\n\nQueda anotada como anulada y el aviso volverá a aparecer.')) return;
+
+  const { data, error } = await sb.from('med_tomas')
+    .update({ estado: 'anulada' }).eq('id', id).select();
+
+  if (error) { toast('❌ ' + (error.message || 'No se pudo deshacer'), 4500); return; }
+  if (!data || !data.length) {
+    toast('⚠️ No se modificó nada. Revisa la policy de UPDATE de med_tomas.', 6000); return;
+  }
+  toast('↩️ Deshecha');
+  await cargarMedicacion();
+};
+
+/* ─────────────────────────────────────────────────────────────
+   LA PESTAÑA
+   ───────────────────────────────────────────────────────────── */
+function pautaActiva(p) {
+  return !p.hasta || p.hasta >= hoyISO();
+}
+
+function nombreHoras(horas) {
+  return horas.join(' · ');
+}
+
+function renderMedicacion() {
+  const panel = document.getElementById('tab-medicacion');
+  if (!panel) return;
+
+  const cont = document.getElementById('medCuerpo');
+  if (!cont) return;
+
+  if (!medPautas.length) {
+    cont.innerHTML = `
+      <div class="card">
+        <p class="card-title">💊 ${esc(t('med.titulo', 'Medicinas'))}</p>
+        <p class="card-sub">${esc(t('med.vacio.sub', 'Todavía no hay ningún tratamiento'))}</p>
+        <p class="hint-txt" style="margin-bottom:16px">
+          ${esc(t('med.vacio.txt', 'Apunta lo que os haya pautado el pediatra y a qué horas. Cuando uno de los dos marque una toma, el aviso desaparece del móvil del otro.'))}
+        </p>
+        <button class="btn btn-primary" onclick="abrirAltaPauta()"
+          >${esc(t('med.anadir', 'Añadir medicamento'))}</button>
+      </div>
+      ${piePrudencia()}`;
+    return;
+  }
+
+  cont.innerHTML = htmlAhora() + htmlTratamientos() + piePrudencia();
+  medFoco = null;
+}
+
+/* Lo de ahora: pendientes y ya marcadas, en orden de hora, todo
+   junto. Las pendientes salen de med_pendientes(); las marcadas,
+   de las tomas. Aquí no se calcula ninguna ranura. */
+function htmlAhora() {
+  const hoy = hoyISO(), ayer = diasAtras(1);
+
+  const filas = [];
+
+  pendientesVivas().concat(
+    medPendientes.map(p => Object.assign({}, p, { est: estadoSlot(p.momento) }))
+                 .filter(p => p.est === 'futuro')
+  ).forEach(p => {
+    if (!filas.some(f => f.clave === claveSlot(p))) filas.push(filaPendiente(p));
+  });
+
+  medTomas.filter(x => x.estado !== 'anulada' && (x.fecha_slot === hoy || x.fecha_slot === ayer))
+          .forEach(x => filas.push(filaHecha(x)));
+
+  if (!filas.length) {
+    return `<div class="card">
+      <p class="card-title">💊 ${esc(t('med.hoy', 'Ahora mismo'))}</p>
+      <p class="hint-txt" style="margin:0">${esc(t('med.nada', 'No toca ninguna toma ahora mismo.'))}</p>
+    </div>`;
+  }
+
+  // En la lista sí manda el reloj, y hacia abajo: un horario de
+  // medicación se lee como se vive el día, de la mañana a la noche.
+  filas.sort((a, b) => (a.orden > b.orden ? 1 : a.orden < b.orden ? -1 : 0));
+
+  return `<div class="card card-no-pad">
+    <p class="card-title" style="padding:18px 18px 0">💊 ${esc(t('med.hoy', 'Ahora mismo'))}</p>
+    <div style="padding:10px 0 2px">${filas.map(f => f.html).join('')}</div>
+  </div>`;
+}
+
+function etiquetaDia(fecha) {
+  if (fecha === hoyISO())    return '';
+  if (fecha === diasAtras(1)) return t('med.ayer', 'ayer') + ' · ';
+  return fechaCorta(fecha + 'T12:00', { day: 'numeric', month: 'short' }) + ' · ';
+}
+
+function filaPendiente(p) {
+  const clave = claveSlot(p);
+  const min   = (Date.now() - new Date(p.momento)) / 60000;
+  const foco  = medFoco === clave ? ' med-foco' : '';
+
+  let sello, clase;
+  if (p.est === 'futuro')      { sello = t('med.luego', 'más tarde'); clase = 'med-pt-futuro'; }
+  else if (p.est === 'toca')   { sello = t('med.ahora', 'toca ahora'); clase = 'med-pt-toca'; }
+  else if (p.est === 'tarde')  { sello = t('med.hace', 'hace') + ' ' + desdeHace(min); clase = 'med-pt-tarde'; }
+  else                         { sello = t('med.hace', 'hace') + ' ' + desdeHace(min); clase = 'med-pt-pasada'; }
+
+  const pos = pospuesto(p)
+    ? `<span class="med-pos">${esc(t('med.pospuesta', 'pospuesta'))}</span>` : '';
+
+  return { clave, orden: p.fecha_slot + p.hora_slot, html: `
+    <div class="med-fila${foco}">
+      <div class="med-cuando ${clase}">${esc(etiquetaDia(p.fecha_slot))}${esc(p.hora_slot)}</div>
+      <div class="med-info">
+        <div class="med-nom">${esc(p.nombre)}${p.dosis ? ' <span class="med-dosis">' + esc(p.dosis) + '</span>' : ''}</div>
+        <div class="med-sello ${clase}">${esc(sello)} ${pos}</div>
+      </div>
+      <div class="med-acciones">
+        <button class="btn-mini btn-mini-pri" onclick="marcarToma('${clave}','dada')"
+          >${esc(t('med.dada', 'Ya se la he dado'))}</button>
+        <button class="btn-mini" onclick="marcarToma('${clave}','saltada')"
+          title="${esc(t('med.saltar', 'Dejar constancia de que no se ha dado'))}">✕</button>
+      </div>
+    </div>` };
+}
+
+function filaHecha(x) {
+  const pauta = medPautas.find(p => p.id === x.pauta_id);
+  const quien = quienMarco(x);
+  const desfase = Math.round(
+    (new Date(x.dada_en) - new Date(x.fecha_slot + 'T' + x.hora_slot)) / 60000);
+
+  const detalle = x.estado === 'dada'
+    ? t('med.dadaA', 'dada a las') + ' ' +
+      new Date(x.dada_en).toLocaleTimeString(localeActivo(), { hour: '2-digit', minute: '2-digit' }) +
+      (Math.abs(desfase) >= 15 ? ' (' + (desfase > 0 ? '+' : '−') + desdeHace(desfase) + ')' : '') +
+      ' · ' + quien
+    : t('med.nodada', 'no se dio') + ' · ' + quien;
+
+  return { clave: null, orden: x.fecha_slot + x.hora_slot, html: `
+    <div class="med-fila med-hecha">
+      <div class="med-cuando med-pt-ok">${esc(etiquetaDia(x.fecha_slot))}${esc(x.hora_slot)}</div>
+      <div class="med-info">
+        <div class="med-nom">${esc(pauta ? pauta.nombre : '—')}</div>
+        <div class="med-sello">${x.estado === 'dada' ? '✅' : '🚫'} ${esc(detalle)}</div>
+      </div>
+      <div class="med-acciones">
+        <button class="btn-mini" onclick="anularToma('${x.id}')"
+          title="${esc(t('med.deshacer', 'Deshacer'))}">↩︎</button>
+      </div>
+    </div>` };
+}
+
+function htmlTratamientos() {
+  const activas = medPautas.filter(pautaActiva);
+  const viejas  = medPautas.filter(p => !pautaActiva(p));
+
+  const fila = p => `
+    <div class="med-trat">
+      <div class="med-info">
+        <div class="med-nom">${esc(p.nombre)}${p.dosis ? ' <span class="med-dosis">' + esc(p.dosis) + '</span>' : ''}</div>
+        <div class="med-sello">⏰ ${esc(nombreHoras(p.horas))}${
+          p.hasta ? ' · ' + esc(t('med.hasta', 'hasta el')) + ' ' + esc(fechaCorta(p.hasta + 'T12:00'))
+                  : ' · ' + esc(t('med.sinfin', 'sin fecha de fin'))}</div>
+        ${p.nota ? `<div class="med-nota">${esc(p.nota)}</div>` : ''}
+      </div>
+      <div class="med-acciones">
+        <button class="btn-mini" onclick="abrirEditarPauta('${p.id}')">${esc(t('btn.editar', 'Editar'))}</button>
+      </div>
+    </div>`;
+
+  return `<div class="card card-no-pad">
+    <p class="card-title" style="padding:18px 18px 10px">${esc(t('med.tratamientos', 'Tratamientos'))}</p>
+    ${activas.length ? activas.map(fila).join('')
+      : `<p class="hint-txt" style="padding:0 18px 10px">${esc(t('med.sinactivos', 'Ninguno en marcha.'))}</p>`}
+    <div style="padding:14px 18px 18px">
+      <button class="btn btn-secundario" onclick="abrirAltaPauta()"
+        >${esc(t('med.anadir', 'Añadir medicamento'))}</button>
+    </div>
+    ${viejas.length ? `
+      <details class="mas" style="margin:0 18px 18px">
+        <summary>${esc(t('med.terminados', 'Tratamientos terminados'))} (${viejas.length})</summary>
+        <div style="padding:4px 0">${viejas.map(fila).join('')}</div>
+      </details>` : ''}
+  </div>`;
+}
+
+/* Esto no es un adorno legal: la app no avisa con el móvil
+   apagado y hay que decirlo donde se toman las decisiones. */
+function piePrudencia() {
+  return `<p class="med-pie">${esc(t('med.pie',
+    'Tracking Álex no es un dispositivo médico y sólo avisa cuando lo abres. ' +
+    'Para una toma que no se puede olvidar, pon también la alarma del móvil. ' +
+    'Sigue siempre la pauta de tu pediatra.'))}</p>`;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   ALTA Y EDICIÓN DE PAUTAS
+   ───────────────────────────────────────────────────────────── */
+function normalizarHoras(lista) {
+  const vistas = {};
+  lista.forEach(h => {
+    const m = /^(\d{1,2}):(\d{2})$/.exec((h || '').trim());
+    if (!m) return;
+    const hh = Math.min(23, parseInt(m[1], 10));
+    const mm = Math.min(59, parseInt(m[2], 10));
+    vistas[String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0')] = true;
+  });
+  return Object.keys(vistas).sort();
+}
+
+window.abrirAltaPauta = function(desdePauta) {
+  const base = desdePauta ? medPautas.find(p => p.id === desdePauta) : null;
+  medForm = {
+    id:      null,
+    rehacer: base ? base.id : null,     // si viene de «cambiar horas»
+    horas:   base ? base.horas.slice() : ['09:00']
+  };
+
+  document.getElementById('comidaModalTitulo').textContent = base
+    ? t('med.cambiarHoras', 'Cambiar las horas') + ' · ' + base.nombre
+    : t('med.anadir', 'Añadir medicamento');
+
+  document.getElementById('comidaModalCuerpo').innerHTML = `
+    ${base ? `<p class="aviso aviso-suave">${esc(t('med.rehacerAviso',
+      'Las horas de una pauta no se tocan en marcha: lo apuntado dejaría de cuadrar. ' +
+      'Se cierra ésta hoy y la nueva empieza mañana.'))}</p>` : ''}
+
+    <div class="field">
+      <label for="medNombre">${esc(t('med.f.nombre', 'Medicamento'))}</label>
+      <input type="text" id="medNombre" maxlength="80" placeholder="Vitamina D"
+             value="${base ? esc(base.nombre) : ''}">
+    </div>
+
+    <div class="field">
+      <label for="medDosis">${esc(t('med.f.dosis', 'Dosis'))}</label>
+      <input type="text" id="medDosis" maxlength="60" placeholder="2 gotas"
+             value="${base && base.dosis ? esc(base.dosis) : ''}">
+      <p class="hint-txt" style="margin:6px 0 0">${esc(t('med.f.dosisAyuda',
+        'Tal cual te lo haya dicho el pediatra. La app no calcula dosis.'))}</p>
+    </div>
+
+    <div class="field">
+      <label>${esc(t('med.f.horas', 'Horas del día'))}</label>
+      <div class="chip-row" style="margin-bottom:8px">
+        <button type="button" class="chip" onclick="medAtajo(24)">1 ${esc(t('med.aldia', 'al día'))}</button>
+        <button type="button" class="chip" onclick="medAtajo(12)">${esc(t('med.cada', 'cada'))} 12 h</button>
+        <button type="button" class="chip" onclick="medAtajo(8)">${esc(t('med.cada', 'cada'))} 8 h</button>
+        <button type="button" class="chip" onclick="medAtajo(6)">${esc(t('med.cada', 'cada'))} 6 h</button>
+      </div>
+      <div id="medHoras" class="chip-row" style="margin-bottom:8px"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="time" id="medHoraNueva" value="09:00" style="flex:1">
+        <button type="button" class="btn-mini btn-mini-pri" onclick="medAnadirHora()"
+          >${esc(t('med.f.anadirHora', 'Añadir hora'))}</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label for="medDesde">${esc(t('med.f.desde', 'Empieza'))}</label>
+      <input type="date" id="medDesde" value="${base ? diasAtras(-1) : hoyISO()}">
+    </div>
+
+    <div class="field">
+      <label for="medDias">${esc(t('med.f.durante', 'Durante (días)'))}</label>
+      <input type="number" id="medDias" min="1" max="3650" inputmode="numeric" placeholder="365">
+      <p class="hint-txt" style="margin:6px 0 0">${esc(t('med.f.duranteAyuda',
+        'Déjalo vacío si no tiene fecha de fin.'))}</p>
+    </div>
+
+    <div class="field" style="margin-bottom:0">
+      <label for="medNota">${esc(t('med.f.nota', 'Nota (opcional)'))}</label>
+      <input type="text" id="medNota" maxlength="200" placeholder="Con la comida"
+             value="${base && base.nota ? esc(base.nota) : ''}">
+    </div>`;
+
+  document.getElementById('comidaModalBtns').innerHTML = `
+    <button class="btn btn-primary" onclick="guardarPauta()"
+      >${esc(t('btn.guardar', 'Guardar'))}</button>`;
+
+  document.getElementById('comidaModal').style.display = '';
+  pintarHorasForm();
+};
+
+function pintarHorasForm() {
+  const cont = document.getElementById('medHoras');
+  if (!cont || !medForm) return;
+  cont.innerHTML = medForm.horas.length
+    ? medForm.horas.map(h => `
+        <button type="button" class="chip sel" onclick="medQuitarHora('${h}')"
+          title="${esc(t('med.f.quitar', 'Quitar'))}">${esc(h)} ✕</button>`).join('')
+    : `<span class="hint-txt">${esc(t('med.f.sinHoras', 'Añade al menos una hora'))}</span>`;
+}
+
+window.medAnadirHora = function() {
+  const v = document.getElementById('medHoraNueva').value;
+  if (!v) return;
+  medForm.horas = normalizarHoras(medForm.horas.concat([v]));
+  pintarHorasForm();
+};
+
+window.medQuitarHora = function(h) {
+  medForm.horas = medForm.horas.filter(x => x !== h);
+  pintarHorasForm();
+};
+
+/* «Cada 8 h» no es otra forma de guardar la pauta: genera las
+   horas concretas a partir de la primera. Así sólo existe una
+   manera de decir cuándo toca, y es la lista de horas. */
+window.medAtajo = function(cada) {
+  const base = medForm.horas[0] || document.getElementById('medHoraNueva').value || '09:00';
+  const h0 = parseInt(base.slice(0, 2), 10), m0 = base.slice(3);
+  const horas = [];
+  for (let i = 0; i < 24 / cada; i++) {
+    horas.push(String((h0 + i * cada) % 24).padStart(2, '0') + ':' + m0);
+  }
+  medForm.horas = normalizarHoras(horas);
+  pintarHorasForm();
+};
+
+window.guardarPauta = async function() {
+  const nombre = document.getElementById('medNombre').value.trim();
+  const dosis  = document.getElementById('medDosis').value.trim();
+  const nota   = document.getElementById('medNota').value.trim();
+  const desde  = document.getElementById('medDesde').value;
+  const dias   = parseInt(document.getElementById('medDias').value, 10);
+
+  if (!nombre)              { toast('⚠️ Ponle nombre al medicamento.'); return; }
+  if (!medForm.horas.length) { toast('⚠️ Añade al menos una hora.'); return; }
+  if (!desde)               { toast('⚠️ Falta la fecha de inicio.'); return; }
+
+  let hasta = null;
+  if (!isNaN(dias) && dias > 0) {
+    const d = new Date(desde + 'T12:00');
+    d.setDate(d.getDate() + dias - 1);
+    hasta = fechaLocalISO(d);
+  }
+
+  const fila = {
+    nino_id: ninoActivo.id,
+    nombre, dosis: dosis || null, nota: nota || null,
+    horas: medForm.horas,
+    zona: Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Madrid',
+    desde, hasta
+  };
+
+  // Si venimos de «cambiar horas», la vieja se cierra HOY y la
+  // nueva empieza MAÑANA. Cerrarla ayer dejaría las tomas de hoy
+  // apuntando a ranuras que ya no existen, y la pauta nueva
+  // volvería a pedir dosis que ya se han dado.
+  if (medForm.rehacer) {
+    const { error: e1 } = await sb.from('med_pautas')
+      .update({ hasta: hoyISO() }).eq('id', medForm.rehacer).select();
+    if (e1) { toast('❌ ' + (e1.message || 'No se pudo cerrar la pauta anterior'), 4500); return; }
+  }
+
+  const { error } = await sb.from('med_pautas').insert(fila);
+  if (error) { toast('❌ No se pudo guardar: ' + (error.message || ''), 4500); return; }
+
+  cerrarComidaModal();
+  medForm = null;
+  toast('💊 ' + nombre + ' ' + t('med.guardada', 'añadido'));
+  await cargarMedicacion();
+};
+
+/* Editar toca sólo lo que no define las ranuras: nombre, dosis,
+   nota y alargar el final. Las horas van por «cambiar horas», que
+   crea una pauta nueva. */
+window.abrirEditarPauta = function(id) {
+  const p = medPautas.find(x => x.id === id);
+  if (!p) return;
+
+  document.getElementById('comidaModalTitulo').textContent = p.nombre;
+  document.getElementById('comidaModalCuerpo').innerHTML = `
+    <div class="field">
+      <label for="medENombre">${esc(t('med.f.nombre', 'Medicamento'))}</label>
+      <input type="text" id="medENombre" maxlength="80" value="${esc(p.nombre)}">
+    </div>
+    <div class="field">
+      <label for="medEDosis">${esc(t('med.f.dosis', 'Dosis'))}</label>
+      <input type="text" id="medEDosis" maxlength="60" value="${p.dosis ? esc(p.dosis) : ''}">
+    </div>
+    <div class="field">
+      <label for="medENota">${esc(t('med.f.nota', 'Nota (opcional)'))}</label>
+      <input type="text" id="medENota" maxlength="200" value="${p.nota ? esc(p.nota) : ''}">
+    </div>
+    <div class="field">
+      <label for="medEHasta">${esc(t('med.f.hasta', 'Hasta el día'))}</label>
+      <input type="date" id="medEHasta" value="${p.hasta || ''}">
+      <p class="hint-txt" style="margin:6px 0 0">
+        ⏰ ${esc(nombreHoras(p.horas))} —
+        <a href="#" onclick="event.preventDefault();abrirAltaPauta('${p.id}')"
+           >${esc(t('med.cambiarHoras', 'cambiar las horas'))}</a>
+      </p>
+    </div>`;
+
+  document.getElementById('comidaModalBtns').innerHTML = `
+    <button class="btn btn-primary" onclick="guardarEdicionPauta('${p.id}')"
+      >${esc(t('btn.guardar', 'Guardar'))}</button>
+    ${pautaActiva(p) ? `<button class="btn btn-danger-sm" onclick="terminarPauta('${p.id}')"
+      >${esc(t('med.terminar', 'Terminar ya'))}</button>` : ''}`;
+
+  document.getElementById('comidaModal').style.display = '';
+};
+
+window.guardarEdicionPauta = async function(id) {
+  const cambios = {
+    nombre: document.getElementById('medENombre').value.trim(),
+    dosis:  document.getElementById('medEDosis').value.trim() || null,
+    nota:   document.getElementById('medENota').value.trim() || null,
+    hasta:  document.getElementById('medEHasta').value || null
+  };
+  if (!cambios.nombre) { toast('⚠️ El nombre no puede quedar vacío.'); return; }
+
+  // .select() a propósito: si RLS bloquea un UPDATE, Supabase no
+  // devuelve error, devuelve cero filas. Ya ha pasado dos veces.
+  const { data, error } = await sb.from('med_pautas').update(cambios).eq('id', id).select();
+  if (error) { toast('❌ ' + (error.message || 'No se pudo guardar'), 4500); return; }
+  if (!data || !data.length) {
+    toast('⚠️ No se modificó nada. Revisa la policy de UPDATE de med_pautas.', 6000); return;
+  }
+
+  cerrarComidaModal();
+  toast('✅ Guardado');
+  await cargarMedicacion();
+};
+
+/* Terminar pone el final AYER, no hoy: «ya no se la demos» quiere
+   decir que las tomas que quedaban hoy tampoco. Lo ya apuntado no
+   se toca. */
+window.terminarPauta = async function(id) {
+  const p = medPautas.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm('¿Terminar ' + p.nombre + '?\n\nDejará de avisar, incluidas las tomas que quedaban hoy.\nLo apuntado no se borra.')) return;
+
+  const { data, error } = await sb.from('med_pautas')
+    .update({ hasta: diasAtras(1) }).eq('id', id).select();
+  if (error) { toast('❌ ' + (error.message || 'No se pudo terminar'), 4500); return; }
+  if (!data || !data.length) {
+    toast('⚠️ No se modificó nada. Revisa la policy de UPDATE de med_pautas.', 6000); return;
+  }
+
+  cerrarComidaModal();
+  toast('🏁 ' + p.nombre + ' terminado');
+  await cargarMedicacion();
+};

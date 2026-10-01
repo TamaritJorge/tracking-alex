@@ -36,14 +36,17 @@ async function reunirDatos() {
   };
 
   try {
-    const [miembros, ajustes, registrosTodos, alimentos, alimAjustes] = await Promise.all([
+    const [miembros, ajustes, registrosTodos, alimentos, alimAjustes,
+           medPautasTodas, medTomasTodas] = await Promise.all([
       sb.from('familia_miembros').select('*').eq('familia_id', familia.id)
         .then(r => { if (r.error) throw r.error; return r.data || []; }),
       sb.from('familia_ajustes').select('*').eq('familia_id', familia.id)
         .then(r => { if (r.error) throw r.error; return r.data || []; }),
       porHijo('registros'),
       porHijo('alim_registros'),
-      porHijo('alim_ajustes')
+      porHijo('alim_ajustes'),
+      porHijo('med_pautas'),
+      porHijo('med_tomas')
     ]);
 
     return {
@@ -59,12 +62,15 @@ async function reunirDatos() {
         registros:       registrosTodos,
         alimentacion:    alimentos,
         ajustes_familia: ajustes,
-        ajustes_comida:  alimAjustes
+        ajustes_comida:  alimAjustes,
+        medicacion:      medPautasTodas,
+        medicacion_tomas: medTomasTodas
       },
       resumen: {
         hijos: hijos.length,
         registros: registrosTodos.length,
-        alimentacion: alimentos.length
+        alimentacion: alimentos.length,
+        medicacion: medTomasTodas.length
       }
     };
   } catch (e) {

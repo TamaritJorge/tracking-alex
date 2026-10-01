@@ -1000,6 +1000,88 @@
     .mas > .field:last-child     { padding-bottom: 14px; }
 
     /* ═══════════════════════════════════════════
+       MEDICACIÓN
+
+       El banner y las filas de tomas. Casi todo reaprovecha lo que
+       ya hay (.card, .btn-mini, .aviso-*); aquí sólo está la
+       disposición propia de las filas.
+       ═══════════════════════════════════════════ */
+    .med-banner {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .med-banner-txt { flex: 1; min-width: 180px; cursor: pointer; }
+    .med-banner-btns { display: flex; gap: 6px; flex-shrink: 0; }
+    .med-otras { font-size: .78rem; color: var(--text2); }
+
+    .med-fila, .med-trat {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 18px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .med-fila:last-child, .med-trat:last-child { border-bottom: none; }
+
+    /* La hora, en columna fija: así las filas se leen como un horario
+       aunque los nombres midan cosas distintas. */
+    .med-cuando {
+      flex-shrink: 0;
+      width: 58px;
+      font-size: .82rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .med-info  { flex: 1; min-width: 0; }
+    .med-nom   { font-size: .9rem; font-weight: 600; }
+    .med-dosis { font-weight: 400; color: var(--text2); }
+    .med-sello { font-size: .75rem; color: var(--text2); margin-top: 2px; }
+    .med-nota  { font-size: .75rem; color: var(--text2); margin-top: 3px; font-style: italic; }
+
+    .med-acciones { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .med-pt-toca   { color: #b45309; }
+    .med-pt-tarde  { color: var(--danger); }
+    .med-pt-pasada { color: var(--text2); }
+    .med-pt-futuro { color: var(--text2); }
+    .med-pt-ok     { color: var(--ok); }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .med-pt-toca { color: #fbbf24; }
+    }
+    :root[data-theme="dark"] .med-pt-toca { color: #fbbf24; }
+
+    /* Una toma ya resuelta pesa menos: lo que hay que mirar es lo que falta */
+    .med-hecha .med-nom { font-weight: 500; color: var(--text2); }
+
+    .med-pos {
+      font-size: .7rem;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 1px 5px;
+      color: var(--text2);
+    }
+
+    /* La fila a la que te ha traído el banner, para no tener que buscarla */
+    .med-foco {
+      background: var(--primary-lavado, rgba(109,40,217,.08));
+      border-left: 3px solid var(--primary);
+    }
+
+    .med-pie {
+      font-size: .74rem;
+      line-height: 1.5;
+      color: var(--text2);
+      text-align: center;
+      margin: 4px 6px 0;
+    }
+
+    /* ═══════════════════════════════════════════
        HISTORIAL EN PANTALLA ESTRECHA
 
        La tabla medía 380 px dentro de un hueco de 341: se desbordaba y

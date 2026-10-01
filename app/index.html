@@ -221,6 +221,10 @@
   <main>
     <p id="avisoPlan" style="display:none"></p>
 
+    <!-- Aviso de medicación. Fuera de los paneles a propósito: una toma
+         que toca hay que verla estés en la pestaña que estés. -->
+    <p id="avisoMed" data-modulo="medicacion" style="display:none"></p>
+
 
     <!-- ── TAB: REGISTRAR ─────────────────────── -->
     <div id="tab-registrar" class="tab-panel active">
@@ -353,6 +357,13 @@
         <button class="btn btn-primary" id="btnExt">Guardar extracción</button>
       </div>
 
+    </div>
+
+
+    <!-- ── TAB: MEDICINAS ────────────────────── -->
+    <div id="tab-medicacion" class="tab-panel" data-modulo="medicacion">
+      <p id="medError" class="aviso aviso-stop" style="display:none"></p>
+      <div id="medCuerpo"></div>
     </div>
 
 
@@ -535,6 +546,9 @@
     <button class="tab-btn" data-tab="graficas">
       <span class="tab-icon">📊</span><span data-i18n="tab.graficas">Gráficas</span>
     </button>
+    <button class="tab-btn" data-tab="medicacion" data-modulo="medicacion">
+      <span class="tab-icon">💊</span><span data-i18n="tab.medicacion">Medicinas</span>
+    </button>
     <button class="tab-btn" data-tab="comida" data-modulo="comida">
       <span class="tab-icon">🥑</span><span data-i18n="tab.comida">Comida</span>
     </button>
@@ -572,6 +586,7 @@
 <script src="historial.js"></script>
 <script src="registros.js"></script>
 <script src="comida.js"></script>
+<script src="medicacion.js"></script>
 <script src="compartir.js"></script>
 <script src="datos.js"></script>
 </body>
