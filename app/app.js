@@ -86,10 +86,8 @@ function toLocalDT(iso) {
 }
 
 function fmtFechaHora(iso) {
-  return new Date(iso).toLocaleString('es-ES', {
-    day: '2-digit', month: '2-digit',
-    hour: '2-digit', minute: '2-digit'
-  });
+  // El idioma lo pone idiomas.js, no este fichero
+  return fechaHora(iso);
 }
 
 // Lee un input datetime-local y devuelve el ISO, o null si no vale
@@ -278,6 +276,9 @@ aplicarTema(tema);
    INICIALIZACIÓN
    ───────────────────────────────────────────────────────────── */
 async function init() {
+  // El idioma, antes que nada: si no, se ve un parpadeo en español
+  aplicarIdioma();
+
   // Pintar los selectores generados antes de nada
   document.getElementById('rowCacaQty').innerHTML   = htmlCantidad(1);
   document.getElementById('rowPipiQty').innerHTML   = htmlCantidad(1);
@@ -350,7 +351,8 @@ function avisarSuscripcion() {
   el.style.display = '';
   el.className = 'aviso ' + (dias > 3 ? 'aviso-suave' : dias > 0 ? 'aviso-ojo' : 'aviso-stop');
   el.textContent = dias > 0
-    ? `Prueba gratuita: quedan ${dias} ${dias === 1 ? 'día' : 'días'}.`
+    ? t2('plan.prueba', 'Prueba gratuita: quedan {n} {dias}.',
+          { n: dias, dias: plural(dias, 'día', 'días', 'dia') })
     : 'La prueba ha terminado. Puedes consultar y exportar todo, pero no añadir registros nuevos.';
 }
 
@@ -539,7 +541,7 @@ function renderResumen() {
   const desde = Date.now() - VENTANA_MS;
 
   document.querySelectorAll('[data-resumen-desde]').forEach(el => {
-    el.textContent = 'Desde las ' + new Date(desde).toLocaleString('es-ES', {
+    el.textContent = t('resumen.desde', 'Desde las ') + fechaHora(desde, {
       hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short'
     });
   });

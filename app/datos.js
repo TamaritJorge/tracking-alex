@@ -124,10 +124,13 @@ window.exportarCSV = async function() {
 
   // Las comillas dobles se escapan duplicándolas: es lo que espera el
   // formato, y sin esto una nota con comillas parte la fila en dos.
+  const sep = separadorCSV();
   const celda = v => {
     if (v === null || v === undefined) return '';
     const s = String(v);
-    return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    // Se entrecomilla si lleva el separador activo, comillas o saltos de linea
+    return (s.indexOf(sep) >= 0 || /["\n\r]/.test(s))
+      ? '"' + s.replace(/"/g, '""') + '"' : s;
   };
 
   const filas = r.paquete.registros
@@ -146,12 +149,12 @@ window.exportarCSV = async function() {
         d.pecho,
         d.ml,
         d.nota
-      ].map(celda).join(';');
+      ].map(celda).join(separadorCSV());
     });
 
   // Punto y coma y BOM: es lo que Excel en español espera. Con comas y sin
   // BOM, Excel mete toda la fila en una celda y rompe los acentos.
-  descargar('﻿' + cols.join(';') + '\r\n' + filas.join('\r\n'),
+  descargar('﻿' + cols.join(separadorCSV()) + '\r\n' + filas.join('\r\n'),
             nombreFicheroDatos('csv'), 'text/csv;charset=utf-8');
   toast(`✅ ${filas.length} registros en CSV`);
 };
@@ -187,8 +190,8 @@ window.abrirBorradoCuenta = async function() {
       ${solo
         ? `Eres el único adulto de <strong>${esc(familia.nombre)}</strong>. Al borrar tu cuenta
            se borra también la familia entera: ${hijos.length}
-           ${hijos.length === 1 ? 'hijo' : 'hijos'} y <strong>${registros}</strong>
-           ${registros === 1 ? 'registro' : 'registros'}. No se puede deshacer.`
+           ${plural(hijos.length, 'hijo', 'hijos', 'hijo')} y <strong>${registros}</strong>
+           ${plural(registros, 'registro', 'registros', 'registro')}. No se puede deshacer.`
         : `Hay otro adulto en <strong>${esc(familia.nombre)}</strong>. Se borra
            <strong>tu cuenta</strong>, pero los datos de ${hijos.length === 1 ? 'tu hijo' : 'tus hijos'}
            siguen siendo suyos y no se tocan. Tú perderás el acceso.`}

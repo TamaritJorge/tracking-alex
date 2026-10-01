@@ -150,7 +150,7 @@ async function dibujarTarjeta(card) {
 
   ctx.fillStyle = tenue;
   ctx.font = (12 * escala) + 'px ' + fuente;
-  ctx.fillText(new Date().toLocaleDateString('es-ES', {
+  ctx.fillText(new Date().toLocaleDateString(localeActivo(), {
     day: 'numeric', month: 'long', year: 'numeric'
   }) + ' · Tracking Alex', 16 * escala, base.height + pie * 0.72);
 

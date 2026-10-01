@@ -405,11 +405,11 @@ function renderCharts() {
               const l = [];
 
               if (ctx.dataset.tipo === 'pipi') {
-                l.push(`${n} ${n === 1 ? 'pipí' : 'pipís'} en 24 h`);
+                l.push(`${n} ${plural(n, 'pipí', 'pipís', 'pipi')} en 24 h`);
                 l.push(`Éste: cantidad ${m.cantidad} · `
                      + (m.transparente ? 'transparente' : 'no transparente'));
               } else {
-                l.push(`${n} ${n === 1 ? 'caca' : 'cacas'} en 24 h`);
+                l.push(`${n} ${plural(n, 'caca', 'cacas', 'caca')} en 24 h`);
                 l.push(`Ésta: cantidad ${m.cantidad} · ${infoColor(m.color).label}`);
               }
               if (m.nota) l.push('📝 ' + m.nota);

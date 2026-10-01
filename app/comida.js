@@ -362,7 +362,7 @@ function renderEstado() {
       <p class="card-title">🥑 Aún no habéis empezado</p>
       <p class="card-sub">
         ${faltan > 0
-          ? `Faltan ${faltan} ${faltan === 1 ? 'día' : 'días'} para los 6 meses`
+          ? `Faltan ${faltan} ${plural(faltan, 'día', 'días', 'dia')} para los 6 meses`
           : `Ya ha cumplido los 6 meses`}
       </p>
 
@@ -404,7 +404,7 @@ function renderEstado() {
   cont.innerHTML = `
     <p class="card-title">🥑 Alimentación complementaria</p>
     <p class="card-sub">Día ${dias} · empezasteis el ${esc(new Date(ajustes.inicio)
-        .toLocaleDateString('es-ES', { day: 'numeric', month: 'long' }))}</p>
+        .toLocaleDateString(localeActivo(), { day: 'numeric', month: 'long' }))}</p>
     <div class="sum-grid">
       <div class="sum-item">
         <div class="sum-val">${probados}</div>
@@ -460,7 +460,7 @@ function renderVentana() {
       <div class="aviso aviso-espera">
         <strong>⏳ Ventana de ${esc(v.nombre)} abierta</strong><br>
         Quedan ${d} d ${h} h — hasta el
-        ${esc(new Date(v.fin).toLocaleString('es-ES',
+        ${esc(new Date(v.fin).toLocaleString(localeActivo(),
           { weekday: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' }))}.
         Mejor no introducir otro alérgeno nuevo hasta entonces, para saber a quién
         culpar si algo sienta mal.
@@ -741,7 +741,7 @@ window.verFicha = function(id) {
 
   if (e.veces) {
     html += `<div class="field"><label>Historial</label>
-      <p class="ficha-txt">Ofrecido ${e.veces} ${e.veces === 1 ? 'vez' : 'veces'}.
+      <p class="ficha-txt">Ofrecido ${e.veces} ${plural(e.veces, 'vez', 'veces', 'vez')}.
       Última vez: ${esc(fmtFechaHora(new Date(e.ultima).toISOString()))}.
       ${e.estado === 'tolerado' ? ' Tolerado.' : ''}
       ${e.estado === 'reaccion' ? ' <strong style="color:var(--danger)">Hubo una reacción.</strong>' : ''}
@@ -1170,7 +1170,7 @@ window.copiarResumen = async function() {
     .filter(x => x.e.veces > 0)
     .sort((x, y) => x.e.primera - y.e.primera);
 
-  const f = t => new Date(t).toLocaleDateString('es-ES');
+  const f = x => fechaCorta(x);
   let txt = 'ALIMENTACIÓN COMPLEMENTARIA — ' + nombreHijo() + '\n';
   txt += 'Inicio: ' + (ajustes.inicio ? f(new Date(ajustes.inicio)) : '—') + '\n';
   txt += 'Edad actual: ' + mesesAlex().toFixed(1) + ' meses\n\n';

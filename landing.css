@@ -308,3 +308,21 @@ a { color: var(--marca); }
 
 .pie-enlaces a { text-decoration: none; }
 .pie-enlaces a:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════════════════
+   DE DÓNDE SALE EL NOMBRE
+   ═══════════════════════════════════════════ */
+.historia {
+  max-width: 620px;
+  padding: 0 16px 56px;
+  text-align: center;
+}
+
+.historia h2 {
+  font-size: 1.12rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  margin-bottom: 10px;
+}
+
+.historia p { color: var(--tinta2); font-size: 0.95rem; }

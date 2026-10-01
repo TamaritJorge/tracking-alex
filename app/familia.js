@@ -281,7 +281,7 @@ window.abrirAjustes = function() {
   const dias = diasDePrueba();
   const plan = familia.plan === 'activo'
     ? '<span style="color:var(--ok)">Activo</span>'
-    : dias > 0 ? `Prueba · quedan ${dias} ${dias === 1 ? 'día' : 'días'}`
+    : dias > 0 ? `Prueba · quedan ${dias} ${plural(dias, 'día', 'días', 'dia')}`
                : '<span style="color:var(--danger)">Prueba terminada</span>';
 
   document.getElementById('comidaModalCuerpo').innerHTML = `
@@ -302,7 +302,7 @@ window.abrirAjustes = function() {
           <span class="ali-nom">${esc(n.nombre)}</span>
           <span class="tag tag-pronto">${n.sexo === 'nina' ? 'niña' : 'niño'}</span>
           <span class="ali-veces">${esc(new Date(n.fecha_nacimiento + 'T12:00:00')
-            .toLocaleDateString('es-ES'))}</span>
+            .toLocaleDateString(localeActivo()))}</span>
           <button class="btn-edit-sm" onclick="editarHijo('${n.id}')"
                   aria-label="Editar a ${esc(n.nombre)}">✏️</button>
         </div>`).join('')}
@@ -347,6 +347,11 @@ window.abrirAjustes = function() {
       </p>
       <button class="btn btn-secundario" style="margin-top:8px"
               onclick="generarInvitacion()">Generar código de invitación</button>
+    </div>
+
+    <div class="field">
+      <label>${t('ajustes.idioma', 'Idioma')}</label>
+      ${htmlSelectorIdioma()}
     </div>
 
     <div class="field">
@@ -499,7 +504,7 @@ window.editarHijo = function(id) {
     aviso.innerHTML =
         total < 0 ? 'No se ha podido comprobar cuántos registros tiene. '
                   + 'Borrarlo se llevaría todo su historial.'
-      : total > 0 ? `Tiene <strong>${total}</strong> ${total === 1 ? 'registro' : 'registros'}. `
+      : total > 0 ? `Tiene <strong>${total}</strong> ${plural(total, 'registro', 'registros', 'registro')}. `
                   + 'Borrarlo los borra todos, y eso no se puede deshacer.'
       : 'No tiene ningún registro todavía.';
   });
@@ -570,7 +575,7 @@ window.pedirBorradoHijo = async function(id) {
       ${total < 0
         ? `No se ha podido comprobar cuántos registros tiene ${esc(n.nombre)}. Se borrará todo lo suyo. No se puede deshacer.`
         : total > 0
-        ? `Se borrarán <strong>${total}</strong> ${total === 1 ? 'registro' : 'registros'} de ${esc(n.nombre)}. No se puede deshacer.`
+        ? `Se borrarán <strong>${total}</strong> ${plural(total, 'registro', 'registros', 'registro')} de ${esc(n.nombre)}. No se puede deshacer.`
         : `Se borrará a ${esc(n.nombre)}. Segun la base de datos no tiene ningún registro.`}
     </div>
     <div class="field">
