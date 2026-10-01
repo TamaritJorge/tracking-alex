@@ -234,15 +234,17 @@
           </div>
         </div>
 
-        <div class="field">
-          <label for="pipiNota">Nota (opcional)</label>
-          <input type="text" id="pipiNota" placeholder="Color raro, olor, manchitas…" maxlength="200">
-        </div>
-
-        <div class="field">
-          <label for="pipiFecha">Fecha y hora</label>
-          <input type="datetime-local" id="pipiFecha">
-        </div>
+        <details class="mas">
+          <summary>Nota o cambiar la hora</summary>
+          <div class="field">
+            <label for="pipiNota">Nota (opcional)</label>
+            <input type="text" id="pipiNota" placeholder="Color raro, olor, manchitas…" maxlength="200">
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label for="pipiFecha">Fecha y hora</label>
+            <input type="datetime-local" id="pipiFecha">
+          </div>
+        </details>
 
         <button class="btn btn-primary" id="btnPipi">Guardar pipí</button>
       </div>
@@ -260,19 +262,19 @@
           <label>Color</label>
           <div class="color-row" id="rowCacaColor"></div>
         </div>
-        <p class="hint-txt">
-          Si la ves blanquecina o con sangre, coméntalo con el pediatra.
-        </p>
+        <p class="hint-txt">Blanquecina o con sangre ⚠️: coméntalo con el pediatra.</p>
 
-        <div class="field">
-          <label for="cacaFecha">Fecha y hora</label>
-          <input type="datetime-local" id="cacaFecha">
-        </div>
-
-        <div class="field">
-          <label for="cacaNota">Nota (opcional)</label>
-          <input type="text" id="cacaNota" placeholder="Textura, olor, si le costó…" maxlength="200">
-        </div>
+        <details class="mas">
+          <summary>Nota o cambiar la hora</summary>
+          <div class="field">
+            <label for="cacaNota">Nota (opcional)</label>
+            <input type="text" id="cacaNota" placeholder="Textura, olor, si le costó…" maxlength="200">
+          </div>
+          <div class="field" style="margin-bottom:0">
+            <label for="cacaFecha">Fecha y hora</label>
+            <input type="datetime-local" id="cacaFecha">
+          </div>
+        </details>
 
         <button class="btn btn-primary" id="btnCaca">Guardar caca</button>
       </div>
@@ -288,10 +290,13 @@
                  min="500" max="10000" inputmode="numeric">
         </div>
 
-        <div class="field">
-          <label for="pesoFecha">Fecha y hora</label>
-          <input type="datetime-local" id="pesoFecha">
-        </div>
+        <details class="mas">
+          <summary>Cambiar la hora</summary>
+          <div class="field" style="margin-bottom:0">
+            <label for="pesoFecha">Fecha y hora</label>
+            <input type="datetime-local" id="pesoFecha">
+          </div>
+        </details>
 
         <button class="btn btn-primary" id="btnPeso">Guardar peso</button>
       </div>
@@ -315,10 +320,13 @@
                  min="0" max="500" inputmode="decimal" step="0.5">
         </div>
 
-        <div class="field">
-          <label for="extFecha">Fecha y hora</label>
-          <input type="datetime-local" id="extFecha">
-        </div>
+        <details class="mas">
+          <summary>Cambiar la hora</summary>
+          <div class="field" style="margin-bottom:0">
+            <label for="extFecha">Fecha y hora</label>
+            <input type="datetime-local" id="extFecha">
+          </div>
+        </details>
 
         <button class="btn btn-primary" id="btnExt">Guardar extracción</button>
       </div>

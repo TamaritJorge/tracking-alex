@@ -187,14 +187,23 @@ function htmlCantidad(valor = 0) {
   return h;
 }
 
+/* Ocho muestras en una fila, y debajo el nombre de la elegida.
+   Antes era una rejilla de ocho botones con su texto: 203 px de los ~600
+   que tiene un movil, y por eso el boton de Guardar no se alcanzaba.
+   El nombre en texto sigue ahi — elegir un color no puede depender solo
+   de ver el color — pero ocupa una linea en vez de ocho. */
 function htmlColores(valor = COLOR_CACA_DEF) {
-  return Object.entries(COLORES_CACA).map(([clave, c]) => {
+  const botones = Object.entries(COLORES_CACA).map(([clave, c]) => {
     const sel = clave === valor;
+    const ojo = /⚠/.test(c.label);          // los dos de aviso llevan ⚠️
     return `<button type="button" class="color-btn${sel ? ' sel' : ''}" `
-         + `data-v="${clave}" aria-pressed="${sel}" title="${esc(c.label)}">`
-         + `<span class="color-swatch" style="background:${c.hex}"></span>`
-         + `<span>${esc(c.label)}</span></button>`;
+         + `data-v="${clave}" aria-pressed="${sel}" aria-label="${esc(c.label)}" `
+         + `title="${esc(c.label)}" style="--muestra:${c.hex}">`
+         + (ojo ? '<span class="color-ojo" aria-hidden="true">⚠️</span>' : '')
+         + `</button>`;
   }).join('');
+
+  return botones + `<span class="color-nombre">${esc(infoColor(valor).label)}</span>`;
 }
 
 // Valor seleccionado dentro de una fila de botones
@@ -224,6 +233,12 @@ document.addEventListener('click', e => {
   });
   btn.classList.add('sel');
   btn.setAttribute('aria-pressed', 'true');
+
+  // Al elegir un color, su nombre se escribe debajo de la fila
+  if (btn.classList.contains('color-btn')) {
+    const nombre = fila.querySelector('.color-nombre');
+    if (nombre) nombre.textContent = infoColor(btn.dataset.v).label;
+  }
 
   // Los chips del historial además filtran. Acotado a #filtroRow a
   // propósito: si no, cualquier .chip de otra pestaña machacaría el

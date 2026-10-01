@@ -393,14 +393,17 @@
     /* ═══════════════════════════════════════════
        SELECTOR DE COLOR DE CACA
        ═══════════════════════════════════════════ */
+    /* Rejilla de 8 columnas y no flex: con un ancho fijo las muestras se
+       partian en dos filas en cuanto el movil era un poco mas estrecho.
+       Asi se encogen juntas y siempre caben en una. */
     .color-row {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
+      grid-template-columns: repeat(8, 1fr);
       gap: 6px;
-    }
-
-    @media (min-width: 420px) {
-      .color-row { grid-template-columns: repeat(4, 1fr); }
+      /* Tope de ancho: con 8 columnas elasticas, en un escritorio de 900 px
+         cada muestra se iba a 90 px y parecian globos. Asi se encogen en el
+         movil y se quedan en ~44 px en pantalla grande. */
+      max-width: 400px;
     }
 
     .color-btn {
@@ -929,3 +932,218 @@
     }
 
     .login-nombre em { font-style: normal; color: var(--marca); }
+
+    /* ═══════════════════════════════════════════
+       «MÁS OPCIONES» EN LOS FORMULARIOS
+
+       La fecha ya viene puesta en «ahora» y la nota es opcional: entre
+       las dos ocupaban 180 px de los ~600 reales que tiene un móvil con
+       la barra del navegador, y dejaban el botón de Guardar fuera de
+       pantalla. Plegadas, siguen a un toque de distancia.
+       ═══════════════════════════════════════════ */
+    .mas {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 16px;
+      background: var(--surface2);
+    }
+
+    .mas > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 11px 14px;
+      font-size: 0.85rem;
+      color: var(--text2);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      user-select: none;
+    }
+
+    .mas > summary::-webkit-details-marker { display: none; }
+
+    /* Flecha propia, para que gire igual en todos los navegadores */
+    .mas > summary::before {
+      content: "›";
+      font-size: 1.1rem;
+      line-height: 1;
+      transition: transform .15s ease;
+      color: var(--primary-txt);
+    }
+
+    .mas[open] > summary::before { transform: rotate(90deg); }
+
+    .mas[open] > summary { border-bottom: 1px solid var(--border); }
+
+    .mas > .field { padding: 0 14px; }
+    .mas > .field:first-of-type { padding-top: 14px; }
+    .mas > .field:last-child     { padding-bottom: 14px; }
+
+    /* ═══════════════════════════════════════════
+       HISTORIAL EN PANTALLA ESTRECHA
+
+       La tabla medía 380 px dentro de un hueco de 341: se desbordaba y
+       el botón de borrar quedaba cortado por el borde. Cuatro columnas
+       no caben en un móvil, así que ahí deja de ser tabla y pasa a ser
+       una lista. El HTML no cambia; sólo cómo se dibuja.
+       ═══════════════════════════════════════════ */
+    @media (max-width: 560px) {
+      #tab-historial thead { display: none; }
+
+      #tab-historial table,
+      #tab-historial tbody,
+      #tab-historial tr,
+      #tab-historial td { display: block; width: auto; }
+
+      #tab-historial tr {
+        position: relative;
+        padding: 12px 92px 12px 14px;   /* hueco a la derecha para los botones */
+        border-bottom: 1px solid var(--border);
+      }
+
+      #tab-historial tr:last-child { border-bottom: none; }
+
+      #tab-historial td {
+        border: none;
+        padding: 0;
+        white-space: normal !important;
+      }
+
+      /* 1ª fecha y 2ª tipo, juntas arriba y en pequeño */
+      #tab-historial td:nth-child(1),
+      #tab-historial td:nth-child(2) {
+        display: inline;
+        font-size: 0.78rem;
+        color: var(--text2);
+      }
+
+      #tab-historial td:nth-child(1)::after {
+        content: " · ";
+        color: var(--border);
+      }
+
+      /* 3ª el detalle, que es lo que se lee */
+      #tab-historial td:nth-child(3) {
+        margin-top: 3px;
+        font-size: 0.95rem;
+      }
+
+      /* 4ª los botones, anclados a la derecha y centrados */
+      #tab-historial td:nth-child(4) {
+        position: absolute;
+        top: 50%;
+        right: 12px;
+        transform: translateY(-50%);
+        margin: 0;
+      }
+
+      /* El estado vacío ocupa toda la fila, sin el hueco de los botones */
+      #tab-historial td.empty-state {
+        position: static;
+        transform: none;
+        padding: 26px 14px;
+        text-align: center;
+      }
+
+      #tab-historial tr:has(.empty-state) { padding: 0; }
+    }
+
+    /* ═══════════════════════════════════════════
+       SECCIONES DE AJUSTES
+
+       Eran ocho bloques seguidos, todos con el mismo peso visual, en un
+       contenido de 1.222 px dentro de un modal de 690: para encontrar
+       cualquier cosa había que leérselo entero. Ahora son tres secciones
+       y sólo la primera viene abierta.
+       ═══════════════════════════════════════════ */
+    .secc {
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      background: var(--surface2);
+      overflow: hidden;
+    }
+
+    .secc > summary {
+      list-style: none;
+      cursor: pointer;
+      padding: 13px 15px;
+      font-size: 0.95rem;
+      font-weight: 620;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      user-select: none;
+    }
+
+    .secc > summary::-webkit-details-marker { display: none; }
+
+    /* La flecha va al final, empujada por el margen automático */
+    .secc > summary::after {
+      content: "›";
+      margin-left: auto;
+      font-size: 1.25rem;
+      line-height: 1;
+      color: var(--text2);
+      transition: transform .15s ease;
+    }
+
+    .secc[open] > summary::after { transform: rotate(90deg); }
+
+    .secc[open] > summary { border-bottom: 1px solid var(--border); }
+
+    /* El contenido respira dentro de la sección */
+    .secc > .field,
+    .secc > details.mas { margin: 14px 15px; }
+
+    .secc > .field:last-child { margin-bottom: 15px; }
+
+    /* Dentro de una sección, las tarjetas interiores usan el fondo de la
+       tarjeta para que se distingan del fondo de la propia sección */
+    .secc .ali-fila,
+    .secc .modulo-fila,
+    .secc .mas { background: var(--surface); }
+
+    /* ═══════════════════════════════════════════
+       MUESTRAS DE COLOR
+       ═══════════════════════════════════════════ */
+    .color-btn {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 1;
+      padding: 0;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--muestra);
+      cursor: pointer;
+      transition: transform .12s ease, box-shadow .12s ease;
+    }
+
+    .color-btn:hover { transform: scale(1.08); }
+
+    /* La elegida: anillo del color de acción, separado por un hueco del
+       propio fondo para que se vea también sobre un color claro */
+    .color-btn.sel {
+      border-color: var(--surface);
+      box-shadow: 0 0 0 3px var(--primary);
+    }
+
+    /* El ⚠️ de blanquecino y rojizo: la advertencia no puede depender
+       de reconocer un tono */
+    .color-ojo {
+      position: absolute;
+      right: -3px;
+      bottom: -3px;
+      font-size: 0.6rem;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    /* El nombre de la elegida ocupa toda la fila, debajo de las muestras */
+    .color-nombre {
+      grid-column: 1 / -1;
+      font-size: 0.82rem;
+      color: var(--text);
+      font-weight: 560;
+      margin-top: 2px;
+    }

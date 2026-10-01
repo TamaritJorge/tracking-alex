@@ -276,7 +276,7 @@ async function unirseAFamilia(codigo) {
 window.abrirAjustes = function() {
   if (!familia) return;
 
-  document.getElementById('comidaModalTitulo').textContent = '⚙️ Ajustes';
+  document.getElementById('comidaModalTitulo').textContent = '⚙️ ' + t('ajustes.titulo', 'Ajustes');
 
   const dias = diasDePrueba();
   const plan = familia.plan === 'activo'
@@ -284,43 +284,39 @@ window.abrirAjustes = function() {
     : dias > 0 ? `Prueba · quedan ${dias} ${plural(dias, 'día', 'días', 'dia')}`
                : '<span style="color:var(--danger)">Prueba terminada</span>';
 
+  // Tres secciones plegables en vez de ocho bloques seguidos. Antes eran
+  // 1.222 px de contenido en un modal de 690, todo al mismo peso visual:
+  // había que leérselo entero para encontrar cualquier cosa.
+  // Sólo se abre la primera; las otras dos son un toque.
   document.getElementById('comidaModalCuerpo').innerHTML = `
-    <div class="field">
-      <label>Familia</label>
-      <div class="ali-fila" style="cursor:default">
-        <span class="ali-nom">${esc(familia.nombre)}</span>
-        <span class="ali-veces">${plan}</span>
-        <button class="btn-edit-sm" onclick="editarFamilia()"
-                aria-label="Cambiar el nombre de la familia">✏️</button>
-      </div>
-    </div>
 
-    <div class="field">
-      <label>Hijos</label>
-      ${hijos.map(n => `
+    <details class="secc" open>
+      <summary>👪 ${t('ajustes.familia', 'Familia')}</summary>
+
+      <div class="field">
         <div class="ali-fila" style="cursor:default">
-          <span class="ali-nom">${esc(n.nombre)}</span>
-          <span class="tag tag-pronto">${n.sexo === 'nina' ? 'niña' : 'niño'}</span>
-          <span class="ali-veces">${esc(new Date(n.fecha_nacimiento + 'T12:00:00')
-            .toLocaleDateString(localeActivo()))}</span>
-          <button class="btn-edit-sm" onclick="editarHijo('${n.id}')"
-                  aria-label="Editar a ${esc(n.nombre)}">✏️</button>
-        </div>`).join('')}
-    </div>
+          <span class="ali-nom">${esc(familia.nombre)}</span>
+          <span class="ali-veces">${plan}</span>
+          <button class="btn-edit-sm" onclick="editarFamilia()"
+                  aria-label="Cambiar el nombre de la familia">✏️</button>
+        </div>
+      </div>
 
-    <div class="field">
-      <label>Qué quieres llevar</label>
-      <p class="hint-txt" style="margin:0 0 10px">
-        Lo que apagues desaparece de Registrar, Gráficas e Historial.
-        <strong>No se borra nada</strong>: si lo vuelves a encender,
-        todo lo guardado sigue ahí.
-      </p>
-      ${htmlModulos()}
-    </div>
+      <div class="field">
+        <label>${t('ajustes.hijos', 'Hijos')}</label>
+        ${hijos.map(n => `
+          <div class="ali-fila" style="cursor:default">
+            <span class="ali-nom">${esc(n.nombre)}</span>
+            <span class="tag tag-pronto">${n.sexo === 'nina' ? 'niña' : 'niño'}</span>
+            <span class="ali-veces">${esc(new Date(n.fecha_nacimiento + 'T12:00:00')
+              .toLocaleDateString(localeActivo()))}</span>
+            <button class="btn-edit-sm" onclick="editarHijo('${n.id}')"
+                    aria-label="Editar a ${esc(n.nombre)}">✏️</button>
+          </div>`).join('')}
+      </div>
 
-    <details style="margin-bottom:16px">
-      <summary style="cursor:pointer;font-size:.9rem;color:var(--primary-txt)">➕ Añadir otro hijo</summary>
-      <div style="margin-top:12px">
+      <details class="mas">
+        <summary>➕ ${t('ajustes.anadirHijo', 'Añadir otro hijo')}</summary>
         <div class="field">
           <label for="nuevoHijoNombre">Nombre</label>
           <input type="text" id="nuevoHijoNombre" maxlength="40">
@@ -336,55 +332,75 @@ window.abrirAjustes = function() {
             <button type="button" class="toggle-opt"     data-v="nina">Niña</button>
           </div>
         </div>
-        <button class="btn btn-secundario" onclick="guardarNuevoHijo()">Añadir</button>
+        <div class="field" style="margin-bottom:0">
+          <button class="btn btn-secundario" onclick="guardarNuevoHijo()">Añadir</button>
+        </div>
+      </details>
+
+      <div class="field" style="margin-bottom:0">
+        <label>${t('ajustes.segundoAdulto', 'Segundo adulto')}</label>
+        <p class="ficha-txt" id="estadoInvitacion">
+          Genera un código y pásaselo. Una familia admite dos adultos como máximo.
+        </p>
+        <button class="btn btn-secundario" style="margin-top:8px"
+                onclick="generarInvitacion()">Generar código de invitación</button>
       </div>
     </details>
 
-    <div class="field">
-      <label>Segundo adulto</label>
-      <p class="ficha-txt" id="estadoInvitacion">
-        Genera un código y pásaselo. Una familia admite dos adultos como máximo.
-      </p>
-      <button class="btn btn-secundario" style="margin-top:8px"
-              onclick="generarInvitacion()">Generar código de invitación</button>
-    </div>
 
-    <div class="field">
-      <label>${t('ajustes.idioma', 'Idioma')}</label>
-      ${htmlSelectorIdioma()}
-    </div>
+    <details class="secc">
+      <summary>🎛️ ${t('ajustes.app', 'La aplicación')}</summary>
 
-    <div class="field">
-      <label>Tus datos</label>
-      <p class="hint-txt" style="margin:0 0 10px">
-        Llévatelo todo cuando quieras, sin pedir permiso a nadie. El JSON es la
-        copia completa; el CSV se abre en una hoja de cálculo.
-      </p>
-      <button class="btn btn-secundario" id="btnExportJSON"
-              onclick="exportarJSON()">⬇️ Descargar todo (JSON)</button>
-      <button class="btn btn-secundario" id="btnExportCSV" style="margin-top:8px"
-              onclick="exportarCSV()">⬇️ Registros (CSV)</button>
-    </div>
+      <div class="field">
+        <label>${t('ajustes.idioma', 'Idioma')}</label>
+        ${htmlSelectorIdioma()}
+      </div>
 
-    <div class="field">
-      <label>Borrar la cuenta</label>
-      <p class="hint-txt" style="margin:0 0 10px">
-        Borra tu cuenta y, si eres el único adulto de la familia, todo lo que
-        hay dentro. No se puede deshacer y nosotros tampoco podremos recuperarlo.
-      </p>
-      <button class="btn btn-secundario"
-              style="color:var(--danger);border-color:var(--danger)"
-              onclick="abrirBorradoCuenta()">🗑️ Borrar mi cuenta</button>
-    </div>
+      <div class="field" style="margin-bottom:0">
+        <label>${t('ajustes.modulos', 'Qué quieres llevar')}</label>
+        <p class="hint-txt" style="margin:0 0 10px">
+          Lo que apagues desaparece de Registrar, Gráficas e Historial.
+          <strong>No se borra nada</strong>: si lo vuelves a encender,
+          todo lo guardado sigue ahí.
+        </p>
+        ${htmlModulos()}
+      </div>
+    </details>
 
-    <p class="hint-txt" style="margin-top:4px">
+
+    <details class="secc">
+      <summary>🔐 ${t('ajustes.datos', 'Tus datos')}</summary>
+
+      <div class="field">
+        <p class="hint-txt" style="margin:0 0 10px">
+          Llévatelo todo cuando quieras, sin pedir permiso a nadie. El JSON es la
+          copia completa; el CSV se abre en una hoja de cálculo.
+        </p>
+        <button class="btn btn-secundario" id="btnExportJSON"
+                onclick="exportarJSON()">⬇️ Descargar todo (JSON)</button>
+        <button class="btn btn-secundario" id="btnExportCSV" style="margin-top:8px"
+                onclick="exportarCSV()">⬇️ Registros (CSV)</button>
+      </div>
+
+      <div class="field" style="margin-bottom:0">
+        <label>${t('ajustes.borrarCuenta', 'Borrar la cuenta')}</label>
+        <p class="hint-txt" style="margin:0 0 10px">
+          Borra tu cuenta y, si eres el único adulto de la familia, todo lo que
+          hay dentro. No se puede deshacer y nosotros tampoco podremos recuperarlo.
+        </p>
+        <button class="btn btn-secundario"
+                style="color:var(--danger);border-color:var(--danger)"
+                onclick="abrirBorradoCuenta()">🗑️ Borrar mi cuenta</button>
+      </div>
+    </details>
+
+    <p class="hint-txt" style="margin-top:14px;text-align:center">
       <a href="../privacidad.html" target="_blank" rel="noopener">Privacidad</a> ·
       <a href="../terminos.html" target="_blank" rel="noopener">Condiciones</a> ·
       <a href="../aviso-legal.html" target="_blank" rel="noopener">Aviso legal</a>
     </p>
 
     <p id="ajustesErr" class="error-txt" style="display:none"></p>`;
-
   document.getElementById('comidaModalBtns').innerHTML = '';
   document.getElementById('comidaModal').style.display = '';
 };
