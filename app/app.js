@@ -11,6 +11,20 @@
 const SUPABASE_URL = 'https://yzarrncayxkvkpyflbrk.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_IliCiFj7DM6UHxL4YxlnNw_57j6pW5z';
 
+/* Se mira la URL ANTES de crear el cliente, y esto no es manía.
+
+   supabase-js detecta solo el token de recuperación que viene en la
+   dirección, inicia sesión con él y LIMPIA la URL. Todo eso pasa nada más
+   cargar, mucho antes de que init() se suscriba a onAuthStateChange en
+   DOMContentLoaded. Resultado: el evento PASSWORD_RECOVERY se dispara
+   cuando todavía no hay nadie escuchando, y acto seguido getSession()
+   encuentra una sesión válida y te mete en la aplicación.
+
+   Era exactamente eso lo que fallaba: el enlace del correo te dejaba
+   dentro sin haber cambiado nada. Mirando la URL aquí, da igual si
+   llegamos tarde al evento. */
+let recuperandoPwd = /type=recovery/.test(location.hash + location.search);
+
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -308,9 +322,13 @@ async function init() {
     // Hay que atenderlo ANTES que SIGNED_IN: supabase-js deja una sesion
     // iniciada, asi que sin esto entrarias directo a la app sin llegar a
     // cambiar la contrasena, y el enlace del correo no serviria de nada.
-    if (evento === 'PASSWORD_RECOVERY') { modoRecuperacion(true); return; }
+    // Se deja por si llega a tiempo, pero ya no dependemos de él
+    if (evento === 'PASSWORD_RECOVERY') { recuperandoPwd = true; modoRecuperacion(true); return; }
 
-    if (evento === 'SIGNED_IN')  entrar();
+    if (evento === 'SIGNED_IN') {
+      if (recuperandoPwd) modoRecuperacion(true);
+      else entrar();
+    }
   });
 
   engancharAlta();
@@ -323,7 +341,11 @@ async function init() {
   });
 
   const { data: { session } } = await sb.auth.getSession();
-  if (session) await entrar();
+
+  // Venir del enlace de recuperación deja sesión iniciada. Entrar aquí sin
+  // más sería saltarse el único paso que el usuario había pedido dar.
+  if (session && recuperandoPwd) modoRecuperacion(true);
+  else if (session) await entrar();
   else mostrarLogin();
 }
 
@@ -540,6 +562,7 @@ document.getElementById('guardarPwdBtn').addEventListener('click', async () => {
   }
 
   document.getElementById('nuevaPwd').value = '';
+  recuperandoPwd = false;
   modoRecuperacion(false);
   toast(t('recup.lista', '✅ Contraseña cambiada'));
   entrar();
