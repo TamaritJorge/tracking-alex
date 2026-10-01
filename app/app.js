@@ -303,6 +303,13 @@ async function init() {
   // enteraba y los guardados fallaban en silencio.
   sb.auth.onAuthStateChange((evento) => {
     if (evento === 'SIGNED_OUT') { limpiarEstado(); mostrarLogin(); }
+
+    // PASSWORD_RECOVERY llega cuando se vuelve desde el enlace del correo.
+    // Hay que atenderlo ANTES que SIGNED_IN: supabase-js deja una sesion
+    // iniciada, asi que sin esto entrarias directo a la app sin llegar a
+    // cambiar la contrasena, y el enlace del correo no serviria de nada.
+    if (evento === 'PASSWORD_RECOVERY') { modoRecuperacion(true); return; }
+
     if (evento === 'SIGNED_IN')  entrar();
   });
 
@@ -444,7 +451,13 @@ document.getElementById('registroBtn').addEventListener('click', async () => {
     return;
   }
 
-  const { error } = await sb.auth.signUp({ email, password: pwd });
+  // emailRedirectTo explicito: sin el manda la Site URL del panel, que
+  // apunta a la raiz, y el usuario confirmaba su cuenta para aterrizar en
+  // la pagina de ventas en vez de dentro de la aplicacion.
+  const { error } = await sb.auth.signUp({
+    email, password: pwd,
+    options: { emailRedirectTo: window.location.origin + window.location.pathname }
+  });
   errEl.style.display = '';
   errEl.textContent = error
     ? traducirAuth(error)
@@ -461,7 +474,81 @@ function traducirAuth(error) {
   return m || 'No se ha podido completar.';
 }
 
+/* ─────────────────────────────────────────────────────
+   RECUPERAR LA CONTRASEÑA
+
+   No existía. Una aplicación con entrada por correo y contraseña y sin
+   forma de recuperarla deja fuera para siempre a quien la olvide, que
+   es exactamente lo que acaba pasando con una cuenta que se usa a las
+   tres de la mañana.
+   ──────────────────────────────────────────────────── */
+
+/* Alterna entre el formulario de entrar y el de elegir contraseña nueva */
+function modoRecuperacion(activo) {
+  pantalla('loginScreen');
+  const entrar = document.querySelector('#loginScreen .card');
+  const nueva  = document.getElementById('cardNuevaPwd');
+  if (entrar) entrar.style.display = activo ? 'none' : '';
+  if (nueva)  nueva.style.display  = activo ? '' : 'none';
+}
+
+document.getElementById('olvideBtn').addEventListener('click', async (e) => {
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value.trim();
+  const errEl = document.getElementById('loginErr');
+  errEl.style.display = '';
+
+  if (!email) {
+    errEl.textContent = t('recup.falta', 'Escribe tu correo arriba y vuelve a pulsar.');
+    return;
+  }
+
+  const { error } = await sb.auth.resetPasswordForEmail(email, {
+    redirectTo: window.location.origin + window.location.pathname
+  });
+
+  // A proposito NO se distingue entre "existe" y "no existe": decirlo
+  // convertiria esta pantalla en una forma de averiguar quien tiene cuenta.
+  errEl.textContent = error
+    ? traducirAuth(error)
+    : t('recup.enviado', 'Si esa dirección tiene cuenta, te llega un correo en un minuto.');
+});
+
+document.getElementById('guardarPwdBtn').addEventListener('click', async () => {
+  const pwd   = document.getElementById('nuevaPwd').value;
+  const errEl = document.getElementById('nuevaPwdErr');
+  const btn   = document.getElementById('guardarPwdBtn');
+
+  if (pwd.length < 8) {
+    errEl.textContent = t('recup.corta', 'Al menos 8 caracteres.');
+    errEl.style.display = '';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.textContent = t('recup.guardando', 'Guardando…');
+
+  const { error } = await sb.auth.updateUser({ password: pwd });
+
+  btn.disabled = false;
+  btn.textContent = t('recup.guardar', 'Guardar contraseña');
+
+  if (error) {
+    errEl.textContent = traducirAuth(error);
+    errEl.style.display = '';
+    return;
+  }
+
+  document.getElementById('nuevaPwd').value = '';
+  modoRecuperacion(false);
+  toast(t('recup.lista', '✅ Contraseña cambiada'));
+  entrar();
+});
+
+/* Al volver a la pantalla de entrar hay que deshacer el modo recuperacion:
+   si no, quien cierre sesion vuelve y se encuentra el formulario equivocado. */
 document.getElementById('logoutBtn').addEventListener('click', async () => {
+  modoRecuperacion(false);
   await sb.auth.signOut();      // limpiarEstado() lo hace onAuthStateChange
 });
 

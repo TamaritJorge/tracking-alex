@@ -53,6 +53,18 @@ TEXTOS.en = {
   /* ── Ajustes ───────────────────────────────────────────────── */
   'ajustes.idioma': 'Language',
 
+  /* ── Recuperar la contraseña ───────────────────────────────── */
+  'login.olvide':    'Forgotten your password?',
+  'recup.titulo':    'Choose a new password',
+  'recup.sub':       'At least 8 characters',
+  'recup.campo':     'New password',
+  'recup.guardar':   'Save password',
+  'recup.guardando': 'Saving…',
+  'recup.falta':     'Type your email above and press again.',
+  'recup.enviado':   'If that address has an account, you will get an email in a minute.',
+  'recup.corta':     'At least 8 characters.',
+  'recup.lista':     '✅ Password changed',
+
   /* ── Botones generales ─────────────────────────────────────── */
   'btn.salir': 'Sign out'
 };

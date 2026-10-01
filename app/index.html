@@ -106,6 +106,27 @@
       <p id="loginErr" class="error-txt" style="display:none"></p>
       <button class="btn btn-primary" id="loginBtn" style="margin-top:4px" data-i18n="login.entrar">Entrar</button>
       <button class="btn btn-secundario" id="registroBtn" style="margin-top:8px" data-i18n="login.registro">Crear una cuenta</button>
+
+      <p style="text-align:center;margin-top:14px">
+        <a href="#" id="olvideBtn" class="enlace-sutil"
+           data-i18n="login.olvide">&iquest;Has olvidado la contrase&ntilde;a?</a>
+      </p>
+    </div>
+
+    <!-- Elegir contraseña nueva. Sale cuando se vuelve desde el enlace del
+         correo de recuperación, no antes: supabase-js detecta el token en la
+         URL y dispara PASSWORD_RECOVERY. -->
+    <div class="card" id="cardNuevaPwd" style="display:none">
+      <p class="card-title" data-i18n="recup.titulo">Elige una contraseña nueva</p>
+      <p class="card-sub" data-i18n="recup.sub">Con al menos 8 caracteres</p>
+
+      <div class="field">
+        <label for="nuevaPwd" data-i18n="recup.campo">Contraseña nueva</label>
+        <input type="password" id="nuevaPwd" placeholder="••••••••" autocomplete="new-password">
+      </div>
+
+      <p id="nuevaPwdErr" class="error-txt" style="display:none"></p>
+      <button class="btn btn-primary" id="guardarPwdBtn" data-i18n="recup.guardar">Guardar contraseña</button>
     </div>
   </div>
 </div>

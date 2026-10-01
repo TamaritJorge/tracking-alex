@@ -1147,3 +1147,14 @@
       font-weight: 560;
       margin-top: 2px;
     }
+
+    /* Enlace discreto bajo los botones de entrar */
+    .enlace-sutil {
+      font-size: 0.85rem;
+      color: var(--text2);
+      text-decoration: none;
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 1px;
+    }
+
+    .enlace-sutil:hover { color: var(--primary-txt); border-bottom-color: var(--primary-txt); }
