@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>Tracking Álex</title>
+
+  <!-- Favicon en SVG: una sola pieza para todos los tamaños, sin .ico.
+       El PNG es sólo para la pantalla de inicio de iOS, que no acepta SVG. -->
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../marca/icono-180.png">
+  <meta name="theme-color" content="#6d28d9">
+
+  <!-- Supabase JS (base de datos + auth + tiempo real) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <!-- Chart.js (gráficas) -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <!-- Capturas compartibles -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <!-- Adaptador de fechas para Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+  <!-- marca.css primero: define los tokens que estilos.css consume -->
+  <link rel="stylesheet" href="../marca.css">
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     TOAST
+     ═══════════════════════════════════════════ -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+
+<!-- ═══════════════════════════════════════
+     EL LOGO, UNA SOLA VEZ
+     Las tres cabeceras y la pantalla de entrada lo reutilizan con
+     <use>. Va en línea y no como <img> para que no cueste una
+     petición más en el arranque.
+     ═══════════════════════════════════════ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="taG" gradientUnits="userSpaceOnUse" x1="14" y1="90" x2="86" y2="10">
+      <stop offset="0" stop-color="#6d28d9"/>
+      <stop offset="1" stop-color="#a78bfa"/>
+    </linearGradient>
+    <linearGradient id="taP" gradientUnits="userSpaceOnUse" x1="0" y1="0" x2="100" y2="100">
+      <stop offset="0" stop-color="#7c3aed"/>
+      <stop offset="1" stop-color="#a855f7"/>
+    </linearGradient>
+
+    <!-- Marca suelta -->
+    <symbol id="logoTA" viewBox="0 0 100 100">
+      <path d="M20 86 L50 36 L80 86" fill="none" stroke="url(#taG)" stroke-width="13"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M41 21 L64 8" fill="none" stroke="#a855f7" stroke-width="8.5"
+            stroke-linecap="round"/>
+    </symbol>
+
+    <!-- Pastilla, para la pantalla de entrada -->
+    <symbol id="logoTAPastilla" viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="26" fill="url(#taP)"/>
+      <path d="M30 74 L50 40 L70 74" fill="none" stroke="#fff" stroke-width="10.5"
+            stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M43 30 L61 19" fill="none" stroke="#fff" stroke-width="7.5"
+            stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+
+<!-- ═══════════════════════════════════════════
+     PANTALLA DE LOGIN
+     ═══════════════════════════════════════════ -->
+<div id="loginScreen" style="display:none">
+  <div class="header">
+    <span class="header-title logo-marca">
+      <svg width="26" height="26" aria-hidden="true"><use href="#logoTA"/></svg>
+      <span class="logo-txt"><span class="hide-narrow">Tracking </span><em>Álex</em></span>
+    </span>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn1" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+    </div>
+  </div>
+
+  <div class="login-wrap">
+    <svg class="login-logo" width="72" height="72" aria-hidden="true"><use href="#logoTAPastilla"/></svg>
+    <p class="login-nombre">Tracking <em>Álex</em></p>
+    <p class="login-sub">Entra para llevar el seguimiento de tu bebé</p>
+    <div class="card">
+      <button class="btn btn-google" id="googleBtn">
+        <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true"><path fill="#4285F4" d="M45 24c0-1.6-.1-2.7-.4-3.9H24v7.1h12c-.2 1.8-1.5 4.6-4.4 6.4l6.7 5.2C42.2 35 45 30 45 24z"/><path fill="#34A853" d="M24 46c5.9 0 10.9-2 14.5-5.3l-6.9-5.4c-1.8 1.3-4.3 2.2-7.6 2.2-5.8 0-10.7-3.8-12.5-9.1l-7.1 5.5C8.1 41.1 15.4 46 24 46z"/><path fill="#FBBC05" d="M11.5 28.4c-.5-1.4-.7-2.9-.7-4.4s.3-3 .7-4.4l-7.1-5.5C2.9 17 2 20.4 2 24s.9 7 2.4 9.9l7.1-5.5z"/><path fill="#EA4335" d="M24 10.6c4.1 0 6.9 1.8 8.5 3.3l6.2-6C34.9 4.4 29.9 2 24 2 15.4 2 8.1 6.9 4.4 14.1l7.1 5.5C13.3 14.4 18.2 10.6 24 10.6z"/></svg>
+        Continuar con Google
+      </button>
+
+      <div class="separador"><span>o con tu correo</span></div>
+
+      <div class="field">
+        <label for="loginEmail">Correo electrónico</label>
+        <input type="email" id="loginEmail" placeholder="tu@correo.com" autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="loginPwd">Contraseña</label>
+        <input type="password" id="loginPwd" placeholder="••••••••" autocomplete="current-password">
+      </div>
+      <p id="loginErr" class="error-txt" style="display:none"></p>
+      <button class="btn btn-primary" id="loginBtn" style="margin-top:4px">Entrar</button>
+      <button class="btn btn-secundario" id="registroBtn" style="margin-top:8px">Crear una cuenta</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     ALTA DE FAMILIA
+     Sale cuando hay sesión pero todavía no hay familia ni hijo
+     ═══════════════════════════════════════════ -->
+<div id="altaScreen" style="display:none">
+  <div class="header">
+    <span class="header-title logo-marca">
+      <svg width="26" height="26" aria-hidden="true"><use href="#logoTA"/></svg>
+      <span class="logo-txt"><span class="hide-narrow">Tracking </span><em>Álex</em></span>
+    </span>
+    <div class="header-right">
+      <button class="icon-btn" id="themeBtn3" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+      <button class="icon-btn" id="logoutBtn2" style="font-size:.8rem">Salir</button>
+    </div>
+  </div>
+
+  <div class="login-wrap">
+    <div class="card">
+      <p class="card-title">Vamos a empezar</p>
+      <p class="card-sub">Sólo se pide una vez</p>
+
+      <div class="field">
+        <label for="altaFamilia">Nombre de la familia</label>
+        <input type="text" id="altaFamilia" maxlength="60" placeholder="Familia García">
+      </div>
+
+      <div class="field">
+        <label for="altaNombre">Nombre del bebé</label>
+        <input type="text" id="altaNombre" maxlength="40" placeholder="Álex">
+      </div>
+
+      <div class="field">
+        <label for="altaFecha">Fecha de nacimiento</label>
+        <input type="date" id="altaFecha">
+      </div>
+
+      <div class="field">
+        <label>Sexo</label>
+        <div class="toggle-row" id="rowAltaSexo">
+          <button type="button" class="toggle-opt sel" data-v="nino">Niño</button>
+          <button type="button" class="toggle-opt"     data-v="nina">Niña</button>
+        </div>
+        <p class="hint-txt" style="margin:8px 0 0">
+          Hace falta para el percentil de peso: la OMS tiene una curva distinta
+          para cada sexo y usar la equivocada desplaza el resultado.
+        </p>
+      </div>
+
+      <p id="altaErr" class="error-txt" style="display:none"></p>
+      <button class="btn btn-primary" id="altaBtn">Crear</button>
+    </div>
+
+    <div class="card">
+      <p class="card-title">¿Te han invitado?</p>
+      <p class="card-sub">Si tu pareja ya creó la familia, pega aquí su código</p>
+      <div class="field">
+        <input type="text" id="altaCodigo" maxlength="12" placeholder="Código de invitación"
+               style="text-transform:uppercase">
+      </div>
+      <p id="unirErr" class="error-txt" style="display:none"></p>
+      <button class="btn btn-secundario" id="unirBtn">Unirme a la familia</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     APP PRINCIPAL
+     ═══════════════════════════════════════════ -->
+<div id="appScreen" style="display:none">
+  <div class="header">
+    <span class="header-title logo-marca">
+      <svg width="26" height="26" aria-hidden="true"><use href="#logoTA"/></svg>
+      <span id="cabeceraHijo"></span>
+    </span>
+    <div class="header-right">
+      <button class="icon-btn" id="ajustesBtn" title="Ajustes" aria-label="Ajustes">⚙️</button>
+      <button class="icon-btn" id="themeBtn2" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+      <button class="icon-btn" id="logoutBtn" style="font-size:.8rem">Salir</button>
+    </div>
+  </div>
+
+  <main>
+    <p id="avisoPlan" style="display:none"></p>
+
+
+    <!-- ── TAB: REGISTRAR ─────────────────────── -->
+    <div id="tab-registrar" class="tab-panel active">
+
+      <!-- Qué se registra. El selector se queda siempre a la vista: cambiar
+           de pipí a caca es un toque, no volver atrás y elegir otra vez.
+           Las cuatro tarjetas siguen en el DOM y solo se ocultan, porque los
+           listeners de registros.js y los ids de resetFechas() se enganchan
+           una sola vez al cargar la pagina. -->
+      <div class="chip-row" id="selectorRegistro">
+        <button type="button" class="chip sel" data-reg="pipi"       aria-pressed="true"  data-modulo="panales">💧 Pipí</button>
+        <button type="button" class="chip"     data-reg="caca"       aria-pressed="false" data-modulo="panales">💩 Caca</button>
+        <button type="button" class="chip"     data-reg="peso"       aria-pressed="false" data-modulo="peso">⚖️ Peso</button>
+        <button type="button" class="chip"     data-reg="extraccion" aria-pressed="false" data-modulo="extraccion">🍼 Leche</button>
+      </div>
+
+      <p id="registrarVacio" class="hint-txt" style="display:none">
+        Están todos los módulos ocultos. Se encienden en ⚙️ Ajustes.
+      </p>
+
+      <!-- Pipí -->
+      <div class="card" data-modulo="panales" data-reg="pipi">
+        <p class="card-title">💧 Pipí</p>
+        <p class="card-sub">Cantidad y aspecto</p>
+
+        <div class="field">
+          <label>Cantidad (0 = nada · 10 = muchísimo)</label>
+          <div class="qty-row" id="rowPipiQty"></div>
+        </div>
+
+        <div class="field">
+          <label>Aspecto</label>
+          <div class="toggle-row" id="rowPipiTrans">
+            <button type="button" class="toggle-opt sel" data-v="si" aria-pressed="true">Transparente</button>
+            <button type="button" class="toggle-opt"     data-v="no" aria-pressed="false">No transparente</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="pipiNota">Nota (opcional)</label>
+          <input type="text" id="pipiNota" placeholder="Color raro, olor, manchitas…" maxlength="200">
+        </div>
+
+        <div class="field">
+          <label for="pipiFecha">Fecha y hora</label>
+          <input type="datetime-local" id="pipiFecha">
+        </div>
+
+        <button class="btn btn-primary" id="btnPipi">Guardar pipí</button>
+      </div>
+      <!-- Caca -->
+      <div class="card" data-modulo="panales" data-reg="caca">
+        <p class="card-title">💩 Caca</p>
+        <p class="card-sub">Cantidad y color</p>
+
+        <div class="field">
+          <label>Cantidad (0 = nada · 10 = muchísima)</label>
+          <div class="qty-row" id="rowCacaQty"></div>
+        </div>
+
+        <div class="field">
+          <label>Color</label>
+          <div class="color-row" id="rowCacaColor"></div>
+        </div>
+        <p class="hint-txt">
+          Si la ves blanquecina o con sangre, coméntalo con el pediatra.
+        </p>
+
+        <div class="field">
+          <label for="cacaFecha">Fecha y hora</label>
+          <input type="datetime-local" id="cacaFecha">
+        </div>
+
+        <div class="field">
+          <label for="cacaNota">Nota (opcional)</label>
+          <input type="text" id="cacaNota" placeholder="Textura, olor, si le costó…" maxlength="200">
+        </div>
+
+        <button class="btn btn-primary" id="btnCaca">Guardar caca</button>
+      </div>
+
+      <!-- Peso -->
+      <div class="card" data-modulo="peso" data-reg="peso">
+        <p class="card-title">⚖️ Peso del bebé</p>
+        <p class="card-sub">En gramos</p>
+
+        <div class="field">
+          <label for="pesoG">Peso (gramos)</label>
+          <input type="number" id="pesoG" placeholder="3000"
+                 min="500" max="10000" inputmode="numeric">
+        </div>
+
+        <div class="field">
+          <label for="pesoFecha">Fecha y hora</label>
+          <input type="datetime-local" id="pesoFecha">
+        </div>
+
+        <button class="btn btn-primary" id="btnPeso">Guardar peso</button>
+      </div>
+
+      <!-- Extracción -->
+      <div class="card" data-modulo="extraccion" data-reg="extraccion">
+        <p class="card-title">🍼 Extracción de leche</p>
+        <p class="card-sub">Registra el pecho y los ml extraídos</p>
+
+        <div class="field">
+          <label>Pecho</label>
+          <div class="toggle-row" id="rowPecho">
+            <button type="button" class="toggle-opt sel" data-v="izquierdo" aria-pressed="true">Izquierdo</button>
+            <button type="button" class="toggle-opt"     data-v="derecho"   aria-pressed="false">Derecho</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="extMl">Cantidad (ml)</label>
+          <input type="number" id="extMl" placeholder="0"
+                 min="0" max="500" inputmode="decimal" step="0.5">
+        </div>
+
+        <div class="field">
+          <label for="extFecha">Fecha y hora</label>
+          <input type="datetime-local" id="extFecha">
+        </div>
+
+        <button class="btn btn-primary" id="btnExt">Guardar extracción</button>
+      </div>
+
+    </div>
+
+
+    <!-- ── TAB: GRÁFICAS ─────────────────────── -->
+    <div id="tab-graficas" class="tab-panel">
+
+      <!-- Mismo resumen que en la pestaña Registrar -->
+      <div class="card" data-captura="Resumen de 24 horas">
+        <p class="card-title">🕐 Últimas 24 h</p>
+        <p class="card-sub" data-resumen-desde>—</p>
+        <div class="sum-grid" data-resumen></div>
+      </div>
+
+      <div class="card" data-modulo="peso" data-captura="Peso">
+        <p class="card-title">Peso</p>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--weight)"></div>
+            <span>Pesadas</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dash"
+                 style="background:repeating-linear-gradient(90deg,var(--weight) 0 5px,transparent 5px 9px)"></div>
+            <span>Tendencia</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dash"
+                 style="background:repeating-linear-gradient(90deg,var(--target) 0 5px,transparent 5px 9px)"></div>
+            <span>Mínimo 20 g/día</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-band"></div>
+            <span>Percentiles OMS (niños)</span>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartPeso"></canvas></div>
+        <p class="hint-txt" id="notaTendencia" style="margin:10px 0 0"></p>
+      </div>
+
+      <div class="card" data-modulo="panales" data-captura="Pipís y cacas en 24 h">
+        <p class="card-title">Pipís y cacas en 24 h</p>
+        <!-- La leyenda la pinta graficas.js: depende de qué colores de caca
+             existan de verdad en los datos. -->
+        <div class="legend" id="leyendaPanal"></div>
+        <div class="chart-wrap"><canvas id="chartPanal"></canvas></div>
+        <p class="hint-txt" id="notaPanal" style="margin:10px 0 0"></p>
+      </div>
+
+      <div class="card" data-modulo="extraccion" data-captura="Extracciones de leche">
+        <p class="card-title">Extracciones de leche</p>
+        <div class="legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--left)"></div>
+            <span>Izquierdo</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:var(--right)"></div>
+            <span>Derecho</span>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="chartExt"></canvas></div>
+      </div>
+    </div>
+
+
+    <!-- ── TAB: HISTORIAL ────────────────────── -->
+    <div id="tab-historial" class="tab-panel">
+      <div class="chip-row" id="filtroRow">
+        <button type="button" class="chip sel" data-f="todo"       aria-pressed="true">Todo</button>
+        <button type="button" class="chip"     data-f="extraccion" aria-pressed="false" data-modulo="extraccion">🍼 Leche</button>
+        <button type="button" class="chip"     data-f="peso"       aria-pressed="false" data-modulo="peso">⚖️ Peso</button>
+        <button type="button" class="chip"     data-f="caca"       aria-pressed="false" data-modulo="panales">💩 Caca</button>
+        <button type="button" class="chip"     data-f="pipi"       aria-pressed="false" data-modulo="panales">💧 Pipí</button>
+      </div>
+
+      <div class="card card-no-pad">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Detalle</th>
+                <th id="thAcc">Acc.</th>
+              </tr>
+            </thead>
+            <tbody id="histBody">
+              <tr><td colspan="4" class="empty-state">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ── TAB: COMIDA ───────────────────────── -->
+    <div id="tab-comida" class="tab-panel" data-modulo="comida">
+
+      <p id="comidaError" class="error-txt" style="display:none"></p>
+
+      <div class="card" id="comidaEstado"></div>
+
+      <div id="comidaVentana" style="display:none"></div>
+
+      <div class="card" id="comidaCola"></div>
+
+      <div class="card" id="comidaCatalogo"></div>
+
+      <!-- Información fija: qué mirar y qué no confundir -->
+      <div class="card">
+        <p class="card-title">🚨 Si algo va mal</p>
+        <p class="card-sub">Merece la pena leerlo antes de empezar, no durante</p>
+
+        <div class="field">
+          <label>Arcada y atragantamiento no son lo mismo</label>
+          <p class="ficha-txt">
+            La <strong>arcada</strong> es ruidosa: tose, se pone rojo, hace aspavientos.
+            Es normal y frecuente al principio, es el cuerpo protegiéndose. No hay que
+            hacer nada salvo mantener la calma y no meterle los dedos en la boca.<br><br>
+            El <strong>atragantamiento</strong> es silencioso: no sale aire, no tose, se
+            queda callado y cambia de color. Ahí sí hay que actuar de inmediato.
+          </p>
+        </div>
+
+        <div class="field">
+          <label>Señales de reacción alérgica grave</label>
+          <p class="ficha-txt">
+            Dificultad para respirar, pitidos, hinchazón de labios, lengua o cara,
+            vómitos repetidos, palidez o decaimiento súbito, ronchas por todo el cuerpo.
+          </p>
+        </div>
+
+        <div class="aviso aviso-stop">
+          Ante cualquiera de esas señales: <strong>112</strong>.
+        </div>
+
+        <p class="hint-txt" style="margin-top:12px">
+          Un curso de RCP para bebés dura un par de horas y se olvida mucho menos que
+          un texto. Esta app es un registro: no sustituye a la pediatra.
+        </p>
+      </div>
+
+      <div class="card" id="comidaDiario"></div>
+    </div>
+
+  </main>
+
+  <!-- ── MODAL DE COMIDA ───────────────────── -->
+  <!-- Propio, y no el de edición, para no pisarse con registros.js -->
+  <div id="comidaModal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <p class="modal-title" id="comidaModalTitulo"></p>
+      <div id="comidaModalCuerpo"></div>
+      <div class="modal-btns" id="comidaModalBtns"></div>
+      <div class="modal-btns">
+        <button class="btn" onclick="cerrarComidaModal()"
+                style="background:var(--surface2);color:var(--text)">Cerrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MODAL DE EDICIÓN ───────────────────── -->
+  <div id="editModal" class="modal-overlay" style="display:none">
+    <div class="modal-box">
+      <p class="modal-title">✏️ Editar registro</p>
+      <div id="editForm"></div>
+      <div class="modal-btns">
+        <button class="btn btn-primary" id="btnSaveEdit">Guardar cambios</button>
+        <button class="btn" id="btnCancelEdit"
+                style="background:var(--surface2);color:var(--text)">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BARRA DE TABS ──────────────────────── -->
+  <nav class="tab-bar">
+    <button class="tab-btn active" data-tab="registrar">
+      <span class="tab-icon">✏️</span><span>Registrar</span>
+    </button>
+    <button class="tab-btn" data-tab="graficas">
+      <span class="tab-icon">📊</span><span>Gráficas</span>
+    </button>
+    <button class="tab-btn" data-tab="comida" data-modulo="comida">
+      <span class="tab-icon">🥑</span><span>Comida</span>
+    </button>
+    <button class="tab-btn" data-tab="historial">
+      <span class="tab-icon">📋</span><span>Historial</span>
+    </button>
+  </nav>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     LÓGICA DE LA APP
+
+     Scripts clásicos (no módulos) y en este orden a propósito:
+
+     · app.js       primero: define el estado y las utilidades
+                    que usan todos los demás, y deja init()
+                    esperando a DOMContentLoaded.
+     · oms.js       independiente, no usa nada de los otros.
+     · los tres siguientes sólo declaran funciones, así que
+       entre ellos el orden da igual.
+
+     Se usan <script src> y no type="module" para que la página
+     siga funcionando al abrirla con doble clic (file://), donde
+     los módulos ES fallan por CORS.
+     ═══════════════════════════════════════════ -->
+<script src="app.js"></script>
+<script src="familia.js"></script>
+<script src="modulos.js"></script>
+<script src="oms.js"></script>
+<script src="alimentos.js"></script>
+<script src="graficas.js"></script>
+<script src="historial.js"></script>
+<script src="registros.js"></script>
+<script src="comida.js"></script>
+<script src="compartir.js"></script>
+</body>
+</html>

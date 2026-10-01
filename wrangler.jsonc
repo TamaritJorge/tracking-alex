@@ -15,8 +15,14 @@
     // Los ficheros están en la raíz del repo, no en una carpeta de build
     "directory": "./",
 
-    // Si alguien entra a una ruta que no existe, devolver index.html
-    // en vez de un 404 de Cloudflare
-    "not_found_handling": "single-page-application"
+    // Antes esto era "single-page-application", que devolvia el index ante
+    // CUALQUIER ruta desconocida y con codigo 200. Tenia sentido cuando toda
+    // la web era un solo index; ahora que hay paginas de verdad es un
+    // problema: un enlace mal escrito mostraria el landing fingiendo que
+    // existe, y los buscadores indexarian rutas fantasma.
+    //
+    // La app no usa rutas de cliente (las pestanas no cambian la URL), asi
+    // que no se pierde nada al quitarlo.
+    "not_found_handling": "404-page"
   }
 }
