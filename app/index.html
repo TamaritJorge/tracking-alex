@@ -260,7 +260,7 @@
         </div>
 
         <details class="mas">
-          <summary>Nota o cambiar la hora</summary>
+          <summary>Nota o cambiar la hora <span class="eco-fecha" id="pipiFechaEco"></span></summary>
           <div class="field">
             <label for="pipiNota">Nota (opcional)</label>
             <input type="text" id="pipiNota" placeholder="Color raro, olor, manchitas…" maxlength="200">
@@ -290,7 +290,7 @@
         <p class="hint-txt">Blanquecina o con sangre ⚠️: coméntalo con el pediatra.</p>
 
         <details class="mas">
-          <summary>Nota o cambiar la hora</summary>
+          <summary>Nota o cambiar la hora <span class="eco-fecha" id="cacaFechaEco"></span></summary>
           <div class="field">
             <label for="cacaNota">Nota (opcional)</label>
             <input type="text" id="cacaNota" placeholder="Textura, olor, si le costó…" maxlength="200">
@@ -315,13 +315,10 @@
                  min="500" max="10000" inputmode="numeric">
         </div>
 
-        <details class="mas">
-          <summary>Cambiar la hora</summary>
-          <div class="field" style="margin-bottom:0">
-            <label for="pesoFecha">Fecha y hora</label>
-            <input type="datetime-local" id="pesoFecha">
-          </div>
-        </details>
+        <div class="field">
+          <label for="pesoFecha">Fecha y hora <span class="eco-fecha" id="pesoFechaEco"></span></label>
+          <input type="datetime-local" id="pesoFecha">
+        </div>
 
         <button class="btn btn-primary" id="btnPeso">Guardar peso</button>
       </div>
@@ -346,7 +343,7 @@
         </div>
 
         <details class="mas">
-          <summary>Cambiar la hora</summary>
+          <summary>Cambiar la hora <span class="eco-fecha" id="extFechaEco"></span></summary>
           <div class="field" style="margin-bottom:0">
             <label for="extFecha">Fecha y hora</label>
             <input type="datetime-local" id="extFecha">

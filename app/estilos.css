@@ -975,6 +975,26 @@
 
     .mas[open] > summary { border-bottom: 1px solid var(--border); }
 
+    /* El momento que se va a guardar, escrito al lado del título.
+       En ámbar cuando NO es ahora mismo: es justo el caso que hay que
+       cazar — una hora vieja heredada de haber dejado la pestaña
+       abierta, o una que se cambió a mano y se olvidó. */
+    .eco-fecha {
+      font-weight: 600;
+      color: var(--primary-txt);
+      white-space: nowrap;
+    }
+
+    .eco-fecha.viejo { color: #b45309; }
+
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) .eco-fecha.viejo { color: #fbbf24; }
+    }
+
+    :root[data-theme="dark"] .eco-fecha.viejo { color: #fbbf24; }
+
+    .mas > summary .eco-fecha { margin-left: auto; }
+
     .mas > .field { padding: 0 14px; }
     .mas > .field:first-of-type { padding-top: 14px; }
     .mas > .field:last-child     { padding-bottom: 14px; }

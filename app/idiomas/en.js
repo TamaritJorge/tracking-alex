@@ -65,6 +65,10 @@ TEXTOS.en = {
   'recup.corta':     'At least 8 characters.',
   'recup.lista':     '✅ Password changed',
 
+  /* ── Fechas ───────────────────────────────────────── */
+  'fecha.hoy':  'Today',
+  'fecha.ayer': 'Yesterday',
+
   /* ── Enlaces de correo ─────────────────────────────────────── */
   'enlace.caducado': 'That link is no longer valid: it expired or had already been used. Ask for a new one.',
   'enlace.invalido': 'That link is not valid. Ask for a new one.',

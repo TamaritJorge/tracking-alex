@@ -436,12 +436,86 @@ function avisarSuscripcion() {
     : 'La prueba ha terminado. Puedes consultar y exportar todo, pero no añadir registros nuevos.';
 }
 
+/* ─────────────────────────────────────────────────────
+   EL MOMENTO QUE SE VA A GUARDAR
+
+   Estos campos se rellenaban una sola vez, al entrar. Si la pestaña
+   llevaba horas abierta —que es lo normal con el móvil en la mesilla—
+   el pañal de las tres de la mañana se apuntaba a la hora de la cena,
+   sin que nada lo dijera.
+
+   Dos arreglos, y hacen falta los dos:
+
+     1. Se enseña el momento sin tener que abrir nada.
+     2. Se pone al día solo, mientras nadie lo haya tocado a mano. Si lo
+        tocas, manda lo tuyo: para eso está el campo.
+   ──────────────────────────────────────────────────── */
+const CAMPOS_FECHA = ['extFecha', 'pesoFecha', 'cacaFecha', 'pipiFecha'];
+
 // Todos los formularios arrancan en "ahora"
 function resetFechas() {
-  ['extFecha', 'pesoFecha', 'cacaFecha', 'pipiFecha'].forEach(id => {
-    document.getElementById(id).value = ahoraLocal();
+  CAMPOS_FECHA.forEach(reiniciarFecha);
+}
+
+/* Devuelve un campo a "ahora" y lo marca como no tocado */
+function reiniciarFecha(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.value = ahoraLocal();
+  delete el.dataset.tocada;
+  pintarFechas();
+}
+
+/* Pone al día los que nadie haya tocado. Se llama al volver a la
+   pestaña, al cambiar de formulario y cada cinco minutos. */
+function refrescarFechas() {
+  CAMPOS_FECHA.forEach(id => {
+    const el = document.getElementById(id);
+    if (el && !el.dataset.tocada) el.value = ahoraLocal();
+  });
+  pintarFechas();
+}
+
+/* "Hoy, 14:32" — más legible de un vistazo que 01/10/2026 14:32, que es
+   lo que pinta el propio input y hay que pararse a leer. */
+function etiquetaMomento(d) {
+  const hora = d.toLocaleTimeString(localeActivo(), { hour: '2-digit', minute: '2-digit' });
+  const mismoDia = (a, b) => a.toDateString() === b.toDateString();
+  const hoy = new Date();
+  const ayer = new Date(hoy); ayer.setDate(hoy.getDate() - 1);
+
+  if (mismoDia(d, hoy))  return t('fecha.hoy',  'Hoy')  + ', ' + hora;
+  if (mismoDia(d, ayer)) return t('fecha.ayer', 'Ayer') + ', ' + hora;
+  return fechaCorta(d.toISOString(), { day: 'numeric', month: 'short' }) + ', ' + hora;
+}
+
+function pintarFechas() {
+  CAMPOS_FECHA.forEach(id => {
+    const el  = document.getElementById(id);
+    const eco = document.getElementById(id + 'Eco');
+    if (!el || !eco) return;
+
+    const d = new Date(el.value);
+    if (isNaN(+d)) { eco.textContent = '—'; eco.classList.remove('viejo'); return; }
+
+    eco.textContent = etiquetaMomento(d);
+    // Dos minutos de margen: el reloj avanza mientras rellenas el formulario
+    eco.classList.toggle('viejo', Math.abs(Date.now() - d) > 2 * 60 * 1000);
   });
 }
+
+/* Tocar el campo manda sobre la puesta al día automática */
+CAMPOS_FECHA.forEach(id => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.addEventListener('input', () => { el.dataset.tocada = '1'; pintarFechas(); });
+});
+
+// Al volver a la app desde otra aplicación, que no se guarde la hora
+// en que se dejó aparcada
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) refrescarFechas();
+});
 
 /* ─────────────────────────────────────────────────────────────
    AUTH — LOGIN / LOGOUT
@@ -640,6 +714,7 @@ function switchTab(tab) {
   // La ventana de 24 h se mueve sola, así que se recalcula cada vez
   // que se entra en una pestaña que muestra el resumen.
   if (tab === 'registrar' || tab === 'graficas') renderResumen();
+  if (tab === 'registrar') refrescarFechas();
 
   // Las gráficas solo se pueden dibujar con el panel visible
   if (tab === 'graficas') renderCharts();
@@ -650,6 +725,7 @@ function switchTab(tab) {
 // se refresca solo para que no muestre una ventana caducada.
 setInterval(() => {
   if (tabActual === 'registrar' || tabActual === 'graficas') renderResumen();
+  if (tabActual === 'registrar') refrescarFechas();
 }, 5 * 60 * 1000);
 
 // Al rotar el móvil, Chart.js no reajusta el ancho del canvas por su

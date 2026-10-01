@@ -44,6 +44,9 @@ function mostrarFormulario(cual) {
 
   const vacio = document.getElementById('registrarVacio');
   if (vacio) vacio.style.display = cual ? 'none' : '';
+
+  // Puede llamarse antes de que la app esté montada (aplicarModulos)
+  if (typeof refrescarFechas === 'function') refrescarFechas();
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -85,7 +88,7 @@ document.getElementById('btnExt').addEventListener('click', () => {
     () => {
       toast('✅ Extracción guardada');
       document.getElementById('extMl').value    = '';
-      document.getElementById('extFecha').value = ahoraLocal();
+      reiniciarFecha('extFecha');
     });
 });
 
@@ -103,7 +106,7 @@ document.getElementById('btnPeso').addEventListener('click', () => {
     () => {
       toast('✅ Peso guardado');
       document.getElementById('pesoG').value     = '';
-      document.getElementById('pesoFecha').value = ahoraLocal();
+      reiniciarFecha('pesoFecha');
     });
 });
 
@@ -125,7 +128,7 @@ document.getElementById('btnCaca').addEventListener('click', () => {
   guardarRegistro('btnCaca', 'Guardar caca', 'caca', fecha, datos, () => {
     toast('✅ Caca guardada');
     document.getElementById('cacaNota').value  = '';
-    document.getElementById('cacaFecha').value = ahoraLocal();
+    reiniciarFecha('cacaFecha');
   });
 });
 
@@ -146,7 +149,7 @@ document.getElementById('btnPipi').addEventListener('click', () => {
   guardarRegistro('btnPipi', 'Guardar pipí', 'pipi', fecha, datos, () => {
     toast('✅ Pipí guardado');
     document.getElementById('pipiNota').value  = '';
-    document.getElementById('pipiFecha').value = ahoraLocal();
+    reiniciarFecha('pipiFecha');
   });
 });
 
