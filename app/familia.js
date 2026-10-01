@@ -395,9 +395,9 @@ window.abrirAjustes = function() {
     </details>
 
     <p class="hint-txt" style="margin-top:14px;text-align:center">
-      <a href="../privacidad.html" target="_blank" rel="noopener">Privacidad</a> ·
-      <a href="../terminos.html" target="_blank" rel="noopener">Condiciones</a> ·
-      <a href="../aviso-legal.html" target="_blank" rel="noopener">Aviso legal</a>
+      <a href="../privacidad" target="_blank" rel="noopener">Privacidad</a> ·
+      <a href="../terminos" target="_blank" rel="noopener">Condiciones</a> ·
+      <a href="../aviso-legal" target="_blank" rel="noopener">Aviso legal</a>
     </p>
 
     <p id="ajustesErr" class="error-txt" style="display:none"></p>`;
