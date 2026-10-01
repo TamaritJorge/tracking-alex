@@ -341,11 +341,25 @@ function mostrarApp() {
 }
 
 /* Aviso de los días de prueba que quedan */
+/* Mientras no haya pasarela de pago, no se enseña ninguna cuenta atrás.
+   El contador llegaba a cero y no pasaba absolutamente nada —puedeEscribir()
+   no se llama desde ningún sitio y la política RLS no mira el plan—, así que
+   se contradecía a sí mismo y además contradecía las condiciones del
+   servicio, que dicen que hoy es gratuito.
+
+   Se pone a true el día que Stripe esté conectado Y el límite esté en la base
+   de datos. En el cliente solo sería decorativo: cualquiera con su token puede
+   escribir contra la API saltándose la interfaz. */
+const COBRO_ACTIVO = false;
+
 function avisarSuscripcion() {
   const el = document.getElementById('avisoPlan');
-  if (!el || !familia) return;
+  if (!el) return;
 
-  if (familia.plan === 'activo') { el.style.display = 'none'; return; }
+  if (!COBRO_ACTIVO || !familia || familia.plan === 'activo') {
+    el.style.display = 'none';
+    return;
+  }
 
   const dias = diasDePrueba();
   el.style.display = '';

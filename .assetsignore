@@ -8,3 +8,9 @@ wrangler.jsonc
 README.md
 *.sql
 *.md
+
+# El DPA de Supabase: se guarda en el repositorio como justificante, pero no
+# es contenido de la web. Ademas la politica de privacidad enlaza la version
+# viva de Supabase, que se mantiene actualizada; una copia congelada aqui
+# acabaria contradiciendola.
+*.pdf
