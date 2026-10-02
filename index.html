@@ -54,6 +54,14 @@
   }
   </script>
 
+  <!-- Google Search no acepta SVG como favicon: su lista es BMP, GIF,
+       ICO, PNG, JPEG, PPM y TIFF. Declarando sólo el SVG, los resultados
+       de búsqueda salían con el globo terráqueo genérico. El SVG se queda
+       porque los navegadores modernos lo prefieren y escala sin pesar;
+       el .ico y el PNG son para todo lo demás. Se generan con
+       marca/iconos.py a partir de la misma pastilla. -->
+  <link rel="icon" href="favicon.ico" sizes="32x32">
+  <link rel="icon" href="marca/icono-96.png" type="image/png" sizes="96x96">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="marca/icono-180.png">
   <meta name="theme-color" content="#6d28d9">
