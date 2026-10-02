@@ -34,112 +34,270 @@
    ═════════════════════════════════════════════════════════════ */
 
 
+/* ── De dónde sale todo esto ──────────────────────────
+   Cada cifra y cada edad de este fichero tiene que poder rastrearse
+   hasta aquí. Las restricciones llevan `fuentes` y los alimentos que
+   citan algo llevan `refs`: en los dos casos son CLAVES de esta lista,
+   no texto suelto. Lo que se enseña sale de aquí, así que la cita no
+   puede desincronizarse del dato.
+
+   Lo que no se ha podido verificar contra la fuente primaria se queda
+   SIN `fuentes`, y la ficha dice «recomendación general». Un consejo
+   prudente sin firma sigue valiendo; un consejo prudente firmado por
+   quien no lo dijo, no.                                            */
+const FUENTES = [
+  { id:'espghan2017', org:'ESPGHAN',
+    titulo:'Complementary Feeding: A Position Paper by the ESPGHAN Committee on Nutrition',
+    pub:'J Pediatr Gastroenterol Nutr 2017;64(1):119-132', anio:2017,
+    url:'https://pubmed.ncbi.nlm.nih.gov/28027215/' },
+
+  { id:'aep2018', org:'AEP',
+    titulo:'Recomendaciones de la AEP sobre alimentación complementaria',
+    pub:'Comité de Lactancia Materna y Comité de Nutrición', anio:2018,
+    url:'https://www.aeped.es/publicaciones/protocolos/recomendaciones-aep-sobre-alimentacion' },
+
+  { id:'aepap2009', org:'AEPap',
+    titulo:'Alimentación de 6 a 24 meses',
+    pub:'Programa de Salud Infantil', anio:2009,
+    url:'https://www.aepap.org/sites/default/files/alimentacion_6-24m.pdf' },
+
+  { id:'aepap2006', org:'AEPap',
+    titulo:'Alimentación complementaria',
+    pub:'Actualización en Pediatría', anio:2006,
+    url:'https://www.aepap.org/sites/default/files/complementaria.pdf' },
+
+  { id:'aesanNitratos', org:'AESAN',
+    titulo:'Recomendaciones de consumo de hortalizas de hoja para población infantil '
+         + 'por la presencia de nitratos', anio:2020,
+    url:'https://www.aesan.gob.es/dam/jcr:05045da1-f03a-4a47-906b-7bb2f9c99c40/'
+      + 'TRIPTICO_AESAN_RECOMENDACION_CONSUMO_HORTALIZAS_NITRATOS_.pdf' },
+
+  { id:'aesanMercurio', org:'AESAN',
+    titulo:'Recomendaciones de consumo de pescado por presencia de mercurio', anio:2019,
+    url:'https://www.aesan.gob.es/dam/jcr:37655af5-1ba6-4a9e-a756-79a51810aac7/'
+      + 'RECOMENDACIONES_consumo_pescado_MERCURIO_AESAN_WEB.pdf' },
+
+  { id:'aesanCadmio', org:'AESAN',
+    titulo:'Cadmio. Ficha de contaminantes químicos',
+    pub:'Mantiene la recomendación de AESAN de limitar la carne oscura de los crustáceos',
+    anio:2025,
+    url:'https://www.aesan.gob.es/dam/jcr:7a626830-125a-4881-9806-165528e72aca/CADMIO.pdf' },
+
+  { id:'aesanArsenico', org:'AESAN',
+    titulo:'Arsénico. Ficha de contaminantes químicos',
+    pub:'La exposición media más alta se estima en los más pequeños, y el arroz y sus '
+      + 'derivados son los que más contribuyen',
+    anio:2025,
+    url:'https://www.aesan.gob.es/dam/jcr:65d2d2c1-e0d8-4f63-b70a-6ae67290a888/'
+      + 'ARS%C3%89NICO.pdf' },
+
+  { id:'fsaArroz', org:'Food Standards Agency (Reino Unido)', corto:'FSA',
+    titulo:'Arsenic in rice', anio:2024,
+    url:'https://www.gov.uk/government/publications/arsenic-in-rice/arsenic-in-rice' },
+
+  { id:'aesanAlgas', org:'AESAN',
+    titulo:'Recomendaciones de consumo de algas por presencia de yodo', anio:2021,
+    nota:'La página original dejó de estar en línea al migrar la web de AESAN; se '
+       + 'enlaza una copia archivada.',
+    url:'http://web.archive.org/web/20260805205339/https://www.aesan.gob.es/AECOSAN/'
+      + 'web/noticias_y_actualizaciones/noticias/2021/Recomendaciones_consumo_algas.htm' },
+
+  { id:'aapZumo', org:'AAP',
+    titulo:'Fruit Juice in Infants, Children, and Adolescents: Current Recommendations',
+    pub:'Pediatrics 2017;139(6):e20170967', anio:2017,
+    url:'https://pubmed.ncbi.nlm.nih.gov/28562300/' },
+
+  { id:'leap', org:'Du Toit G, et al. (ensayo LEAP)', corto:'ensayo LEAP',
+    titulo:'Randomized Trial of Peanut Consumption in Infants at Risk for Peanut Allergy',
+    pub:'N Engl J Med 2015;372(9):803-813', anio:2015,
+    url:'https://pubmed.ncbi.nlm.nih.gov/25705822/' },
+
+  { id:'lupino', org:'Aguilera-Insunza R, et al.', corto:'Ann Allergy Asthma Immunol',
+    titulo:'High prevalence of lupin allergy among patients with peanut allergy: '
+         + 'identification of γ-conglutin as major allergen',
+    pub:'Ann Allergy Asthma Immunol 2023;130(2):225-232', anio:2023,
+    url:'https://pubmed.ncbi.nlm.nih.gov/36191849/' },
+
+  { id:'oms', org:'OMS',
+    titulo:'Alimentación del lactante y del niño pequeño', anio:2023,
+    url:'https://www.who.int/es/news-room/fact-sheets/detail/infant-and-young-child-feeding' },
+
+  { id:'ue1169', org:'Unión Europea', corto:'Reglamento UE 1169/2011',
+    titulo:'Reglamento (UE) 1169/2011, anexo II: los 14 alérgenos de declaración obligatoria',
+    anio:2011,
+    url:'https://eur-lex.europa.eu/legal-content/ES/TXT/?uri=CELEX:32011R1169' }
+];
+
+function fuentePorId(id) {
+  for (var i = 0; i < FUENTES.length; i++) if (FUENTES[i].id === id) return FUENTES[i];
+  return null;
+}
+
+/* El número con el que se cita, 1..n, igual que en la lista impresa. */
+function numeroFuente(id) {
+  for (var i = 0; i < FUENTES.length; i++) if (FUENTES[i].id === id) return i + 1;
+  return null;
+}
+
+/* Los nombres de una lista de claves, sin repetir y en orden. Es lo que
+   encabeza la cita de la ficha: «Fuente: AESAN [5]».
+
+   Se usa `corto` cuando existe: en la lista de abajo interesa la cita
+   académica entera, pero en una ficha «Fuente: Aguilera-Insunza R, et
+   al.» no lo lee nadie.                                             */
+function organismosDe(ids) {
+  var out = [];
+  (ids || []).forEach(function(id) {
+    var f = fuentePorId(id);
+    if (!f) return;
+    var n = f.corto || f.org;
+    if (out.indexOf(n) === -1) out.push(n);
+  });
+  return out;
+}
+
+
 /* ── Restricciones de seguridad ──────────────────────────────
-   `fuente` se muestra en la ficha. Cuando no ha sido posible
-   verificar la fuente primaria, dice "Recomendación general" en
-   vez de atribuirla a un organismo: no se le pone el nombre de
-   una agencia a una cifra que no se ha podido comprobar.        */
+   `fuentes` son claves de FUENTES. Sin `fuentes`, la ficha dice
+   «recomendación general»: no se le pone el nombre de una agencia
+   a una cifra que no se ha podido comprobar.                    */
 const RESTRICCIONES = {
   mercurio: {
     edadMeses: 120,
     etiqueta: 'No antes de los 10 años',
-    motivo: 'Mercurio. Son peces grandes y longevos, los que más acumulan. '
-          + 'AESAN amplió el límite de 3 a 10 años tras detectar en población '
-          + 'española concentraciones superiores a las de otros países europeos.',
-    fuente: 'AESAN'
+    motivo: 'Mercurio. Son peces grandes, depredadores y longevos, que es lo que hace '
+          + 'que acumulen más. AESAN sitúa a los niños de hasta 10 años, junto a las '
+          + 'embarazadas, como la población más vulnerable y les recomienda evitarlos. '
+          + 'De 10 a 14 años tampoco se abre del todo: siguen limitados a 120 g al mes.',
+    fuentes: ['aesanMercurio']
   },
+
+  /* Las espinacas y las acelgas por un lado, la borraja por otro y la
+     remolacha por un tercero: AESAN le pone a la borraja una edad propia
+     y más tardía, y no menciona la remolacha. Meterlas todas en la misma
+     restricción obligaba a firmar con el nombre de AESAN una edad que
+     AESAN no ha dicho. */
   nitratos: {
     edadMeses: 12,
     etiqueta: 'No antes de los 12 meses',
-    motivo: 'Nitratos. Después del año, que no pasen de 45 g/día y que no sean '
-          + 'más del 20 % del puré.',
-    fuente: 'AESAN'
+    motivo: 'Nitratos, que el cuerpo convierte en nitritos y pueden causar '
+          + 'metahemoglobinemia, el «síndrome del bebé azul». AESAN recomienda '
+          + 'evitarlas el primer año; si la pediatra las indica igualmente, no más de '
+          + '25 g/día de 4 a 6 meses y 35 g/día de 6 a 12. De 1 a 3 años, media ración '
+          + '(45 g/día). Y nunca a un niño con una infección intestinal bacteriana.',
+    fuentes: ['aesanNitratos']
   },
+  nitratosBorraja: {
+    edadMeses: 36,
+    etiqueta: 'No antes de los 3 años',
+    motivo: 'Nitratos. A la borraja AESAN le pone una edad propia, más tardía que a '
+          + 'las espinacas y las acelgas: no incluirla antes de los 3 años de vida.',
+    fuentes: ['aesanNitratos']
+  },
+  nitratosOtras: {
+    edadMeses: 12,
+    etiqueta: 'No antes de los 12 meses',
+    motivo: 'Nitratos. Es una hortaliza que los acumula, aunque no está entre las que '
+          + 'AESAN nombra expresamente: la edad de aquí es prudencia, no una cifra '
+          + 'publicada.'
+  },
+
   botulismo: {
     edadMeses: 12,
     etiqueta: 'No antes de los 12 meses',
-    motivo: 'Puede contener esporas de Clostridium botulinum. El intestino del '
-          + 'lactante todavía no puede con ellas.',
-    fuente: 'AEPap'
+    motivo: 'Puede contener esporas de Clostridium botulinum. El lactante todavía no '
+          + 'produce suficiente ácido gástrico para neutralizarlas, y en su intestino '
+          + 'pueden germinar.',
+    fuentes: ['aepap2009']
   },
   lecheVaca: {
     edadMeses: 12,
     etiqueta: 'No como bebida antes de los 12 meses',
-    motivo: 'Desplaza a la leche materna o la fórmula y aporta poco hierro. '
-          + 'En yogur o queso, en pequeña cantidad, sí desde los 6 meses.',
-    fuente: 'AEPap'
+    motivo: 'Desplaza a la leche materna o la fórmula y aporta poco hierro. A partir '
+          + 'del año, entera y sin diluir. En yogur o queso, en pequeña cantidad, sí '
+          + 'desde los 6 meses.',
+    fuentes: ['aepap2009']
   },
   lecheLigera: {
     edadMeses: 24,
     etiqueta: 'No antes de los 2 años',
-    motivo: 'La desnatada y la semidesnatada llevan menos vitaminas liposolubles '
-          + 'y menos grasa, que a esta edad hace falta.',
-    fuente: 'AEPap'
+    motivo: 'La desnatada y la semidesnatada llevan menos vitaminas liposolubles y '
+          + 'menos grasa, y desplazan calorías hacia la proteína. No se recomiendan '
+          + 'en menores de 2 años.',
+    fuentes: ['aepap2009']
   },
   arsenico: {
-    edadMeses: 72,
-    etiqueta: 'Mejor evitarlo en los primeros años',
-    motivo: 'Arsénico inorgánico. El arroz lo acumula más que otros cereales, y '
-          + 'los productos de arroz crudo (tortitas, bebidas) concentran más. '
-          + 'El arroz cocido normal no tiene esta limitación.',
-    fuente: 'Recomendación general (no se ha podido verificar la fuente primaria)'
+    edadMeses: 60,
+    etiqueta: 'No antes de los 5 años',
+    motivo: 'Arsénico inorgánico. La agencia británica de seguridad alimentaria dice '
+          + 'que los menores de 5 años no deben tomar bebida de arroz en lugar de la '
+          + 'leche, porque beben más y pesan menos. AESAN y EFSA añaden que el arroz y '
+          + 'sus derivados son lo que más aporta a esa exposición y que los más '
+          + 'pequeños son los más expuestos. El arroz cocido normal no entra aquí.',
+    fuentes: ['fsaArroz', 'aesanArsenico']
   },
   cadmio: {
-    edadMeses: 36,
-    etiqueta: 'No antes de los 3 años',
-    motivo: 'Cadmio, que se concentra en la cabeza del marisco y en el cuerpo de '
-          + 'los cangrejos. La cola pelada no tiene este problema.',
-    fuente: 'Recomendación general (no se ha podido verificar la fuente primaria)'
+    edadMeses: 216,
+    etiqueta: 'Mejor no dárselas',
+    motivo: 'Cadmio, que se concentra en el hepatopáncreas: la cabeza de gambas, '
+          + 'langostinos y cigalas, y el cuerpo de los cangrejos (centollo, nécora, '
+          + 'buey de mar). AESAN recomienda limitar esa carne oscura a toda la '
+          + 'población, sin poner edad; en un niño no hay ningún motivo para '
+          + 'ofrecérsela. La cola pelada no tiene este problema.',
+    fuentes: ['aesanCadmio']
   },
   enteroAtragantamiento: {
     edadMeses: 60,
     etiqueta: 'Enteros no antes de los 5 años',
-    motivo: 'Tamaño y forma de alto riesgo de atragantamiento. Molidos o en crema '
-          + 'sí se pueden dar desde los 6 meses.',
-    fuente: 'AEPap'
+    motivo: 'Tamaño y forma de alto riesgo de atragantamiento. Molidos o en crema sí '
+          + 'se pueden dar desde los 6 meses, y así aportan lo mismo.',
+    fuentes: ['aep2018', 'aepap2006']
   },
   yodo: {
-    edadMeses: 36,
-    etiqueta: 'Mejor evitarlas',
-    motivo: 'Cantidades muy altas y muy variables de yodo, que pueden alterar la '
-          + 'función del tiroides.',
-    fuente: 'Recomendación general'
+    edadMeses: 216,
+    etiqueta: 'Mejor evitarlas durante la infancia',
+    motivo: 'Cantidades muy altas y muy variables de yodo, sobre todo el alga kombu, '
+          + 'que pueden alterar la función del tiroides. AESAN recomienda que la '
+          + 'población infantil evite su consumo, sin poner una edad de corte.',
+    fuentes: ['aesanAlgas']
   },
   nunca: {
     edadMeses: 9999,
-    etiqueta: 'No añadir en el primer año',
-    motivo: 'No aporta nada y acostumbra al sabor. La sal además sobrecarga el riñón.',
-    fuente: 'AEPap / OMS'
+    etiqueta: 'Mejor no añadirla',
+    motivo: 'No aporta nada y acostumbra al sabor. La OMS pide no añadir sal ni '
+          + 'azúcares a la alimentación complementaria, y AEPap, no añadirlos antes '
+          + 'del año y sólo en pequeñas cantidades durante el segundo. La sal además '
+          + 'sobrecarga el riñón.',
+    fuentes: ['oms', 'aepap2009']
   },
   sinValorNutritivo: {
     edadMeses: 24,
     etiqueta: 'Mejor evitarlo',
-    motivo: 'Bebidas de escaso valor nutritivo: llenan sin alimentar y desplazan '
-          + 'a la leche y a la comida. Las infusiones además pueden llevar azúcar '
-          + 'y algunas plantas no son inocuas en lactantes.',
-    fuente: 'AEPap'
+    motivo: 'Bebidas de escaso valor nutritivo: llenan sin alimentar y desplazan a la '
+          + 'leche y a la comida. Las infusiones además llevan taninos, que estorban '
+          + 'la absorción del hierro, y algunas plantas no son inocuas en lactantes.',
+    fuentes: ['aepap2009']
   },
   azucarAnadido: {
     edadMeses: 24,
     etiqueta: 'Mejor evitarlo en los primeros años',
-    motivo: 'Azúcar añadido. Que algo se venda como "de bebé" no lo hace adecuado: '
-          + 'acostumbra al sabor dulce y favorece la caries.',
-    fuente: 'AEPap / OMS'
+    motivo: 'Azúcar añadido. Que algo se venda como «de bebé» no lo hace adecuado: '
+          + 'acostumbra al sabor dulce y favorece la caries. Para la OMS, por debajo '
+          + 'de los 2 años no hay ninguna cantidad recomendable.',
+    fuentes: ['oms', 'aepap2009']
   },
   embutidos: {
     edadMeses: 12,
     etiqueta: 'No antes de los 12 meses',
     motivo: 'Mucha sal y nitritos, y ningún nutriente que no dé la carne de verdad. '
-          + 'Los curados y las lonchas enteras añaden riesgo de atragantamiento.',
-    fuente: 'Recomendación general (no se ha podido verificar la fuente primaria)'
+          + 'Los curados y las lonchas enteras añaden riesgo de atragantamiento.'
   },
   bebidaVegetal: {
     edadMeses: 12,
     etiqueta: 'No como sustituto de la leche antes de los 12 meses',
     motivo: 'No sustituyen a la leche materna ni a la fórmula: llevan muy poca '
           + 'proteína, grasa y calcio. En una receta puntual no pasa nada; como '
-          + 'bebida principal, no.',
-    fuente: 'AEPap'
+          + 'bebida principal, no.'
   }
 };
 
@@ -251,6 +409,7 @@ const ALIMENTOS = [
        + 'crudo ni poco hecho (mayonesa casera, merengue, tortilla babosa).' },
 
   { id:'crema-cacahuete', nombre:'Crema de cacahuete', cat:'frutosecos', hierro:null, alergeno:'cacahuete', desdeMeses:6, orden:12,
+    refs:['leap'],
     blw:'Capa MUY fina sobre una tira de tostada. Nunca a cucharadas.',
     cuchara:'Una cucharadita diluida en yogur, papilla o agua tibia.',
     atragantamiento:'Espesa y pegajosa, se pega al paladar. Siempre diluida o en '
@@ -345,6 +504,7 @@ const ALIMENTOS = [
        + 'las tortitas y las bebidas de arroz.' },
 
   { id:'cereales-hierro', nombre:'Cereales fortificados con hierro', cat:'cereal', hierro:'alto', alergeno:'gluten', desdeMeses:6, orden:31,
+    refs:['espghan2017'],
     blw:'Espesos, sobre tostada o en tortita.',
     cuchara:'Con leche materna o de fórmula.',
     nota:'ESPGHAN los menciona junto a la carne como vía para cubrir el hierro. '
@@ -399,7 +559,10 @@ const ALIMENTOS = [
     cuchara:'Como base del sofrito del puré.' },
 
   { id:'tomate', nombre:'Tomate', cat:'verdura', hierro:null, desdeMeses:6, orden:47,
-    blw:'Pelado y sin semillas, en gajos gruesos.',
+    atragantamiento:'Los cherry son del tamaño y la forma de la vía aérea, como la '
+                  + 'uva: pelados y partidos a lo LARGO en cuartos, nunca enteros '
+                  + 'ni en rodajas.',
+    blw:'Pelado y sin semillas, en gajos gruesos. El cherry, en cuartos a lo largo.',
     cuchara:'Triturado en salsa sin sal.',
     nota:'La vitamina C del tomate ayuda a absorber el hierro de la legumbre.' },
 
@@ -428,28 +591,41 @@ const ALIMENTOS = [
     blw:'Bastones pelados. Frío va bien cuando le salen los dientes.',
     cuchara:'Rallado.' },
 
-  { id:'lechuga', nombre:'Lechuga', cat:'verdura', hierro:null, desdeMeses:12, orden:54,
+  { id:'lechuga', nombre:'Lechuga', cat:'verdura', hierro:null, desdeMeses:6, orden:54,
+    refs:['aesanNitratos'],
     blw:'Hojas tiernas cortadas pequeñas.',
     cuchara:'Picada muy fina en el plato.',
-    nota:'Las hojas grandes se pegan al paladar; córtalas.' },
+    atragantamiento:'Las hojas grandes se pegan al paladar. Córtalas pequeñas.',
+    nota:'Es de las hortalizas de hoja con más nitratos, pero AESAN pone edad sólo '
+       + 'a espinacas, acelgas y borraja: la lechuga no entra en esa lista. Si '
+       + 'sobra cocinada, al frigorífico o al congelador, nunca a temperatura '
+       + 'ambiente: ahí es donde los nitratos pasan a nitritos.' },
 
   { id:'espinacas', nombre:'Espinacas', cat:'verdura', hierro:'medio', desdeMeses:12,
     restriccion:'nitratos', orden:55,
     blw:'Cocidas y bien escurridas, mezcladas en una tortilla.',
-    cuchara:'Cocidas y trituradas, como parte menor del puré.' },
+    cuchara:'Cocidas y trituradas, como parte menor del puré.',
+    nota:'Lavarlas y cocerlas tirando el agua baja bastante los nitratos. Lo que '
+       + 'sobre, al frigorífico si se come el mismo día y al congelador si no: a '
+       + 'temperatura ambiente el nitrato pasa a nitrito, y en puré más rápido. '
+       + 'Si tiene una infección intestinal bacteriana, ese día no.' },
 
   { id:'acelgas', nombre:'Acelgas', cat:'verdura', hierro:'medio', desdeMeses:12,
     restriccion:'nitratos', orden:56,
     blw:'Penca cocida en bastones.',
-    cuchara:'Cocidas y trituradas con patata.' },
+    cuchara:'Cocidas y trituradas con patata.',
+    nota:'Mismo cuidado que las espinacas: cocerlas tirando el agua, no dejarlas a '
+       + 'temperatura ambiente y no dárselas con una infección intestinal. En '
+       + 'España se comen mucho más que en el resto de Europa, y por eso AESAN las '
+       + 'trata igual que a las espinacas.' },
 
-  { id:'borraja', nombre:'Borraja', cat:'verdura', hierro:null, desdeMeses:12,
-    restriccion:'nitratos', orden:57,
+  { id:'borraja', nombre:'Borraja', cat:'verdura', hierro:null, desdeMeses:36,
+    restriccion:'nitratosBorraja', orden:57,
     blw:'Penca cocida en bastones.',
     cuchara:'Cocida y triturada.' },
 
   { id:'remolacha', nombre:'Remolacha', cat:'verdura', hierro:'medio', desdeMeses:12,
-    restriccion:'nitratos', orden:58,
+    restriccion:'nitratosOtras', orden:58,
     blw:'Cocida en bastones. Mancha muchísimo.',
     cuchara:'Cocida y triturada.',
     nota:'Puede teñir el pipí y la caca de rojo. Es normal y no es sangre.' },
@@ -596,6 +772,7 @@ const ALIMENTOS = [
        + 'que evitar es el atún ROJO.' },
 
   { id:'gambas', nombre:'Gambas y langostinos', cat:'pescado', hierro:'medio', alergeno:'crustaceos', desdeMeses:6, orden:90,
+    refs:['aesanCadmio'],
     blw:'Cola pelada, bien cocida, cortada a lo largo.',
     cuchara:'Picada muy fina.',
     atragantamiento:'La textura elástica cuesta de masticar. Corta pequeño.',
@@ -613,7 +790,7 @@ const ALIMENTOS = [
                   + 'pequeño.' },
 
   { id:'cabezas-marisco', nombre:'Cabezas de marisco', cat:'pescado', hierro:null, alergeno:'crustaceos',
-    desdeMeses:36, restriccion:'cadmio', orden:93,
+    desdeMeses:216, restriccion:'cadmio', orden:93,
     blw:'—', cuchara:'—' },
 
   { id:'pez-espada', nombre:'Pez espada / emperador', cat:'pescado', hierro:'medio', alergeno:'pescado',
@@ -639,11 +816,13 @@ const ALIMENTOS = [
     nota:'Bien cuajada, nada de tortilla poco hecha.' },
 
   { id:'queso-fresco', nombre:'Queso fresco', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:101,
-    blw:'En dados grandes o bastones.',
+    atragantamiento:'En dados pequeños es un riesgo clásico: resbala y tapona. '
+                  + 'Mejor bastones, o dados grandes que tenga que morder.',
+    blw:'En bastones, o en dados grandes. Nunca en taquitos pequeños.',
     cuchara:'Chafado.',
     nota:'Busca el de menos sal. El queso es de los alimentos que más sal aporta.' },
 
-  { id:'queso-curado', nombre:'Queso curado', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:9, orden:102,
+  { id:'queso-curado', nombre:'Queso curado', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:102,
     blw:'Rallado o en bastones finos.',
     cuchara:'Rallado sobre la pasta.',
     nota:'En poca cantidad: lleva bastante sal.' },
@@ -681,6 +860,7 @@ const ALIMENTOS = [
     blw:'—', cuchara:'—' },
 
   { id:'aceite-oliva', nombre:'Aceite de oliva virgen extra', cat:'otros', hierro:null, desdeMeses:6, orden:120,
+    refs:['aepap2009'],
     blw:'Un chorrito sobre la verdura.', cuchara:'Una cucharadita en cada puré.',
     nota:'AEPap lo prefiere a cualquier otra grasa. Unos 10-20 g al día si no toma '
        + 'alimentos de origen animal a diario, 5 g si sí.' },
@@ -695,15 +875,15 @@ const ALIMENTOS = [
     blw:'—', cuchara:'—' },
 
   { id:'tortitas-arroz', nombre:'Tortitas de arroz', cat:'cereal', hierro:null,
-    desdeMeses:72, restriccion:'arsenico', orden:124,
+    desdeMeses:60, restriccion:'arsenico', orden:124,
     blw:'—', cuchara:'—' },
 
   { id:'bebida-arroz', nombre:'Bebida de arroz', cat:'otros', hierro:null,
-    desdeMeses:72, restriccion:'arsenico', orden:125,
+    desdeMeses:60, restriccion:'arsenico', orden:125,
     blw:'—', cuchara:'—' },
 
   { id:'algas', nombre:'Algas', cat:'otros', hierro:'medio',
-    desdeMeses:36, restriccion:'yodo', orden:126,
+    desdeMeses:216, restriccion:'yodo', orden:126,
     blw:'—', cuchara:'—' },
 
   { id:'palomitas', nombre:'Palomitas', cat:'otros', hierro:null,
@@ -727,12 +907,17 @@ const ALIMENTOS = [
     nota:'Azúcar, y además cafeína. No hay prisa ninguna.' },
 
   { id:'zumo', nombre:'Zumo de fruta', cat:'otros', hierro:null, desdeMeses:12, orden:131,
+    refs:['aapZumo', 'aepap2009'],
     blw:'En vaso, nunca en biberón.', cuchara:'—',
-    nota:'Máximo 180 ml al día (AAP) y siempre mejor la fruta entera: el zumo tiene '
-       + 'el azúcar sin la fibra y favorece la caries.' },
+    nota:'La AAP desaconseja el zumo por debajo del año, salvo que la pediatra lo '
+       + 'indique para el estreñimiento, y de 1 a 3 años lo limita a 120 ml al día. '
+       + 'Siempre mejor la fruta entera: el zumo lleva el azúcar sin la fibra y '
+       + 'favorece la caries. (Hasta hace poco aquí ponía 180 ml, que es la cifra '
+       + 'que la AAP daba antes de 2017.)' },
 
   /* ══ Bebidas ══════════════════════════════════════════════ */
   { id:'agua', nombre:'Agua', cat:'otros', hierro:null, desdeMeses:6, orden:19,
+    refs:['aepap2009'],
     blw:'En vaso abierto o de aprendizaje, con las comidas. Pequeños sorbos.',
     cuchara:'Unos sorbos entre cucharadas.',
     nota:'Desde que empieza la complementaria hay que ofrecerle agua en las comidas. '
@@ -798,6 +983,7 @@ const ALIMENTOS = [
   /* ══ Alérgenos que faltaban del listado europeo ═══════════ */
   { id:'apio', nombre:'Apio', cat:'verdura', hierro:null, alergeno:'apio',
     desdeMeses:6, orden:59,
+    refs:['ue1169'],
     blw:'Sólo cocido y sin hebras, en bastones.',
     cuchara:'Cocido y triturado, o como base del caldo.',
     atragantamiento:'Crudo tiene hebras duras que no puede masticar.',
@@ -805,24 +991,28 @@ const ALIMENTOS = [
        + 'sofritos. Si lo usáis para el caldo, cuenta como introducción.' },
 
   { id:'mostaza', nombre:'Mostaza', cat:'otros', hierro:null, alergeno:'mostaza',
-    desdeMeses:12, orden:141,
+    desdeMeses:6, orden:141,
+    refs:['ue1169', 'espghan2017'],
     blw:'—', cuchara:'—',
-    nota:'Alérgeno oficial. Poco habitual a esta edad, pero aparece en salsas y '
-       + 'algunos embutidos.' },
+    nota:'Alérgeno oficial de la lista europea. Poco habitual a esta edad y no hay '
+       + 'ninguna prisa por darla, pero tampoco motivo para retrasarla: aparece en '
+       + 'salsas y en algunos embutidos, y conviene saber si le sienta bien.' },
 
   { id:'altramuces', nombre:'Altramuces y harina de altramuz', cat:'legumbre',
-    hierro:'medio', alergeno:'altramuces', desdeMeses:12, orden:31,
+    hierro:'medio', alergeno:'altramuces', desdeMeses:6, orden:31,
+    refs:['ue1169', 'lupino', 'espghan2017'],
     blw:'Pelados, sin piel y chafados. Los de bote hay que enjuagarlos mucho.',
     cuchara:'Chafados y mezclados con el puré.',
     atragantamiento:'Redondos, firmes y con una piel dura que no puede masticar. '
                   + 'Pelar y chafar siempre.',
     nota:'Ojo con este, que pasa desapercibido: es alérgeno oficial en la UE y '
-       + 'tiene reactividad cruzada alta con el cacahuete — en pruebas de '
-       + 'provocación, el 44 % de los alérgicos al cacahuete reaccionaron también '
-       + 'al altramuz. Si reacciona al cacahuete, consultad antes de darle '
-       + 'altramuces. Aparece además como harina en panes sin gluten y en productos '
-       + 'veganos, así que mirad la etiqueta. Los de aperitivo van en salmuera y '
-       + 'llevan muchísima sal.' },
+       + 'tiene reactividad cruzada con el cacahuete. En una serie pequeña de '
+       + 'provocaciones reaccionaron al altramuz 4 de 9 alérgicos al cacahuete; '
+       + 'son pocos casos, pero la señal es fuerte. Si reacciona al cacahuete, '
+       + 'consultad con vuestra pediatra antes de darle altramuces. Aparece '
+       + 'además como harina en panes sin gluten y en productos veganos, así que '
+       + 'mirad la etiqueta. Los de aperitivo no valen: van en salmuera y llevan '
+       + 'muchísima sal.' },
 
   /* ══ Más verdura ══════════════════════════════════════════ */
   { id:'nabo', nombre:'Nabo', cat:'verdura', hierro:null, desdeMeses:6, orden:44,

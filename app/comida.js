@@ -347,6 +347,7 @@ function renderComida() {
   renderVentana();
   renderCola();
   renderCatalogo();
+  renderFuentes();
   renderDiario();
 }
 
@@ -628,6 +629,99 @@ window.toggleCat = function(clave) {
   renderCatalogo();
 };
 
+/* ────────────────────────────────────────────────────────────
+   DE DÓNDE SALE CADA COSA
+
+   Dos piezas: la cita corta dentro de la ficha de un alimento
+   —«Fuente: AESAN [6]»— y la lista entera al pie de la pestaña.
+
+   El número no es decorativo: es la posición en FUENTES, y pulsarlo
+   cierra el modal, abre la lista y lleva el ojo hasta esa entrada. Quien
+   quiera comprobar un dato llega a la fuente en dos toques; quien no, ni
+   se entera de que está ahí.
+
+   Y donde no hay claves no se inventa un organismo: la ficha dice que es
+   una recomendación general, que es exactamente lo que es.
+   ──────────────────────────────────────────────────────────── */
+
+let fuentesAbiertas = false;
+let fuenteResaltada = null;
+
+function htmlCita(ids) {
+  const orgs = organismosDe(ids);
+  if (!orgs.length) {
+    return `<div class="aviso-fuente">Recomendación general: no se ha podido
+      verificar una fuente primaria.</div>`;
+  }
+  const nums = ids.map(id => {
+    const n = numeroFuente(id);
+    return n ? `<button type="button" class="ref-num" onclick="verFuente('${id}')"
+      aria-label="Ver la referencia ${n}">${n}</button>` : '';
+  }).join('');
+  return `<div class="aviso-fuente">Fuente: ${esc(orgs.join(', '))} ${nums}</div>`;
+}
+
+/* El scroll va diferido: la tarjeta acaba de repintarse y hasta que el
+   navegador no la coloca no tiene su altura final. */
+window.verFuente = function(id) {
+  fuenteResaltada = id;
+  fuentesAbiertas = true;
+  cerrarComidaModal();
+  switchTab('comida');
+  renderFuentes();
+  setTimeout(() => {
+    const el = document.getElementById('fuente-' + id);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, 60);
+};
+
+window.toggleFuentes = function() {
+  fuentesAbiertas = !fuentesAbiertas;
+  if (!fuentesAbiertas) fuenteResaltada = null;
+  renderFuentes();
+};
+
+function renderFuentes() {
+  const cont = document.getElementById('comidaFuentes');
+  if (!cont) return;
+
+  const lista = !fuentesAbiertas ? '' : `
+    <ol class="ref-lista">
+      ${FUENTES.map(f => `
+        <li id="fuente-${f.id}" class="${f.id === fuenteResaltada ? 'ref-viva' : ''}">
+          <strong>${esc(f.org)}</strong>${f.anio ? ' (' + f.anio + ')' : ''}.
+          ${esc(f.titulo)}.
+          ${f.pub ? `<span class="ref-pub">${esc(f.pub)}.</span>` : ''}
+          <a href="${esc(f.url)}" target="_blank" rel="noopener noreferrer">Ver</a>
+          ${f.nota ? `<span class="ref-pub">${esc(f.nota)}</span>` : ''}
+        </li>`).join('')}
+    </ol>
+
+    <p class="hint-txt" style="margin:16px 0 0">
+      <strong>El orden en que se ofrecen los alimentos no importa</strong>, y así lo
+      dicen tanto la AEP como AESAN. La cola de esta pestaña es una sugerencia
+      nuestra: prioriza el hierro, que es lo que de verdad escasea a partir de los
+      6 meses, y mete pronto los alérgenos, porque retrasarlos no previene alergias.
+      Se puede saltar, posponer y descartar lo que queráis.
+    </p>
+
+    <p class="hint-txt" style="margin:10px 0 0">
+      Donde no ha sido posible llegar a la fuente primaria, la ficha lo dice: pone
+      <em>recomendación general</em> en vez del nombre de una agencia.
+    </p>`;
+
+  cont.innerHTML = `
+    <button type="button" class="cat-cab" onclick="toggleFuentes()"
+            aria-expanded="${fuentesAbiertas}">
+      <span>📖 De dónde sale todo esto</span>
+      <span>${fuentesAbiertas ? '−' : '+'}</span>
+    </button>
+    <p class="card-sub" style="margin-top:8px">
+      ${FUENTES.length} referencias. Cada edad y cada cifra de esta pestaña sale de ahí.
+    </p>
+    ${lista}`;
+}
+
 /* ── Diario ── */
 function renderDiario() {
   const cont = document.getElementById('comidaDiario');
@@ -707,7 +801,7 @@ window.verFicha = function(id) {
   if (av.duro) {
     html += `<div class="aviso aviso-stop">
       <strong>⛔ ${esc(av.duro.etiqueta)}</strong><br>${esc(av.duro.motivo)}
-      <div class="aviso-fuente">Fuente: ${esc(av.duro.fuente)}</div></div>`;
+      ${htmlCita(av.duro.fuentes)}</div>`;
   } else if (av.suave) {
     html += `<div class="aviso aviso-suave">
       Se suele ofrecer a partir de los ${av.suave} meses. No es una prohibición,
@@ -729,14 +823,19 @@ window.verFicha = function(id) {
   }
   if (a.nota) {
     html += `<div class="field"><label>A tener en cuenta</label>
-      <p class="ficha-txt">${esc(a.nota)}</p></div>`;
+      <p class="ficha-txt">${esc(a.nota)}</p>
+      ${a.refs ? htmlCita(a.refs) : ''}</div>`;
   }
 
   if (a.alergeno) {
     html += `<div class="field"><label>Alérgeno</label>
-      <p class="ficha-txt">${esc(ALERGENOS[a.alergeno].nombre)}. Tras introducirlo
-      se abre una ventana de ${DIAS_VENTANA_ALERGENO} días antes de probar otro
-      alérgeno nuevo.</p></div>`;
+      <p class="ficha-txt">${esc(ALERGENOS[a.alergeno].nombre)}, de los catorce de
+      declaración obligatoria en la UE. Tras introducirlo se abre una ventana de
+      ${DIAS_VENTANA_ALERGENO} días antes de probar otro alérgeno nuevo: la AEP
+      habla de separarlos entre 3 y 5 días, y aquí se usa el extremo corto.
+      Retrasar un alérgeno no previene la alergia, así que todos se pueden
+      ofrecer desde los 6 meses.</p>
+      ${htmlCita(['ue1169', 'aep2018', 'espghan2017'])}</div>`;
   }
 
   if (e.veces) {
@@ -783,7 +882,7 @@ window.abrirRegistro = function(id) {
   if (av.duro) {
     aviso = `<div class="aviso aviso-stop">
       <strong>⛔ ${esc(av.duro.etiqueta)}</strong><br>${esc(av.duro.motivo)}
-      <div class="aviso-fuente">Fuente: ${esc(av.duro.fuente)}</div>
+      ${htmlCita(av.duro.fuentes)}
       <label class="check-inline" style="margin-top:10px">
         <input type="checkbox" id="confirmaRiesgo"> Lo registro igualmente
       </label></div>`;

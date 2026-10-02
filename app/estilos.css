@@ -729,6 +729,56 @@
 
     .btn-mini-pri { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
 
+    /* Bibliografía de la pestaña de comida.
+
+       El numerito es un botón de verdad, no un <sup>: tiene que poder
+       pulsarse con un dedo gordo a las tres de la mañana, así que se le
+       da área de toque aunque se vea pequeño. */
+    .ref-num {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      margin-left: 3px;
+      padding: 0 5px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      background: var(--surface2);
+      color: var(--primary);
+      font: inherit;
+      font-size: 0.72rem;
+      font-weight: 700;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .ref-num:hover { border-color: var(--primary); }
+
+    .ref-lista {
+      margin: 14px 0 0;
+      padding-left: 22px;
+      font-size: 0.84rem;
+      line-height: 1.5;
+      color: var(--text2);
+    }
+
+    .ref-lista li { margin-bottom: 12px; }
+    .ref-lista strong { color: var(--text); }
+    .ref-lista a { color: var(--primary); }
+
+    .ref-pub { display: block; font-size: 0.95em; opacity: .85; }
+
+    /* La entrada a la que se acaba de saltar desde una ficha. Se queda
+       marcada: si el salto deja la lista a media pantalla, hay que poder
+       ver cuál era sin volver atrás. */
+    .ref-viva {
+      background: var(--primary-lavado, rgba(109,40,217,.10));
+      border-radius: 8px;
+      padding: 6px 8px;
+      margin-left: -8px;
+    }
+
     /* Catálogo plegable */
     .cat-cab {
       display: flex;
