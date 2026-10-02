@@ -151,7 +151,10 @@ window.posponerSlot = function(clave) {
   o[clave] = e;
   guardarPospuestos(o);
   pintarBannerMed();
-  toast(t('med.pospuesto', '⏾ Te lo recuerdo en ' + POSPONER_MIN + ' min'));
+  // «Sigue sin darse» a proposito: el boton de al lado es el de marcarla,
+  // y confundirlos es confundir «luego» con «ya esta hecho».
+  toast(t2('med.pospuesto', '⏾ Sigue sin darse. Te lo recuerdo en {n} min.',
+           { n: POSPONER_MIN }), 4000);
 };
 
 /* ─────────────────────────────────────────────────────────────
@@ -292,7 +295,7 @@ function pintarBannerMed() {
         <button class="btn-mini btn-mini-pri" onclick="irAMedicacion('${clave}')"
                 >${esc(t('med.verla', 'Ver'))}</button>
         ${puedePosponer ? `<button class="btn-mini" onclick="posponerSlot('${clave}')"
-                >${esc(t('med.ahorano', 'Ahora no'))}</button>` : ''}
+                >${esc(t2('med.posponer', 'Posponer {n} min', { n: POSPONER_MIN }))}</button>` : ''}
       </span>
     </div>`;
 }
