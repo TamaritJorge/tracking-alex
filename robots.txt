@@ -1,19 +1,62 @@
-# Tracking Álex
+# As a condition of accessing this website, you agree to abide by the following
+# content signals:
+
+# (a)  If a content-signal = yes, you may collect content for the corresponding
+#      use.
+# (b)  If a content-signal = no, you may not collect content for the
+#      corresponding use.
+# (c)  If the website operator does not include a content signal for a
+#      corresponding use, the website operator neither grants nor restricts
+#      permission via content signal with respect to the corresponding use.
+
+# The content signals and their meanings are:
+
+# search:   building a search index and providing search results (e.g., returning
+#           hyperlinks and short excerpts from your website's contents). Search does not
+#           include providing AI-generated search summaries.
+# ai-input: inputting content into one or more AI models (e.g., retrieval
+#           augmented generation, grounding, or other real-time taking of content for
+#           generative AI search answers).
+# ai-train: training or fine-tuning AI models.
+
+# ANY RESTRICTIONS EXPRESSED VIA CONTENT SIGNALS ARE EXPRESS RESERVATIONS OF
+# RIGHTS UNDER ARTICLE 4 OF THE EUROPEAN UNION DIRECTIVE 2019/790 ON COPYRIGHT
+# AND RELATED RIGHTS IN THE DIGITAL SINGLE MARKET.
+
+# -----------------------------------------------------------------------
+# Tracking Alex
 #
-# No se prohibe nada. La tentacion era poner "Disallow: /app/", y es
-# justo lo que no hay que hacer: Disallow impide RASTREAR, no indexar.
-# Si Google no puede entrar en /app/ nunca llega a leer el <meta
-# name="robots" content="noindex"> que lleva dentro, y la URL puede
-# acabar listada igualmente, sin titulo y sin descripcion. Las dos
-# cosas juntas se estorban; la etiqueta sola funciona.
+# El preambulo de arriba es el de Cloudflare, palabra por palabra. Hasta
+# ahora lo servia Cloudflare por su cuenta porque no habia ningun
+# robots.txt en el repositorio; al crear este, el nuestro lo sustituyo
+# entero. Esta copiado aqui para no perderlo.
 #
-# Lo mismo vale para las paginas legales, que tambien van con noindex.
+# Y va con la linea Content-signal que antes NO estaba: el preambulo solo
+# es un texto que describe unas senales sin declarar ninguna, o sea, nada.
 #
-# Cloudflare anade por su cuenta las senales de contenido para IA
-# (content signals) a este fichero. Si algun dia dejara de hacerlo y se
-# quisieran mantener, se copian aqui.
+#   search=yes   que nos indexen es justo lo que queremos
+#   ai-train=no  no para entrenar modelos
+#   ai-input     a proposito sin declarar, que es neutro: ni se concede ni
+#                se prohibe. Es la postura por defecto de Cloudflare. Si
+#                algun dia interesa que ChatGPT y compania puedan citar la
+#                pagina al recomendar aplicaciones, se pone ai-input=yes.
+#
+# Esto NO bloquea a nadie: es una declaracion de uso, no una regla de
+# rastreo. Bloquear de verdad a GPTBot, ClaudeBot y demas seria una lista
+# de Disallow aparte, y no la hay a proposito: una pagina de venta quiere
+# que la encuentren.
+#
+# No se prohibe nada mas. La tentacion era poner "Disallow: /app/", y es
+# justo lo que no hay que hacer: Disallow impide RASTREAR, no indexar. Si
+# Google no puede entrar en /app/ nunca llega a leer el <meta name="robots"
+# content="noindex"> que lleva dentro, y la URL puede acabar listada
+# igualmente, sin titulo y sin descripcion. Las dos cosas juntas se
+# estorban; la etiqueta sola funciona. Lo mismo vale para las paginas
+# legales, que tambien van con noindex.
+# -----------------------------------------------------------------------
 
 User-agent: *
+Content-signal: search=yes, ai-train=no
 Allow: /
 
 Sitemap: https://trackingalex.app/sitemap.xml
