@@ -549,8 +549,11 @@ function filaPendiente(p) {
   const pos = pospuesto(p)
     ? `<span class="med-pos">${esc(t('med.pospuesta', 'pospuesta'))}</span>` : '';
 
+  // med-pend sólo en las que piden acción: son las que llevan el botón
+  // ancho y las únicas que necesitan partirse en dos líneas en un móvil
+  // estrecho. Las ya resueltas llevan un ✕ pequeño y caben de sobra.
   return { clave, orden: p.fecha_slot + p.hora_slot, html: `
-    <div class="med-fila${foco}">
+    <div class="med-fila med-pend${foco}">
       <div class="med-cuando ${clase}">${esc(etiquetaDia(p.fecha_slot))}${esc(p.hora_slot)}</div>
       <div class="med-info">
         <div class="med-nom">${esc(p.nombre)}${p.dosis ? ' <span class="med-dosis">' + esc(p.dosis) + '</span>' : ''}</div>
@@ -643,8 +646,12 @@ function normalizarHoras(lista) {
   lista.forEach(h => {
     const m = /^(\d{1,2}):(\d{2})$/.exec((h || '').trim());
     if (!m) return;
-    const hh = Math.min(23, parseInt(m[1], 10));
-    const mm = Math.min(59, parseInt(m[2], 10));
+    const hh = parseInt(m[1], 10);
+    const mm = parseInt(m[2], 10);
+    // Se descarta, no se recorta. Recortar convertía «24:70» en las
+    // 23:59 sin decir nada: una hora inventada que nadie había
+    // pedido, y encima a la que de verdad se dan tomas de noche.
+    if (hh > 23 || mm > 59) return;
     vistas[String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0')] = true;
   });
   return Object.keys(vistas).sort();

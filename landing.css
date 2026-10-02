@@ -168,6 +168,12 @@ a { color: var(--marca); }
 
 @media (min-width: 680px) {
   .rejilla { grid-template-columns: repeat(2, 1fr); }
+
+  /* Con un número impar de fichas, la última se quedaba sola a media
+     fila y el bloque terminaba descolgado. Que ocupe el ancho entero.
+     Escrito con :nth-child(odd) y no con «la quinta» para que siga
+     valiendo cuando haya seis, o siete. */
+  .rejilla > .ficha:last-child:nth-child(odd) { grid-column: 1 / -1; }
 }
 
 .ficha {
