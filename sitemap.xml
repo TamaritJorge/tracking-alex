@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Una sola URL, y no es un olvido: las paginas legales y la app van
+     con noindex, asi que meterlas aqui seria pedirle a Google que
+     indexe lo que se le acaba de prohibir. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>https://trackingalex.app/</loc>
+    <lastmod>2026-10-02</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>

@@ -1,0 +1,19 @@
+# Tracking Álex
+#
+# No se prohibe nada. La tentacion era poner "Disallow: /app/", y es
+# justo lo que no hay que hacer: Disallow impide RASTREAR, no indexar.
+# Si Google no puede entrar en /app/ nunca llega a leer el <meta
+# name="robots" content="noindex"> que lleva dentro, y la URL puede
+# acabar listada igualmente, sin titulo y sin descripcion. Las dos
+# cosas juntas se estorban; la etiqueta sola funciona.
+#
+# Lo mismo vale para las paginas legales, que tambien van con noindex.
+#
+# Cloudflare anade por su cuenta las senales de contenido para IA
+# (content signals) a este fichero. Si algun dia dejara de hacerlo y se
+# quisieran mantener, se copian aqui.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://trackingalex.app/sitemap.xml

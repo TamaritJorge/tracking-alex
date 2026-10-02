@@ -200,6 +200,58 @@ a { color: var(--marca); }
 .ficha p { font-size: 0.92rem; color: var(--tinta2); }
 
 /* ═══════════════════════════════════════════
+   PREGUNTAS
+
+   No llevan cuadrícula propia: reutilizan .rejilla y .ficha, que ya
+   hacen exactamente esto. Aquí sólo está lo que .ficha no tenía, que
+   es el h3 (sus títulos son h2) y el encabezado de la sección.
+   ═══════════════════════════════════════════ */
+.faq { padding-top: 10px; }
+
+.faq-titulo {
+  font-size: clamp(1.25rem, 3.4vw, 1.5rem);
+  font-weight: 680;
+  letter-spacing: -0.02em;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+/* Sin el icono de arriba, 22 px de aire sobran */
+.rejilla-faq .ficha { padding: 20px 22px; }
+
+.rejilla-faq h3 {
+  font-size: 1.02rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
+  margin-bottom: 7px;
+}
+
+.rejilla-faq p { font-size: 0.92rem; color: var(--tinta2); }
+.rejilla-faq strong { color: var(--tinta); font-weight: 620; }
+.rejilla-faq em { font-style: normal; font-weight: 620; color: var(--marca); }
+
+/* ═══════════════════════════════════════════
+   CIERRE
+   ═══════════════════════════════════════════ */
+.cierre {
+  text-align: center;
+  padding: 6px 16px 64px;
+}
+
+.cierre h2 {
+  font-size: clamp(1.35rem, 4vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  margin-bottom: 8px;
+}
+
+.cierre p {
+  color: var(--tinta2);
+  font-size: 0.97rem;
+  margin-bottom: 20px;
+}
+
+/* ═══════════════════════════════════════════
    PIE
    ═══════════════════════════════════════════ */
 .pie {

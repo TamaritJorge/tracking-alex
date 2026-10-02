@@ -15,6 +15,12 @@ README.md
 # acabaria contradiciendola.
 *.pdf
 
+# El generador de la tarjeta de compartir (marca/og.py). El PNG que
+# produce si se publica; el script que lo produce, no. Sin esta linea
+# se serviria como parte de la web, porque la carpeta de assets es la
+# raiz del repositorio.
+*.py
+
 # Las plantillas de correo viven en el repositorio para tener historial,
 # pero no son paginas de la web: se pegan en el panel de Supabase.
 correo

@@ -6,6 +6,54 @@
   <title>Tracking Álex · seguimiento diario de tu bebé</title>
   <meta name="description" content="Pañales, peso con percentiles de la OMS, alimentación complementaria y las medicinas del pediatra. Para los dos padres, desde el móvil.">
 
+  <!-- ══ Al compartir el enlace ══════════════════════════════════════
+       Sin og:image no hay tarjeta: WhatsApp, Telegram, LinkedIn y Slack
+       enseñan el dominio pelado, que es como estaba esto antes. Las URL
+       tienen que ser absolutas; varios scrapers no resuelven rutas
+       relativas aquí, y es el fallo clásico. -->
+  <link rel="canonical" href="https://trackingalex.app/">
+  <meta property="og:type"          content="website">
+  <meta property="og:site_name"     content="Tracking Álex">
+  <meta property="og:locale"        content="es_ES">
+  <meta property="og:url"           content="https://trackingalex.app/">
+  <meta property="og:title"         content="El día a día de tu bebé, en dos toques">
+  <meta property="og:description"   content="Pañales, peso con percentiles de la OMS, comida y las medicinas del pediatra. Lo que apunta uno lo ve el otro al instante.">
+  <meta property="og:image"         content="https://trackingalex.app/marca/og.png">
+  <meta property="og:image:width"   content="1200">
+  <meta property="og:image:height"  content="630">
+  <meta property="og:image:type"    content="image/png">
+  <meta property="og:image:alt"     content="Tracking Álex · seguimiento diario de tu bebé">
+  <meta name="twitter:card"         content="summary_large_image">
+  <meta name="twitter:title"        content="El día a día de tu bebé, en dos toques">
+  <meta name="twitter:description"  content="Pañales, peso con percentiles de la OMS, comida y las medicinas del pediatra. Lo que apunta uno lo ve el otro al instante.">
+  <meta name="twitter:image"        content="https://trackingalex.app/marca/og.png">
+
+  <!-- Ficha para los buscadores. Sin aggregateRating y sin offers: no hay
+       valoraciones y todavía no se cobra, así que ponerlas sería mentir en
+       la propia ficha de resultados. Tampoco hay FAQPage: desde 2023 Google
+       sólo lo enseña a webs oficiales, y las preguntas de abajo ya cuentan
+       como texto visible, que es lo que de verdad sirve. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    "name": "Tracking Álex",
+    "url": "https://trackingalex.app/",
+    "image": "https://trackingalex.app/marca/og.png",
+    "applicationCategory": "HealthApplication",
+    "operatingSystem": "Web, Android, iOS",
+    "inLanguage": "es",
+    "description": "Seguimiento diario de un bebé: pañales, peso con los percentiles de la OMS, alimentación complementaria y las pautas de medicación del pediatra. Compartido entre los dos padres, en tiempo real.",
+    "featureList": [
+      "Pañales con cantidad, color y notas",
+      "Peso con los percentiles oficiales de la OMS",
+      "Alimentación complementaria con los 14 alérgenos europeos",
+      "Pautas de medicación con aviso al móvil",
+      "Sincronización en tiempo real entre los dos padres"
+    ]
+  }
+  </script>
+
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="marca/icono-180.png">
   <meta name="theme-color" content="#6d28d9">
@@ -125,13 +173,102 @@
     </article>
   </section>
 
+
+  <!-- ══ PREGUNTAS ═══════════════════════════════════════════════════
+       No están aquí por Google, aunque también: son las preguntas que
+       hasta ahora no tenían respuesta en ninguna parte de la web y que
+       frenan a quien se está pensando entrar. Cuánto cuesta, quién ve
+       los datos de su bebé y si puede sacarlos de aquí.
+
+       Reutiliza .rejilla y .ficha, que ya son exactamente esto: dos
+       columnas que se vuelven una en el móvil. -->
+  <section class="contenedor faq" id="preguntas">
+    <h2 class="faq-titulo">Lo que suele preguntarse todo el mundo</h2>
+
+    <div class="rejilla rejilla-faq">
+      <article class="ficha">
+        <h3>¿Cuánto cuesta?</h3>
+        <p>
+          Ahora mismo se puede usar sin pagar. El día que haya un precio se
+          dirá aquí y dentro de la aplicación <strong>antes</strong> de cobrar
+          nada: no vas a encontrarte un cargo de sorpresa.
+        </p>
+      </article>
+
+      <article class="ficha">
+        <h3>¿Quién ve los datos de mi bebé?</h3>
+        <p>
+          Sólo quien esté en tu familia: tú y la persona a la que invites.
+          No hay publicidad, no se venden a terceros y no los habrá.
+          Está todo escrito en la <a href="privacidad">política de privacidad</a>.
+        </p>
+      </article>
+
+      <article class="ficha">
+        <h3>¿Sirve para los dos a la vez?</h3>
+        <p>
+          Para eso se hizo. Invitas a tu pareja con un código y lo que apunta
+          uno aparece en el móvil del otro al instante, sin recargar nada.
+          Es lo que evita la dosis repetida a las cuatro de la mañana.
+        </p>
+      </article>
+
+      <article class="ficha">
+        <h3>¿Hay que instalar algo?</h3>
+        <p>
+          No: se abre en el navegador del móvil o del ordenador. Si la añades
+          a la pantalla de inicio llegan los avisos de medicación — y en
+          iPhone instalarla es la <em>única</em> forma de que lleguen.
+        </p>
+      </article>
+
+      <article class="ficha">
+        <h3>No necesito la comida ni las medicinas</h3>
+        <p>
+          Pues se apagan. Cada cosa —pañales, peso, extracción, comida,
+          medicinas— se enciende y se apaga en Ajustes. Lo que esté apagado
+          desaparece de la barra y no estorba. También se vuelve a encender
+          el día que haga falta.
+        </p>
+      </article>
+
+      <article class="ficha">
+        <h3>¿Puedo llevarme mis datos?</h3>
+        <p>
+          Cuando quieras: se descarga todo en un fichero JSON, y las medicinas
+          además en CSV para abrirlo con una hoja de cálculo. Y si decides
+          irte, se borra la cuenta entera desde la propia aplicación.
+        </p>
+      </article>
+
+      <article class="ficha">
+        <h3>¿Sustituye al pediatra?</h3>
+        <p>
+          No, y conviene decirlo claro: <strong>esto no es un producto
+          sanitario</strong>. Sirve para no perder el hilo y para llegar a la
+          consulta con los datos a mano, no para diagnosticar ni para decidir
+          nada por tu cuenta.
+        </p>
+      </article>
+    </div>
+  </section>
+
   <section class="contenedor historia">
     <h2>¿Y por qué se llama así?</h2>
     <p>
       Porque Álex es nuestro hijo. Esto empezó siendo una libreta para no perder
       el hilo de sus pañales y su peso, siguió siendo una hoja de cálculo y
-      acabó siendo esto. Lo hemos publicado para que otras familias puedan usarlo y solo cobramos para poder mantenerlo en funcionamiento. No hay publicidad ni datos de terceros, y no los habrá.
+      acabó siendo esto. Lo hemos publicado para que otras familias puedan usarlo. Si algún día cobramos será para poder mantenerlo en funcionamiento, y se avisará antes. No hay publicidad ni datos de terceros, y no los habrá.
     </p>
+  </section>
+
+  <!-- La página terminaba en la historia del nombre y se acababa, sin
+       ningún botón. Quien llega hasta aquí leyendo es precisamente
+       quien ya estaba convencido. -->
+  <section class="contenedor cierre">
+    <h2>¿Lo probamos?</h2>
+    <p>Se tarda menos en crear la familia que en terminar de leer esta frase.</p>
+    <a class="btn btn-pri btn-grande" href="app/">Empezar</a>
   </section>
 
 </main>
