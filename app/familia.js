@@ -521,6 +521,24 @@ window.abrirAjustes = function() {
 
 
     <details class="secc">
+      <summary>☕ ${t('ajustes.apoyar', 'Apoyar la app')}</summary>
+
+      <div class="field" style="margin-bottom:0">
+        <p class="hint-txt" style="margin:0 0 12px">
+          Tracking Álex es gratis y lo va a seguir siendo. No hay publicidad ni
+          se venden datos, y no los va a haber. La mantiene una familia, y el
+          servidor y el dominio los pagamos nosotros.
+          <strong>Si te está sirviendo y te apetece echar una mano, se
+          agradece.</strong> Y si no, no pasa nada: la app es exactamente la misma.
+        </p>
+        <a class="btn btn-secundario" href="${KOFI_URL}"
+           target="_blank" rel="noopener noreferrer"
+          >☕ ${t('ajustes.kofi', 'Invitar a un café')}</a>
+      </div>
+    </details>
+
+
+    <details class="secc">
       <summary>🔐 ${t('ajustes.datos', 'Tus datos')}</summary>
 
       <div class="field">

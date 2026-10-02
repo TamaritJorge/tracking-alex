@@ -8,6 +8,12 @@
    CONFIGURACIÓN
    Solo la publishable key va aquí — la secret key NUNCA
    ───────────────────────────────────────────────────────────── */
+/* Donaciones. La aplicación es gratuita y no hay muro de pago: esto es un
+   enlace y nada más. Donar NO desbloquea nada ni cambia nada, y así tiene
+   que seguir — en el momento en que diera algo a cambio dejaría de ser un
+   donativo y pasaría a ser una venta, con todo lo que eso arrastra. */
+const KOFI_URL = 'https://ko-fi.com/trackingalex';
+
 const SUPABASE_URL = 'https://yzarrncayxkvkpyflbrk.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_IliCiFj7DM6UHxL4YxlnNw_57j6pW5z';
 
