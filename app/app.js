@@ -453,6 +453,78 @@ function avisarSuscripcion() {
    ──────────────────────────────────────────────────── */
 const CAMPOS_FECHA = ['extFecha', 'pesoFecha', 'cacaFecha', 'pipiFecha'];
 
+/* ─────────────────────────────────────────────────────
+   POCOS PIPÍS
+
+   Los pañales mojados son el termómetro casero de si un bebé está
+   tomando bastante. La regla de siempre: uno por día de vida durante
+   los primeros días —uno el primer día, dos el segundo— y de cinco
+   para arriba a partir del quinto.
+
+   Tres cosas que este aviso NO hace, y las tres a propósito:
+
+     · No se enciende si no has apuntado NADA en 24 h. Cero pipís
+       apuntados casi siempre significa que no has abierto la aplicación,
+       no que el bebé no haya hecho. Avisar ahí sería gritarle a todo el
+       que se salta un día, y a la tercera vez nadie lee el aviso.
+     · No sale en rojo. No es una urgencia: es un «mira esto».
+     · No diagnostica. Dice el número, dice el esperado y manda al
+       pediatra, que es quien decide.
+   ──────────────────────────────────────────────────── */
+const PIPIS_META   = 5;        // a partir del quinto día
+const EDAD_MAX_AVISO_PIPIS = 365;   // pasado el año la regla ya no aplica
+
+/* Qué día de vida es hoy, contado como lo cuenta un pediatra: el día del
+   parto es el día 1.
+
+   Se calcula con fechas de calendario a medianoche y NO con edadEnDias(),
+   que ancla el nacimiento a las 12:00 para que el huso horario no mueva
+   los percentiles. Media jornada no importa en una curva de peso, pero
+   aquí sí: con ese anclaje, un bebé nacido hoy tenía edad negativa hasta
+   mediodía y el aviso se apagaba solo durante toda la mañana —justo las
+   horas en que mirarías si ha mojado el pañal—.
+
+   Math.round() y no floor(): entre las dos medianoches puede haber 23 o
+   25 horas el domingo del cambio de hora, y un día de vida no se pierde
+   porque el reloj se mueva. */
+function diaDeVida() {
+  if (!ninoActivo || !ninoActivo.fecha_nacimiento) return null;
+  const nac = new Date(ninoActivo.fecha_nacimiento + 'T00:00:00');
+  if (isNaN(+nac)) return null;
+  const hoy = new Date();
+  hoy.setHours(0, 0, 0, 0);
+  return Math.round((hoy - nac) / 864e5) + 1;
+}
+
+function pipisEsperados(dia) {
+  return Math.min(Math.max(dia, 1), PIPIS_META);
+}
+
+function avisarPocosPipis(pipis, hayDatos) {
+  const el = document.getElementById('avisoPipi');
+  if (!el) return;
+  el.style.display = 'none';
+
+  if (!moduloActivo('panales') || !ninoActivo) return;
+  if (!hayDatos) return;                    // no estás apuntando, no opino
+
+  const dia = diaDeVida();
+  if (dia === null || dia < 1) return;         // todavía no ha nacido
+  if (dia > EDAD_MAX_AVISO_PIPIS) return;
+
+  const meta = pipisEsperados(dia);
+  if (pipis >= meta) return;
+
+  el.className = 'aviso aviso-ojo';
+  el.style.display = '';
+  el.innerHTML = `⚠️ <strong>${t2('pipi.pocos', 'Pocos pipís: {n} en 24 h.',
+      { n: pipis })}</strong>
+    ${t2('pipi.esperados', 'A sus días se esperan al menos {m}.', { m: meta })}
+    ${t('pipi.quehacer', 'Si no se te ha olvidado apuntar alguno, coméntalo con el pediatra.')}
+    <div class="aviso-fuente">${t('pipi.fuente',
+      'Regla de los pañales mojados: uno por día de vida hasta el quinto, y cinco o más a partir de ahí.')}</div>`;
+}
+
 // Todos los formularios arrancan en "ahora"
 function resetFechas() {
   CAMPOS_FECHA.forEach(reiniciarFecha);
@@ -922,6 +994,10 @@ function renderResumen() {
       <div class="sum-extra">Izq ${mlIzq} · Der ${mlDer}</div>
     </div>`);
   }
+
+  // El recuento ya está hecho aquí arriba, así que el aviso se decide
+  // en el mismo sitio y con los mismos números que la casilla.
+  avisarPocosPipis(pipis, recientes.length > 0);
 
   const html = casillas.length
     ? casillas.join('')

@@ -74,24 +74,23 @@
      ═══════════════════════════════════════════ -->
 <div id="loginScreen" style="display:none">
   <div class="header">
-    <span class="header-title logo-marca">
+    <!-- Aquí el logo sí es un enlace: quien llega sin cuenta no tenía
+         forma de ir a ver qué es esto. Dentro de la aplicación NO lo es,
+         para que nadie se salga sin querer de lo que está haciendo. El
+         .html va puesto para que siga valiendo abriendo el fichero a
+         mano, sin servidor. -->
+    <a href="../index.html" class="header-title logo-marca" aria-label="Tracking Álex">
       <svg width="26" height="26" aria-hidden="true"><use href="#logoTA"/></svg>
       <span class="logo-txt"><span class="hide-narrow">Tracking </span><em>Álex</em></span>
-    </span>
+    </a>
     <div class="header-right">
       <button class="icon-btn" id="themeBtn1" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
     </div>
   </div>
 
   <div class="login-wrap">
-    <!-- El logo vuelve a la página de inicio. Quien llega aquí sin cuenta
-         no tenía forma de ir a ver qué es esto. Ruta relativa con el
-         .html incluido para que siga funcionando abriendo el fichero a
-         mano, sin servidor. -->
-    <a href="../index.html" class="login-marca" aria-label="Tracking Álex">
-      <svg class="login-logo" width="72" height="72" aria-hidden="true"><use href="#logoTAPastilla"/></svg>
-      <p class="login-nombre">Tracking <em>Álex</em></p>
-    </a>
+    <svg class="login-logo" width="72" height="72" aria-hidden="true"><use href="#logoTAPastilla"/></svg>
+    <p class="login-nombre">Tracking <em>Álex</em></p>
     <p class="login-sub" data-i18n="login.sub">Entra para llevar el seguimiento de tu bebé</p>
     <div class="card">
       <!-- Aviso de enlace caducado. Va arriba del todo porque es la
@@ -230,6 +229,11 @@
     <!-- Aviso de medicación. Fuera de los paneles a propósito: una toma
          que toca hay que verla estés en la pestaña que estés. -->
     <p id="avisoMed" data-modulo="medicacion" style="display:none"></p>
+
+    <!-- Pocos pipís en 24 h. Va fuera de los paneles como los otros dos:
+         es lo único de esta aplicación que puede querer decir «llama al
+         pediatra», y no puede depender de en qué pestaña estés. -->
+    <p id="avisoPipi" data-modulo="panales" style="display:none"></p>
 
 
     <!-- ── TAB: REGISTRAR ─────────────────────── -->

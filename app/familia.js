@@ -21,6 +21,26 @@ let usuarioId  = null;
 
 const CLAVE_ULTIMO_HIJO = 'ultimoHijo';
 
+/* ¿La fecha de nacimiento puede estar en el futuro? Sí.
+
+   Una pareja que espera un bebé quiere poder abrir la aplicación antes
+   del parto y ver cómo es, y para eso hace falta meter al hijo con la
+   fecha prevista. Lo único que hay que cazar es el año tecleado mal,
+   así que el límite no es «hoy» sino «dentro de un año»: más que
+   cualquier embarazo y menos que una errata de siglo.
+
+   Mientras no nazca, la edad es negativa. Eso está contemplado donde
+   importa: lmsEn() ya devuelve null con edad negativa (no se dibujan
+   percentiles inventados) y el aviso de pipís no se enciende. */
+const DIAS_FUTURO_MAX = 365;
+const TXT_FECHA_LEJOS = 'Esa fecha está demasiado lejos. ¿El año es correcto?';
+
+function fechaDisparatada(iso) {
+  const tope = new Date();
+  tope.setDate(tope.getDate() + DIAS_FUTURO_MAX);
+  return new Date(iso + 'T12:00:00') > tope;
+}
+
 /* ─────────────────────────────────────────────────────────────
    CARGA
    ───────────────────────────────────────────────────────────── */
@@ -247,7 +267,7 @@ function engancharAlta() {
       !nombreF ? 'Ponle nombre a la familia.' :
       !nombreH ? 'Ponle nombre al bebé.' :
       !fecha   ? 'Falta la fecha de nacimiento.' :
-      new Date(fecha) > new Date() ? 'La fecha de nacimiento no puede ser futura.' :
+      fechaDisparatada(fecha) ? TXT_FECHA_LEJOS :
       null;
 
     if (fallo) { err.textContent = fallo; err.style.display = ''; return; }
@@ -570,7 +590,7 @@ window.guardarHijo = async function(id) {
 
   const fallo = !nombre ? 'Ponle nombre.'
               : !fecha  ? 'Falta la fecha de nacimiento.'
-              : new Date(fecha) > new Date() ? 'La fecha no puede ser futura.' : null;
+              : fechaDisparatada(fecha) ? TXT_FECHA_LEJOS : null;
   if (fallo) { err.textContent = fallo; err.style.display = ''; return; }
 
   const { data, error } = await sb.from('ninos')
@@ -695,7 +715,7 @@ window.guardarNuevoHijo = async function() {
 
   const fallo = !nombre ? 'Ponle nombre.'
               : !fecha  ? 'Falta la fecha de nacimiento.'
-              : new Date(fecha) > new Date() ? 'La fecha no puede ser futura.' : null;
+              : fechaDisparatada(fecha) ? TXT_FECHA_LEJOS : null;
   if (fallo) { err.textContent = fallo; err.style.display = ''; return; }
 
   const r = await anadirHijo(nombre, fecha, sexo);

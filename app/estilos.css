@@ -1065,7 +1065,8 @@
     /* Los atajos son ACCIONES («rellena la lista»), no un modo en el que
        te quedas. Con aspecto de chip parecían una opción elegida y por eso
        confundían: puestos como botones, se entiende que rellenan y ya. */
-    .login-marca { text-decoration: none; color: inherit; display: block; }
+    /* El logo de la barra es un enlace solo en la pantalla de entrar */
+    a.logo-marca { text-decoration: none; color: inherit; }
 
     .med-atajos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
 

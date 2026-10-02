@@ -160,6 +160,14 @@ async function dibujarTarjeta(card) {
 /* Edad en un formato legible para la consulta */
 function edadEnTexto() {
   const dias = Math.floor(edadEnDias(new Date()));
+
+  // Todavía no ha nacido: la fecha prevista es una fecha válida y
+  // «-12 días» no es una edad.
+  if (dias < 0) {
+    const faltan = -dias;
+    return 'nace en ' + faltan + (faltan === 1 ? ' día' : ' días');
+  }
+
   if (dias < 31)  return dias + (dias === 1 ? ' día' : ' días');
   if (dias < 365) {
     const m = Math.floor(dias / 30.4375);

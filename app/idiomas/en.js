@@ -66,6 +66,12 @@ TEXTOS.en = {
   'recup.corta':     'At least 8 characters.',
   'recup.lista':     '✅ Password changed',
 
+  /* ── Pañales ──────────────────────────────────── */
+  'pipi.pocos':     'Few wet nappies: {n} in 24 h.',
+  'pipi.esperados': 'At his age at least {m} are expected.',
+  'pipi.quehacer':  'If you have not simply forgotten to log one, mention it to your doctor.',
+  'pipi.fuente':    'Wet nappy rule: one per day of life up to the fifth, and five or more from then on.',
+
   /* ── Medicación ────────────────────────────────────────────── */
   'med.titulo':      'Medicines',
   'med.hoy':         'Right now',
