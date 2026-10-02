@@ -157,7 +157,13 @@ function enVentana(iso, desde) {
    y meter esa bajada en el ajuste aplanaría la pendiente y daría
    una estimación falsamente mala.
    ───────────────────────────────────────────────────────────── */
-const OBJETIVO_G_DIA  = 20;   // mínimo que indicó la pediatra
+/* Los 20 g/día que indicó la pediatra valen para el PRIMER MES y nada
+   más. Un bebé de seis meses gana la mitad de eso y está perfectamente:
+   mantenerlo como suelo para siempre convertiía un dato normal en una
+   alarma permanente. Después del primer mes, la única referencia es su
+   propia curva de la OMS. */
+const OBJETIVO_G_DIA   = 20;
+const DIAS_PRIMER_MES  = 30;
 const DIAS_TENDENCIA  = 7;    // ventana de pesadas que entra en el ajuste
 const DIAS_PROYECCION = 7;    // hasta dónde se prolonga la recta
 const MIN_HORAS_SPAN  = 18;   // por debajo de esto la pendiente se dispara
@@ -918,11 +924,19 @@ function renderResumen() {
     ? gananciaParaMantener(ultimo.fecha_hora, ultimo.datos.gramos)
     : null;
 
-  // Ganancia diaria observada, con tres estados:
-  //   ok    → mantiene percentil
-  //   justo → pasa el suelo de 20 g/día de la pediatra, pero bajará de percentil
-  //   bajo  → por debajo del suelo de la pediatra
+  /* Ganancia diaria observada. Tres estados, y el tercero sólo existe
+     durante el primer mes:
+
+       ok    → mantiene su percentil
+       justo → por debajo de eso, o sea que irá bajando de percentil
+       bajo  → además, primer mes y por debajo de 20 g/día
+
+     Pasado el primer mes no hay «bajo»: no existe un suelo universal de
+     gramos al día, y pintar de rojo a un bebé de cinco meses que gana 15
+     g/día sería asustar sin motivo. */
   const tend = tendenciaPeso();
+  const dia  = diaDeVida();
+  const primerMes = dia !== null && dia <= DIAS_PRIMER_MES;
   let trend;
   if (!tend) {
     // Distinguir "aún no hay datos" de "las hay, pero demasiado juntas":
@@ -938,34 +952,41 @@ function renderResumen() {
     if (necesario !== null && g >= Math.round(necesario)) {
       clase  = 'ok';
       porque = 'Mantiene su percentil';
-    } else if (g >= OBJETIVO_G_DIA) {
-      clase  = 'justo';
-      porque = 'Pasa los ' + OBJETIVO_G_DIA + ' g/día de la pediatra, '
-             + 'pero por debajo de lo que haría falta para no bajar de percentil';
-    } else {
+    } else if (primerMes && g < OBJETIVO_G_DIA) {
       clase  = 'bajo';
-      porque = 'Por debajo de los ' + OBJETIVO_G_DIA + ' g/día que marcó la pediatra';
+      porque = 'En el primer mes se suelen esperar al menos '
+             + OBJETIVO_G_DIA + ' g/día';
+    } else {
+      clase  = 'justo';
+      porque = 'Por debajo de lo que haría falta para seguir por el mismo '
+             + 'percentil. Bajar de percentil no es, por sí solo, un problema';
     }
 
     trend = `<div class="sum-trend ${clase}" title="${porque}. Ajuste sobre ${tend.n} pesadas de los últimos ${tend.dias.toFixed(1)} días">`
           + `${signo}${g} g/día</div>`;
   }
 
-  // Línea de referencia: lo que pide su percentil a día de hoy
-  const needTxt = (tend && necesario !== null)
-    ? `<div class="sum-need" title="Pendiente de la curva de la OMS en su punto actual. A esta edad sube hasta las 3 semanas y luego baja; sobre los 3 meses y medio se cruza con los ${OBJETIVO_G_DIA} g/día de la pediatra.">`
-      + `necesita ${Math.round(necesario)} g/día</div>`
-    : '';
+  // Percentil OMS de la última pesada (peso para la edad)
+  const pct = ultimo ? percentilPeso(ultimo.fecha_hora, ultimo.datos.gramos) : null;
 
-  // Percentil OMS de la última pesada (peso para la edad, niños)
   let pctTxt = '';
   if (ultimo) {
-    const p = percentilPeso(ultimo.fecha_hora, ultimo.datos.gramos);
-    pctTxt = p
-      ? `<div class="sum-pct" title="Peso para la edad, niños (OMS). ${Math.floor(p.dias)} días de edad, z = ${p.z.toFixed(2)}">`
-        + `${textoPercentil(p.pct)} <span class="sum-pct-lbl">OMS</span></div>`
+    pctTxt = pct
+      ? `<div class="sum-pct" title="Peso para la edad (OMS). ${Math.floor(pct.dias)} días de edad, z = ${pct.z.toFixed(2)}">`
+        + `${textoPercentil(pct.pct)} <span class="sum-pct-lbl">OMS</span></div>`
       : '<div class="sum-pct nd">percentil n/d</div>';
   }
+
+  /* Línea de referencia.
+
+     Antes decía «necesita 32 g/día», que suena a que algo malo pasa si no
+     llega. No es eso: es la pendiente que hace falta para seguir por el
+     MISMO percentil, y bajar de percentil no es enfermar. Ahora se dice
+     lo que de verdad significa, con el percentil delante. */
+  const needTxt = (tend && necesario !== null)
+    ? `<div class="sum-need" title="Pendiente de la curva de la OMS en su punto actual: lo que tendría que ganar para seguir por la misma línea. Cambia con la edad —sube hasta las 3 semanas y luego baja— y bajar de percentil no es, por sí solo, un problema.">`
+      + `${Math.round(necesario)} g/día para ${pct ? 'mantener ' + textoPercentil(pct.pct) : 'mantener su percentil'}</div>`
+    : '';
 
   // Cada casilla depende de su módulo: si la familia no se saca leche,
   // no tiene sentido una casilla de mililitros siempre a cero. Se montan

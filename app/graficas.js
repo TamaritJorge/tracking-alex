@@ -118,8 +118,12 @@ function renderCharts() {
   });
 
   /* ── Peso ── */
-  // Además de las pesadas se dibujan dos rectas discontinuas:
-  // la tendencia real y el mínimo de 20 g/día de la pediatra.
+  // Además de las pesadas se dibuja una recta discontinua con la
+  // tendencia real. Antes había una segunda con el mínimo de 20 g/día,
+  // y se ha quitado: ese suelo sólo vale para el primer mes, así que
+  // dibujarlo hasta el año convertía una referencia de recién nacido en
+  // una línea que un bebé sano «no alcanza» durante meses. Ahora es un
+  // aviso que sale sólo cuando toca, justo debajo.
   const tend = tendenciaPeso();
 
   let ejeXPeso = ejeX();
@@ -209,22 +213,6 @@ function renderCharts() {
       unidad: ' g (estimado)'
     });
 
-    // Mínimo de 20 g/día, partiendo de la última pesada real
-    dsPeso.push({
-      label: 'Mínimo 20 g/día',
-      data: [
-        { x: iso(tend.ultimo.t), y: tend.ultimo.g },
-        { x: iso(tFin), y: Math.round(tend.ultimo.g + OBJETIVO_G_DIA * DIAS_PROYECCION) }
-      ],
-      borderColor: '#f59e0b',
-      backgroundColor: 'transparent',
-      borderDash: [3, 4],
-      borderWidth: 2,
-      pointRadius: 0, pointHoverRadius: 0,
-      showLine: true,
-      unidad: ' g (objetivo)'
-    });
-
     // Sólo esta gráfica alarga el eje X: si lo hicieran las tres,
     // las otras dos quedarían con una semana de hueco vacío.
     ejeXPeso = Object.assign(ejeX(), { max: new Date(tFin) });
@@ -299,6 +287,28 @@ function renderCharts() {
     }),
     plugins: [etiquetasPercentil]
   });
+
+  /* Aviso del primer mes.
+
+     Los 20 g/día son una referencia de recién nacido, no un suelo para
+     siempre. Aquí se dice cuando toca —y sólo cuando toca— en vez de
+     dejar una línea en la gráfica que a los cuatro meses parece un
+     suspenso permanente. */
+  const avisoMes = document.getElementById('avisoPesoMes');
+  if (avisoMes) {
+    const dia = (typeof diaDeVida === 'function') ? diaDeVida() : null;
+    const flojo = tend && dia !== null && dia <= DIAS_PRIMER_MES
+               && tend.gPorDia < OBJETIVO_G_DIA;
+
+    avisoMes.style.display = flojo ? '' : 'none';
+    if (flojo) {
+      avisoMes.innerHTML =
+        '⚠️ <strong>Está ganando ' + Math.round(tend.gPorDia) + ' g/día.</strong> '
+        + 'En el primer mes se suelen esperar al menos ' + OBJETIVO_G_DIA + ' g/día. '
+        + 'Con pocas pesadas esta cifra baila mucho, así que mira primero si hay '
+        + 'suficientes; si se mantiene así, coméntalo con tu pediatra.';
+    }
+  }
 
   // Texto explicativo bajo la gráfica
   const nota = document.getElementById('notaTendencia');
