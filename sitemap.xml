@@ -1,12 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Una sola URL, y no es un olvido: las paginas legales y la app van
-     con noindex, asi que meterlas aqui seria pedirle a Google que
-     indexe lo que se le acaba de prohibir. -->
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Una sola URL, y no es un olvido: las paginas legales y la app van
+       con noindex, asi que meterlas aqui seria pedirle a Google que
+       indexe lo que se le acaba de prohibir.
+
+       Sin <changefreq> ni <priority>: Google ha dicho publicamente que
+       los ignora. Y el comentario va DENTRO de <urlset> y no delante,
+       para no dejar ni una rareza que pueda explicar un fallo. -->
   <url>
     <loc>https://trackingalex.app/</loc>
     <lastmod>2026-10-02</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>1.0</priority>
   </url>
 </urlset>
