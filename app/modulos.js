@@ -171,6 +171,48 @@ function htmlModulos() {
     </label>`).join('');
 }
 
+/* Las casillas del ALTA.
+
+   No se puede reutilizar htmlModulos() aquí: el listener delegado de
+   más abajo atrapa cualquier input[data-mod] y llama a cambiarModulo(),
+   que escribe en la base. En el alta todavía no hay familia, así que
+   guardarModulos() devolvería «Sin familia», la casilla se desmarcaría
+   sola y saldría un toast rojo en el primer minuto de uso. De ahí el
+   atributo distinto.
+
+   Y los valores por defecto son literales, no salen de moduloActivo():
+   `modulos` es global y sobrevive a un cierre de sesión, así que quien
+   creara una familia después de otro en el mismo navegador heredaría su
+   configuración. */
+const MODULOS_INICIO = {
+  panales:    true,
+  peso:       true,
+  extraccion: false,
+  medicacion: false,
+  comida:     false
+};
+
+function htmlModulosAlta() {
+  return Object.entries(MODULOS).map(([k, m]) => `
+    <label class="modulo-fila">
+      <input type="checkbox" data-mod-alta="${k}"${MODULOS_INICIO[k] ? ' checked' : ''}>
+      <span class="modulo-txt">
+        <span class="modulo-nom">${m.icono} ${esc(m.nombre)}</span>
+        <span class="modulo-desc">${esc(m.desc)}</span>
+      </span>
+    </label>`).join('');
+}
+
+/* Lo marcado en el alta, tal cual lo dejó la persona */
+function modulosElegidosAlta() {
+  const elegidos = {};
+  Object.keys(MODULOS).forEach(k => { elegidos[k] = false; });
+  document.querySelectorAll('#altaModulos input[data-mod-alta]').forEach(cb => {
+    elegidos[cb.dataset.modAlta] = cb.checked;
+  });
+  return elegidos;
+}
+
 window.cambiarModulo = async function(clave, activo) {
   const antes = modulos[clave];
   modulos[clave] = activo;

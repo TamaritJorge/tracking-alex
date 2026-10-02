@@ -166,8 +166,13 @@
 
   <div class="login-wrap">
     <div class="card">
-      <p class="card-title">Vamos a empezar</p>
-      <p class="card-sub">Sólo se pide una vez</p>
+      <p class="card-title" id="altaTitulo">Vamos a empezar</p>
+      <p class="card-sub" id="altaSub">Sólo se pide una vez</p>
+
+      <!-- Paso 1. El paso 2 vive más abajo, en HTML estático y oculto:
+           engancharAlta() corre una sola vez al cargar y engancha por id,
+           así que generarlo con innerHTML dejaría botones muertos. -->
+      <div id="altaPaso1">
 
       <div class="field">
         <label for="altaFamilia">Nombre de la familia</label>
@@ -196,11 +201,29 @@
         </p>
       </div>
 
+      </div><!-- /altaPaso1 -->
+
+
+      <!-- Paso 2: con qué se empieza. Es lo que de verdad quita el agobio,
+           porque se entra a tres pestañas en vez de a cinco. -->
+      <div id="altaPaso2" style="display:none">
+        <div id="altaModulos"></div>
+
+        <p class="hint-txt" style="margin:14px 0 0">
+          Empieza con lo justo. Las <strong>medicinas</strong>, la
+          <strong>comida</strong> y la <strong>extracción</strong> se encienden
+          en ⚙️ Ajustes el día que hagan falta, y no se pierde nada por
+          tenerlas apagadas ahora.
+        </p>
+      </div>
+
       <p id="altaErr" class="error-txt" style="display:none"></p>
-      <button class="btn btn-primary" id="altaBtn">Crear</button>
+      <button class="btn btn-primary" id="altaBtn">Siguiente</button>
+      <button class="btn btn-secundario" id="altaAtrasBtn"
+              style="margin-top:8px;display:none">&larr; Atrás</button>
     </div>
 
-    <div class="card">
+    <div class="card" id="altaInvitacion">
       <p class="card-title">¿Te han invitado?</p>
       <p class="card-sub">Si tu pareja ya creó la familia, pega aquí su código</p>
       <div class="field">
@@ -209,6 +232,34 @@
       </div>
       <p id="unirErr" class="error-txt" style="display:none"></p>
       <button class="btn btn-secundario" id="unirBtn">Unirme a la familia</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════
+     BIENVENIDA
+
+     Se ve una sola vez, al entrar por primera vez. No guarda estado:
+     es un paso del propio flujo de alta.
+     ═══════════════════════════════════════════ -->
+<div id="bienvenidaScreen" style="display:none">
+  <div class="header">
+    <span class="header-title logo-marca">
+      <svg width="26" height="26" aria-hidden="true"><use href="#logoTA"/></svg>
+      <span class="logo-txt"><span class="hide-narrow">Tracking </span><em>Álex</em></span>
+    </span>
+  </div>
+
+  <div class="login-wrap">
+    <svg class="login-logo" width="72" height="72" aria-hidden="true"><use href="#logoTAPastilla"/></svg>
+    <p class="login-nombre">Tracking <em>Álex</em></p>
+
+    <div class="card">
+      <p class="card-title" data-i18n="bienv.titulo">¡Bienvenido!</p>
+      <div id="bienvenidaTexto"></div>
+      <button class="btn btn-primary" style="margin-top:20px"
+              onclick="terminarBienvenida()" data-i18n="bienv.empezar">Empezar</button>
     </div>
   </div>
 </div>
@@ -245,6 +296,11 @@
 
     <!-- ── TAB: REGISTRAR ─────────────────────── -->
     <div id="tab-registrar" class="tab-panel active">
+
+      <!-- Primeros pasos. Lo pinta bienvenida.js y sólo lo ve quien
+           acaba de darse de alta. Aquí arriba no había nada: el resumen
+           de 24 h vive sólo en Gráficas. -->
+      <div id="primerosPasos" style="display:none"></div>
 
       <!-- Qué se registra. El selector se queda siempre a la vista: cambiar
            de pipí a caca es un toque, no volver atrás y elegir otra vez.
@@ -607,5 +663,6 @@
 <script src="push.js"></script>
 <script src="compartir.js"></script>
 <script src="datos.js"></script>
+<script src="bienvenida.js"></script>
 </body>
 </html>

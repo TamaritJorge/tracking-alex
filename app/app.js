@@ -82,6 +82,12 @@ let filtroHist = 'todo';
 let canalRT    = null;
 let tabActual  = 'registrar';
 
+// Si cargarDatos() ha terminado alguna vez. mostrarApp() lo llama SIN
+// await, así que hay un instante con registros = [] en el que pintar la
+// lista de primeros pasos haría que un paso ya hecho saliera sin tachar
+// y se tachara solo dos décimas después.
+let registrosCargados = false;
+
 /* ─────────────────────────────────────────────────────────────
    UTILIDADES
    ───────────────────────────────────────────────────────────── */
@@ -380,7 +386,7 @@ async function entrar() {
 }
 
 function pantalla(cual) {
-  ['loginScreen', 'altaScreen', 'appScreen'].forEach(id => {
+  ['loginScreen', 'altaScreen', 'bienvenidaScreen', 'appScreen'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.style.display = (id === cual) ? '' : 'none';
   });
@@ -849,6 +855,7 @@ async function cargarDatos() {
   }
 
   registros = data || [];
+  registrosCargados = true;
   renderResumen();
   renderTabla();
   if (tabActual === 'graficas') renderCharts();
@@ -1007,6 +1014,12 @@ function renderResumen() {
   const html = casillas.length
     ? casillas.join('')
     : '<p class="hint-txt" style="margin:0">Todo está oculto. Se enciende de nuevo en ⚙️ Ajustes.</p>';
+
+  // La lista de primeros pasos se cuelga de aquí: son ocho los sitios
+  // que llaman a renderResumen() —cargar datos, cambiar de pestaña, el
+  // temporizador de cinco minutos, cambiar de idioma, encender un
+  // módulo…— y engancharse a mano a los ocho es olvidarse de uno.
+  if (typeof renderPrimerosPasos === 'function') renderPrimerosPasos();
 
   conts.forEach(c => {
     c.innerHTML = html;

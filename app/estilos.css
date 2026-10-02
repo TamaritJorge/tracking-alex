@@ -899,7 +899,13 @@
       cursor: pointer;
     }
 
-    .modulo-fila input { margin-top: 3px; flex: none; width: 18px; height: 18px; }
+    /* accent-color: la casilla la pinta el navegador, y por defecto sale
+       azul. Es el único azul de toda la aplicación y encima en la primera
+       pantalla que ve alguien nuevo. */
+    .modulo-fila input {
+      margin-top: 3px; flex: none; width: 18px; height: 18px;
+      accent-color: var(--primary);
+    }
 
     .modulo-txt  { display: flex; flex-direction: column; gap: 2px; }
     .modulo-nom  { font-size: .9rem; font-weight: 600; }

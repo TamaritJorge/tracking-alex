@@ -14,6 +14,12 @@ let familia    = null;   // { id, nombre, plan, trial_hasta, ... }
 let hijos      = [];     // los de la familia, activos primero
 let ninoActivo = null;   // el que se está viendo ahora mismo
 
+// Cuántos adultos hay en la familia. Se sabe sin consultar nada: la
+// política mie_ver deja ver los dos miembros, así que cargarFamilia()
+// ya se los trae. Lo usa la lista de primeros pasos, que se repinta
+// muchas veces y no puede permitirse un await.
+let adultosFamilia = 1;
+
 // Quién eres tú. Hace falta para distinguir «lo marcaste tú» de
 // «lo marcó tu pareja»: familia_miembros guarda identificadores,
 // no nombres, y auth.users no se puede leer desde el cliente.
@@ -49,11 +55,15 @@ async function cargarFamilia() {
   if (!user) { familia = null; hijos = []; ninoActivo = null; usuarioId = null; return null; }
   usuarioId = user.id;
 
-  // Una familia por usuario, así que basta con la primera
+  // Una familia por usuario. Se traen TODAS las filas en vez de la
+  // primera porque la política mie_ver deja ver también a la pareja, y
+  // así se sabe de paso si la familia tiene uno o dos adultos sin
+  // gastar una consulta aparte.
   const { data: mis, error: e1 } = await sb
-    .from('familia_miembros').select('familia_id').limit(1);
+    .from('familia_miembros').select('familia_id, user_id');
   if (e1) { console.error(e1); return null; }
   if (!mis || !mis.length) { familia = null; hijos = []; ninoActivo = null; return null; }
+  adultosFamilia = mis.length;
 
   const { data: fams, error: e2 } = await sb
     .from('familias').select('*').eq('id', mis[0].familia_id).limit(1);
@@ -138,6 +148,12 @@ function limpiarEstado() {
   medPautas     = [];
   medTomas      = [];
   medPendientes = [];
+
+  // Los módulos también. Sin esto, cerrar sesión y entrar con otra
+  // cuenta en el mismo navegador heredaba la configuración del
+  // anterior hasta que cargarModulos() la pisara.
+  resetModulos();
+  adultosFamilia = 1;
 
   // Los canales van filtrados por nino_id, así que hay que rehacerlos
   if (canalRT)       { sb.removeChannel(canalRT);       canalRT = null; }
@@ -256,8 +272,36 @@ function engancharAlta() {
   const btn = document.getElementById('altaBtn');
   if (!btn) return;
 
-  btn.addEventListener('click', async () => {
-    const err     = document.getElementById('altaErr');
+  /* El alta tiene dos pasos: quién es, y con qué se empieza.
+
+     Se parte porque entrar de golpe a cinco pestañas es lo que abruma
+     a quien llega nuevo. Eligiendo al principio, se entra a tres. */
+  let altaPaso = 1;
+
+  function pintarPasoAlta() {
+    const p1 = document.getElementById('altaPaso1');
+    const p2 = document.getElementById('altaPaso2');
+    const inv = document.getElementById('altaInvitacion');
+    const atras = document.getElementById('altaAtrasBtn');
+
+    const dos = altaPaso === 2;
+    if (p1) p1.style.display = dos ? 'none' : '';
+    if (p2) p2.style.display = dos ? '' : 'none';
+    // «¿Qué quieres llevar?» junto a «pega tu código» no se entiende
+    if (inv) inv.style.display = dos ? 'none' : '';
+    if (atras) atras.style.display = dos ? '' : 'none';
+
+    document.getElementById('altaTitulo').textContent =
+      dos ? '¿Qué quieres llevar ahora?' : 'Vamos a empezar';
+    document.getElementById('altaSub').textContent =
+      dos ? 'Se cambia cuando quieras en ⚙️ Ajustes' : 'Sólo se pide una vez';
+    btn.textContent = dos ? 'Crear' : 'Siguiente';
+    window.scrollTo(0, 0);
+  }
+
+  /* Se valida aquí y no sólo al pulsar «Siguiente»: se puede volver
+     atrás y dejar un campo vacío antes de crear. */
+  function datosAlta() {
     const nombreF = document.getElementById('altaFamilia').value.trim();
     const nombreH = document.getElementById('altaNombre').value.trim();
     const fecha   = document.getElementById('altaFecha').value;
@@ -270,15 +314,67 @@ function engancharAlta() {
       fechaDisparatada(fecha) ? TXT_FECHA_LEJOS :
       null;
 
-    if (fallo) { err.textContent = fallo; err.style.display = ''; return; }
+    return { nombreF, nombreH, fecha, sexo, fallo };
+  }
+
+  const atrasBtn = document.getElementById('altaAtrasBtn');
+  if (atrasBtn) atrasBtn.addEventListener('click', () => {
+    altaPaso = 1;
+    document.getElementById('altaErr').style.display = 'none';
+    pintarPasoAlta();
+  });
+
+  btn.addEventListener('click', async () => {
+    const err = document.getElementById('altaErr');
+    const d = datosAlta();
+
+    if (d.fallo) {
+      altaPaso = 1; pintarPasoAlta();
+      err.textContent = d.fallo; err.style.display = '';
+      return;
+    }
+    err.style.display = 'none';
+
+    // Paso 1 → paso 2
+    if (altaPaso === 1) {
+      document.getElementById('altaModulos').innerHTML = htmlModulosAlta();
+      altaPaso = 2;
+      pintarPasoAlta();
+      return;
+    }
+
+    const elegidos = modulosElegidosAlta();
+
+    // Con las cinco apagadas se entraría a «Están todos los módulos
+    // ocultos», es decir, a una aplicación vacía el primer día.
+    if (!Object.keys(elegidos).some(k => elegidos[k])) {
+      err.textContent = 'Elige al menos una cosa. Lo demás se enciende luego en Ajustes.';
+      err.style.display = '';
+      return;
+    }
 
     btn.disabled = true; btn.textContent = 'Creando…';
-    const r = await crearFamilia(nombreF, { nombre: nombreH, fecha, sexo });
+    const r = await crearFamilia(d.nombreF, { nombre: d.nombreH, fecha: d.fecha, sexo: d.sexo });
     btn.disabled = false; btn.textContent = 'Crear';
 
     if (r.error) { err.textContent = r.error; err.style.display = ''; return; }
     err.style.display = 'none';
-    mostrarApp();
+
+    /* El orden importa: `modulos` en memoria ANTES de pintar, porque
+       mostrarApp() llama a aplicarModulos(). Y nada de cargarModulos()
+       después: si esa lectura fallara haría return dejándolo todo
+       encendido sin avisar, que convertiría un fallo de red en «el alta
+       no sirvió para nada» en silencio. */
+    modulos = elegidos;
+    const g = await guardarModulos();
+    if (g && g.error) {
+      // La familia ya existe: bloquear aquí sería peor que seguir. La
+      // elección vale para esta sesión y se recupera desde Ajustes.
+      toast('⚠️ No se pudo guardar qué quieres llevar. Se ajusta en ⚙️ Ajustes.', 6000);
+    }
+
+    encenderPrimerosPasos();
+    mostrarBienvenida();
   });
 
   document.getElementById('unirBtn').addEventListener('click', async () => {
@@ -290,7 +386,14 @@ function engancharAlta() {
     if (r.error) { err.textContent = r.error; err.style.display = ''; return; }
     err.style.display = 'none';
     await cargarFamilia();
-    mostrarApp();
+
+    // Faltaba: sin esto, quien se une a una familia que tiene Comida o
+    // Medicinas apagadas las veía encendidas hasta recargar la página.
+    // Sólo entrar() llamaba a cargarModulos(), y por aquí no se pasa.
+    await cargarModulos();
+
+    encenderPrimerosPasos();
+    mostrarBienvenida();
   });
 
   const salir = document.getElementById('logoutBtn2');
@@ -394,6 +497,15 @@ window.abrirAjustes = function() {
       <div class="field">
         <label>${t('ajustes.idioma', 'Idioma')}</label>
         ${htmlSelectorIdioma()}
+      </div>
+
+      <div class="field">
+        <label>${t('ajustes.primerosPasos', 'Primeros pasos')}</label>
+        <p class="hint-txt" style="margin:0 0 10px">
+          La lista corta de cosas por hacer al empezar.
+        </p>
+        <button class="btn btn-secundario" onclick="verPrimerosPasos()"
+          >${t('ajustes.verPasos', 'Ver los primeros pasos otra vez')}</button>
       </div>
 
       <div class="field" style="margin-bottom:0">

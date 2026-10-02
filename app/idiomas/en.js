@@ -129,6 +129,27 @@ TEXTOS.en = {
   'med.f.nota':      'Note (optional)',
   'med.pie':         'Tracking Álex is not a medical device and only reminds you when you open it. For a dose that must not be missed, set your phone alarm too. Always follow your doctor’s instructions.',
 
+  /* ── La primera vez ───────────────────────────── */
+  'bienv.titulo':   'Welcome!',
+  'bienv.empezar':  'Get started',
+  'bienv.1':        'This is where you log {n}’s day, in two taps.',
+  'bienv.2':        '<strong>What you log, your partner sees at once</strong>, so nobody has to ask whether the medicine has already been given.',
+  'bienv.3':        'The tabs are at the bottom, and a short list of first steps at the top.',
+  'pasos.titulo':   'To get going',
+  'pasos.cuenta':   '{a} of {b}',
+  'pasos.tubebe':   'your baby',
+  'pasos.ficha':    '{n}’s details, done',
+  'pasos.primero':  'Log the first thing',
+  'pasos.pareja':   'Invite your partner',
+  'pasos.peso':     'Log a weight and see the percentile',
+  'pasos.mas':      'Missing something? <strong>Medicines</strong>, <strong>food</strong> and <strong>pumping</strong> can be switched on whenever you like in ',
+  'pasos.ocultar':  'Hide this',
+  'pasos.ocultada': 'Done. You can get them back in ⚙️ Settings.',
+  'pasos.listo':    '✅ You are all set up',
+  'pasos.yaEsta':   '✅ All done already: there are no steps left.',
+  'ajustes.primerosPasos': 'First steps',
+  'ajustes.verPasos':      'Show the first steps again',
+
   /* ── Avisos en el móvil ────────────────────────── */
   'push.on':            'Turn notifications on',
   'push.off':           'Stop notifying this phone',
