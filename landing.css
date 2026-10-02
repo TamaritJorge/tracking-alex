@@ -202,9 +202,11 @@ a { color: var(--marca); }
 /* ═══════════════════════════════════════════
    PREGUNTAS
 
-   No llevan cuadrícula propia: reutilizan .rejilla y .ficha, que ya
-   hacen exactamente esto. Aquí sólo está lo que .ficha no tenía, que
-   es el h3 (sus títulos son h2) y el encabezado de la sección.
+   Un acordeón de <details>: lo pliega el navegador, sin una línea de
+   JavaScript, y el texto sigue estando en el HTML servido.
+
+   En una sola columna y no en la cuadrícula de dos: al desplegar una,
+   la de al lado daba un salto para igualar la altura de la fila.
    ═══════════════════════════════════════════ */
 .faq { padding-top: 10px; }
 
@@ -216,19 +218,78 @@ a { color: var(--marca); }
   margin-bottom: 20px;
 }
 
-/* Sin el icono de arriba, 22 px de aire sobran */
-.rejilla-faq .ficha { padding: 20px 22px; }
-
-.rejilla-faq h3 {
-  font-size: 1.02rem;
-  font-weight: 650;
-  letter-spacing: -0.015em;
-  margin-bottom: 7px;
+.faq-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 54px;
 }
 
-.rejilla-faq p { font-size: 0.92rem; color: var(--tinta2); }
-.rejilla-faq strong { color: var(--tinta); font-weight: 620; }
-.rejilla-faq em { font-style: normal; font-weight: 620; color: var(--marca); }
+.faq-item {
+  background: var(--papel2);
+  border: 1px solid var(--linea);
+  border-radius: var(--r);
+}
+
+.faq-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 15px 18px;
+  cursor: pointer;
+  list-style: none;              /* la flechita por defecto, fuera */
+}
+
+.faq-item summary::-webkit-details-marker { display: none; }
+
+/* El h3 se queda: la pregunta sigue siendo un encabezado para quien
+   rastrea la página y para un lector de pantalla. */
+.faq-item summary h3 {
+  font-size: 1rem;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  line-height: 1.35;
+}
+
+/* El signo de la derecha. Con ::after y no con un <span> para que no
+   haya nada que se pueda seleccionar ni leer en voz alta: el estado
+   abierto/cerrado ya lo anuncia <summary> por su cuenta. */
+.faq-item summary::after {
+  content: '+';
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 7px;
+  background: var(--marca-lavado);
+  color: var(--marca);
+  font-size: 1.05rem;
+  line-height: 1;
+}
+
+.faq-item[open] summary::after { content: '−'; }
+
+.faq-item summary:hover h3 { color: var(--marca); }
+
+/* Foco visible: con list-style:none el contorno por defecto se pierde
+   en algunos navegadores, y esto se recorre con el tabulador. */
+.faq-item summary:focus-visible {
+  outline: 2px solid var(--marca);
+  outline-offset: -2px;
+  border-radius: var(--r);
+}
+
+.faq-cuerpo {
+  padding: 0 18px 16px;
+  font-size: 0.92rem;
+  color: var(--tinta2);
+}
+
+.faq-cuerpo strong { color: var(--tinta); font-weight: 620; }
+.faq-cuerpo em { font-style: normal; font-weight: 620; color: var(--marca); }
 
 /* ═══════════════════════════════════════════
    CIERRE

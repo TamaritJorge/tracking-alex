@@ -174,85 +174,10 @@
   </section>
 
 
-  <!-- ══ PREGUNTAS ═══════════════════════════════════════════════════
-       No están aquí por Google, aunque también: son las preguntas que
-       hasta ahora no tenían respuesta en ninguna parte de la web y que
-       frenan a quien se está pensando entrar. Cuánto cuesta, quién ve
-       los datos de su bebé y si puede sacarlos de aquí.
-
-       Reutiliza .rejilla y .ficha, que ya son exactamente esto: dos
-       columnas que se vuelven una en el móvil. -->
-  <section class="contenedor faq" id="preguntas">
-    <h2 class="faq-titulo">Lo que suele preguntarse todo el mundo</h2>
-
-    <div class="rejilla rejilla-faq">
-      <article class="ficha">
-        <h3>¿Cuánto cuesta?</h3>
-        <p>
-          Ahora mismo se puede usar sin pagar. El día que haya un precio se
-          dirá aquí y dentro de la aplicación <strong>antes</strong> de cobrar
-          nada: no vas a encontrarte un cargo de sorpresa.
-        </p>
-      </article>
-
-      <article class="ficha">
-        <h3>¿Quién ve los datos de mi bebé?</h3>
-        <p>
-          Sólo quien esté en tu familia: tú y la persona a la que invites.
-          No hay publicidad, no se venden a terceros y no los habrá.
-          Está todo escrito en la <a href="privacidad">política de privacidad</a>.
-        </p>
-      </article>
-
-      <article class="ficha">
-        <h3>¿Sirve para los dos a la vez?</h3>
-        <p>
-          Para eso se hizo. Invitas a tu pareja con un código y lo que apunta
-          uno aparece en el móvil del otro al instante, sin recargar nada.
-          Es lo que evita la dosis repetida a las cuatro de la mañana.
-        </p>
-      </article>
-
-      <article class="ficha">
-        <h3>¿Hay que instalar algo?</h3>
-        <p>
-          No: se abre en el navegador del móvil o del ordenador. Si la añades
-          a la pantalla de inicio llegan los avisos de medicación — y en
-          iPhone instalarla es la <em>única</em> forma de que lleguen.
-        </p>
-      </article>
-
-      <article class="ficha">
-        <h3>No necesito la comida ni las medicinas</h3>
-        <p>
-          Pues se apagan. Cada cosa —pañales, peso, extracción, comida,
-          medicinas— se enciende y se apaga en Ajustes. Lo que esté apagado
-          desaparece de la barra y no estorba. También se vuelve a encender
-          el día que haga falta.
-        </p>
-      </article>
-
-      <article class="ficha">
-        <h3>¿Puedo llevarme mis datos?</h3>
-        <p>
-          Cuando quieras: se descarga todo en un fichero JSON, y las medicinas
-          además en CSV para abrirlo con una hoja de cálculo. Y si decides
-          irte, se borra la cuenta entera desde la propia aplicación.
-        </p>
-      </article>
-
-      <article class="ficha">
-        <h3>¿Sustituye al pediatra?</h3>
-        <p>
-          No, y conviene decirlo claro: <strong>esto no es un producto
-          sanitario</strong>. Sirve para no perder el hilo y para llegar a la
-          consulta con los datos a mano, no para diagnosticar ni para decidir
-          nada por tu cuenta.
-        </p>
-      </article>
-    </div>
-  </section>
-
+  <!-- Antes iba después de las preguntas. Va aquí porque es lo que
+       explica de qué va esto: una familia que lo hizo para su hijo. Eso
+       convence más que cualquier lista de características, y conviene
+       leerlo antes de ponerse a resolver dudas. -->
   <section class="contenedor historia">
     <h2>¿Y por qué se llama así?</h2>
     <p>
@@ -260,6 +185,101 @@
       el hilo de sus pañales y su peso, siguió siendo una hoja de cálculo y
       acabó siendo esto. Lo hemos publicado para que otras familias puedan usarlo. Si algún día cobramos será para poder mantenerlo en funcionamiento, y se avisará antes. No hay publicidad ni datos de terceros, y no los habrá.
     </p>
+  </section>
+
+  <!-- ══ PREGUNTAS ══════════════════════════════════════════════════
+       Son las preguntas que hasta ahora no tenían respuesta en ninguna
+       parte de la web y que frenan a quien se está pensando entrar:
+       cuánto cuesta, quién ve los datos de su bebé y si puede sacarlos
+       de aquí.
+
+       «¿Y esto no perjudica al SEO?» No. El texto de las respuestas está
+       en el HTML que se sirve, no se inyecta al pulsar: Google lo rastrea
+       e indexa igual que si estuviera a la vista. Lo que sí perjudica es
+       inyectarlo con JavaScript al abrir, y aquí no hay JavaScript
+       ninguno — <details> y <summary> lo hace el navegador solo.
+
+       Plegadas porque siete respuestas seguidas son un muro de texto
+       justo donde el visitante venía a decidirse. La primera va abierta
+       a propósito: si estuvieran todas cerradas, alguien podría no
+       darse cuenta de que se abren. -->
+  <section class="contenedor faq" id="preguntas">
+    <h2 class="faq-titulo">Lo que suele preguntarse todo el mundo</h2>
+
+    <div class="faq-lista">
+      <details class="faq-item" open>
+        <summary><h3>¿Cuánto cuesta?</h3></summary>
+        <div class="faq-cuerpo">
+          <p>
+            Ahora mismo se puede usar sin pagar. El día que haya un precio se
+            dirá aquí y dentro de la aplicación <strong>antes</strong> de cobrar
+            nada: no vas a encontrarte un cargo de sorpresa.
+          </p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary><h3>¿Quién ve los datos de mi bebé?</h3></summary>
+        <div class="faq-cuerpo">
+          <p>
+            Sólo quien esté en tu familia: tú y la persona a la que invites.
+            No hay publicidad, no se venden a terceros y no los habrá.
+            Está todo escrito en la <a href="privacidad">política de privacidad</a>.
+          </p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary><h3>¿Sirve para los dos a la vez?</h3></summary>
+        <div class="faq-cuerpo">
+          <p>
+            Para eso se hizo. Invitas a tu pareja con un código y lo que apunta
+            uno aparece en el móvil del otro al instante, sin recargar nada.
+            Es lo que evita la dosis repetida a las cuatro de la mañana.
+          </p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary><h3>¿Hay que instalar algo?</h3></summary>
+        <div class="faq-cuerpo">
+          <p>
+            No: se abre en el navegador del móvil o del ordenador. Si la añades
+            a la pantalla de inicio llegan los avisos de medicación — y en
+            iPhone instalarla es la <em>única</em> forma de que lleguen.
+          </p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary><h3>No necesito la comida ni las medicinas</h3></summary>
+        <div class="faq-cuerpo">
+          <p>
+            Pues se apagan. Cada cosa —pañales, peso, extracción, comida,
+            medicinas— se enciende y se apaga en Ajustes. Lo que esté apagado
+            desaparece de la barra y no estorba. También se vuelve a encender
+            el día que haga falta.
+          </p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary><h3>¿Puedo llevarme mis datos?</h3></summary>
+        <div class="faq-cuerpo">
+          <p>
+            Cuando quieras: se descarga todo en un fichero JSON, y las medicinas
+            además en CSV para abrirlo con una hoja de cálculo. Y si decides
+            irte, se borra la cuenta entera desde la propia aplicación.
+          </p>
+        </div>
+      </details>
+      <details class="faq-item">
+        <summary><h3>¿Sustituye al pediatra?</h3></summary>
+        <div class="faq-cuerpo">
+          <p>
+            No, y conviene decirlo claro: <strong>esto no es un producto
+            sanitario</strong>. Sirve para no perder el hilo y para llegar a la
+            consulta con los datos a mano, no para diagnosticar ni para decidir
+            nada por tu cuenta.
+          </p>
+        </div>
+      </details>
+    </div>
   </section>
 
   <!-- La página terminaba en la historia del nombre y se acababa, sin
