@@ -9,6 +9,13 @@
        El PNG es sólo para la pantalla de inicio de iOS, que no acepta SVG. -->
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../marca/icono-180.png">
+
+  <!-- Instalable en la pantalla de inicio. En iPhone no es un adorno:
+       es la unica forma de que lleguen las notificaciones. -->
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Tracking Alex">
   <meta name="theme-color" content="#6d28d9">
 
   <!-- Supabase JS (base de datos + auth + tiempo real) -->
@@ -597,6 +604,7 @@
 <script src="registros.js"></script>
 <script src="comida.js"></script>
 <script src="medicacion.js"></script>
+<script src="push.js"></script>
 <script src="compartir.js"></script>
 <script src="datos.js"></script>
 </body>

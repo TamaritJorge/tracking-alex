@@ -404,6 +404,11 @@ function mostrarApp() {
   configurarRealtime();
   if (moduloActivo('comida')) iniciarComida();   // sus propias tablas (comida.js)
   if (moduloActivo('medicacion')) iniciarMedicacion();   // idem (medicacion.js)
+
+  // El service worker va aqui y no dentro del modulo de medicinas: es lo
+  // que hace la aplicacion instalable en la pantalla de inicio, y eso no
+  // puede depender de que una familia use las medicinas o no.
+  if (typeof registrarSW === 'function') registrarSW();
   switchTab(tabActual);
 }
 

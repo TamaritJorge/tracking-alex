@@ -129,6 +129,21 @@ TEXTOS.en = {
   'med.f.nota':      'Note (optional)',
   'med.pie':         'Tracking Álex is not a medical device and only reminds you when you open it. For a dose that must not be missed, set your phone alarm too. Always follow your doctor’s instructions.',
 
+  /* ── Avisos en el móvil ────────────────────────── */
+  'push.on':            'Turn notifications on',
+  'push.off':           'Stop notifying this phone',
+  'push.on.titulo':     'This phone gets the reminders',
+  'push.on.txt':        'It will tell you when a dose is due and nobody has marked it. This phone only: your partner turns it on from their own.',
+  'push.off.titulo':    'Remind me on my phone',
+  'push.off.txt':       'Right now the reminder only shows when you open the app. With this, the phone rings even when it is closed.',
+  'push.ios.titulo':    'To make your phone ring',
+  'push.ios.txt':       'On iPhone, notifications only work if you add Tracking Álex to the home screen. Tap the share button in Safari and choose <strong>Add to Home Screen</strong>. Then open it from there and come back here.',
+  'push.no.titulo':     'No notifications in this browser',
+  'push.no.txt':        'This browser does not support notifications. The reminder will still appear when you open the app.',
+  'push.denegado.titulo':'Notifications blocked',
+  'push.denegado.txt':  'You blocked notifications for this site. They have to be allowed again from the browser settings: it cannot be done from here.',
+  'med.pie.push':       'Tracking Álex is not a medical device. Phone reminders can arrive late or not at all: battery saving delays them, and a subscription can expire without warning. For a dose that must not be missed, set your phone alarm too. Always follow your doctor’s instructions.',
+
   /* ── Fechas ───────────────────────────────────────── */
   'fecha.hoy':  'Today',
   'fecha.ayer': 'Yesterday',

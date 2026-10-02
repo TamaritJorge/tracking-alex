@@ -231,6 +231,7 @@ function iniciarMedicacion() {
   cargarMedicacion();
   configurarRealtimeMed();
   arrancarRelojMed();
+  if (typeof iniciarPush === 'function') iniciarPush();
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -511,11 +512,14 @@ function renderMedicacion() {
         <button class="btn btn-primary" onclick="abrirAltaPauta()"
           >${esc(t('med.anadir', 'Añadir medicamento'))}</button>
       </div>
+      ${typeof htmlPush === 'function' ? htmlPush() : ''}
       ${piePrudencia()}`;
     return;
   }
 
-  cont.innerHTML = htmlAhora() + htmlTratamientos() + piePrudencia();
+  cont.innerHTML = htmlAhora() + htmlTratamientos()
+                 + (typeof htmlPush === 'function' ? htmlPush() : '')
+                 + piePrudencia();
   medFoco = null;
 }
 
@@ -655,10 +659,22 @@ function htmlTratamientos() {
 /* Esto no es un adorno legal: la app no avisa con el móvil
    apagado y hay que decirlo donde se toman las decisiones. */
 function piePrudencia() {
-  return `<p class="med-pie">${esc(t('med.pie',
-    'Tracking Álex no es un dispositivo médico y sólo avisa cuando lo abres. ' +
-    'Para una toma que no se puede olvidar, pon también la alarma del móvil. ' +
-    'Sigue siempre la pauta de tu pediatra.'))}</p>`;
+  // El texto cambia con los avisos encendidos: decir «sólo avisa cuando
+  // lo abres» cuando acabas de activar las notificaciones es falso, y
+  // decir que ya no hace falta la alarma del móvil sería peor. Ni una
+  // cosa ni la otra.
+  const txt = (typeof pushActivo === 'function' && pushActivo())
+    ? t('med.pie.push',
+        'Tracking Álex no es un dispositivo médico. Los avisos del móvil pueden ' +
+        'llegar tarde o no llegar: con el ahorro de batería se retrasan, y una ' +
+        'suscripción puede caducar sin avisar. Para una toma que no se puede ' +
+        'olvidar, pon también la alarma del teléfono. Sigue siempre la pauta de ' +
+        'tu pediatra.')
+    : t('med.pie',
+        'Tracking Álex no es un dispositivo médico y sólo avisa cuando lo abres. ' +
+        'Para una toma que no se puede olvidar, pon también la alarma del móvil. ' +
+        'Sigue siempre la pauta de tu pediatra.');
+  return `<p class="med-pie">${esc(txt)}</p>`;
 }
 
 /* ─────────────────────────────────────────────────────────────
