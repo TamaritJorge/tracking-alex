@@ -84,8 +84,14 @@
   </div>
 
   <div class="login-wrap">
-    <svg class="login-logo" width="72" height="72" aria-hidden="true"><use href="#logoTAPastilla"/></svg>
-    <p class="login-nombre">Tracking <em>Álex</em></p>
+    <!-- El logo vuelve a la página de inicio. Quien llega aquí sin cuenta
+         no tenía forma de ir a ver qué es esto. Ruta relativa con el
+         .html incluido para que siga funcionando abriendo el fichero a
+         mano, sin servidor. -->
+    <a href="../index.html" class="login-marca" aria-label="Tracking Álex">
+      <svg class="login-logo" width="72" height="72" aria-hidden="true"><use href="#logoTAPastilla"/></svg>
+      <p class="login-nombre">Tracking <em>Álex</em></p>
+    </a>
     <p class="login-sub" data-i18n="login.sub">Entra para llevar el seguimiento de tu bebé</p>
     <div class="card">
       <!-- Aviso de enlace caducado. Va arriba del todo porque es la

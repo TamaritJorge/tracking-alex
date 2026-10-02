@@ -400,6 +400,9 @@ window.abrirAjustes = function() {
                 onclick="exportarJSON()">⬇️ Descargar todo (JSON)</button>
         <button class="btn btn-secundario" id="btnExportCSV" style="margin-top:8px"
                 onclick="exportarCSV()">⬇️ Registros (CSV)</button>
+        ${moduloActivo('medicacion') ? `
+        <button class="btn btn-secundario" id="btnExportMed" style="margin-top:8px"
+                onclick="exportarMedicacionCSV()">⬇️ Medicinas (CSV)</button>` : ''}
       </div>
 
       <div class="field" style="margin-bottom:0">

@@ -468,6 +468,31 @@ function nombreHoras(horas) {
   return horas.join(' · ');
 }
 
+/* Cuándo vale una pauta, dicho de forma que no parezca un duplicado.
+
+   Cambiar las horas de un tratamiento en marcha cierra el viejo y abre uno
+   nuevo (ver cambiarHorasPauta). Sin esta etiqueta, durante un día se veían
+   dos «Vitamina D» idénticas y parecía un error de la aplicación. Con ella
+   se ve lo que de verdad pasa: uno termina hoy y el otro empieza mañana. */
+function vigencia(p) {
+  const hoy = hoyISO(), man = diasAtras(-1);
+  if (p.desde > hoy) {
+    return p.desde === man ? t('med.empiezaManana', 'empieza mañana')
+                           : t('med.empiezaEl', 'empieza el') + ' ' + fechaCorta(p.desde + 'T12:00');
+  }
+  if (!p.hasta) return t('med.sinfin', 'sin fecha de fin');
+  if (p.hasta === hoy) return t('med.terminaHoy', 'termina hoy');
+  if (p.hasta <  hoy)  return t('med.termino', 'terminó el') + ' ' + fechaCorta(p.hasta + 'T12:00');
+  return t('med.hasta', 'hasta el') + ' ' + fechaCorta(p.hasta + 'T12:00');
+}
+
+/* Una pauta sin ninguna toma apuntada no tiene historia que romper: se
+   puede cambiar entera en el sitio, sin duplicar nada. Es además el caso
+   que de verdad ocurre —acabas de crearla y te has equivocado—. */
+function tieneTomas(pautaId) {
+  return medTomas.some(x => x.pauta_id === pautaId && x.estado !== 'anulada');
+}
+
 function renderMedicacion() {
   const panel = document.getElementById('tab-medicacion');
   if (!panel) return;
@@ -603,9 +628,7 @@ function htmlTratamientos() {
     <div class="med-trat">
       <div class="med-info">
         <div class="med-nom">${esc(p.nombre)}${p.dosis ? ' <span class="med-dosis">' + esc(p.dosis) + '</span>' : ''}</div>
-        <div class="med-sello">⏰ ${esc(nombreHoras(p.horas))}${
-          p.hasta ? ' · ' + esc(t('med.hasta', 'hasta el')) + ' ' + esc(fechaCorta(p.hasta + 'T12:00'))
-                  : ' · ' + esc(t('med.sinfin', 'sin fecha de fin'))}</div>
+        <div class="med-sello">⏰ ${esc(nombreHoras(p.horas))} · ${esc(vigencia(p))}</div>
         ${p.nota ? `<div class="med-nota">${esc(p.nota)}</div>` : ''}
       </div>
       <div class="med-acciones">
@@ -689,19 +712,28 @@ window.abrirAltaPauta = function(desdePauta) {
     </div>
 
     <div class="field">
-      <label>${esc(t('med.f.horas', 'Horas del día'))}</label>
-      <div class="chip-row" style="margin-bottom:8px">
-        <button type="button" class="chip" onclick="medAtajo(24)">1 ${esc(t('med.aldia', 'al día'))}</button>
-        <button type="button" class="chip" onclick="medAtajo(12)">${esc(t('med.cada', 'cada'))} 12 h</button>
-        <button type="button" class="chip" onclick="medAtajo(8)">${esc(t('med.cada', 'cada'))} 8 h</button>
-        <button type="button" class="chip" onclick="medAtajo(6)">${esc(t('med.cada', 'cada'))} 6 h</button>
-      </div>
-      <div id="medHoras" class="chip-row" style="margin-bottom:8px"></div>
-      <div style="display:flex;gap:8px;align-items:center">
+      <label>${esc(t('med.f.horas', '¿A qué horas?'))}</label>
+
+      <div id="medHoras" class="med-horas-lista"></div>
+
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
         <input type="time" id="medHoraNueva" value="09:00" style="flex:1">
         <button type="button" class="btn-mini btn-mini-pri" onclick="medAnadirHora()"
-          >${esc(t('med.f.anadirHora', 'Añadir hora'))}</button>
+          >${esc(t('med.f.anadirHora', 'Añadir'))}</button>
       </div>
+
+      <p class="hint-txt" style="margin:0 0 7px">${esc(t('med.f.atajosAyuda',
+        'O reparte las tomas a lo largo del día desde la primera hora:'))}</p>
+      <div class="med-atajos">
+        <button type="button" class="btn-mini" onclick="medAtajo(12)"
+          >${esc(t('med.cada', 'cada'))} 12 h · 2</button>
+        <button type="button" class="btn-mini" onclick="medAtajo(8)"
+          >${esc(t('med.cada', 'cada'))} 8 h · 3</button>
+        <button type="button" class="btn-mini" onclick="medAtajo(6)"
+          >${esc(t('med.cada', 'cada'))} 6 h · 4</button>
+      </div>
+      <p class="hint-txt" style="margin:7px 0 0">${esc(t('med.f.horasAyuda',
+        'Lo que vale es la lista de arriba: toca una hora para quitarla, o añade las que quieras a mano.'))}</p>
     </div>
 
     <div class="field">
@@ -735,9 +767,9 @@ function pintarHorasForm() {
   if (!cont || !medForm) return;
   cont.innerHTML = medForm.horas.length
     ? medForm.horas.map(h => `
-        <button type="button" class="chip sel" onclick="medQuitarHora('${h}')"
-          title="${esc(t('med.f.quitar', 'Quitar'))}">${esc(h)} ✕</button>`).join('')
-    : `<span class="hint-txt">${esc(t('med.f.sinHoras', 'Añade al menos una hora'))}</span>`;
+        <button type="button" class="med-hora-chip" onclick="medQuitarHora('${h}')"
+          title="${esc(t('med.f.quitar', 'Quitar esta hora'))}">${esc(h)} <span aria-hidden="true">✕</span></button>`).join('')
+    : `<span class="hint-txt">${esc(t('med.f.sinHoras', 'Todavía no hay ninguna hora'))}</span>`;
 }
 
 window.medAnadirHora = function() {
@@ -764,6 +796,16 @@ window.medAtajo = function(cada) {
   }
   medForm.horas = normalizarHoras(horas);
   pintarHorasForm();
+
+  // Decir en voz alta lo que acaba de pasar. El atajo PISA la lista, y
+  // que unos botones cambien en silencio lo que habías escrito a mano es
+  // justo lo que hacía que esto no se entendiera.
+  //
+  // La hora que se nombra es la que PUSISTE, no la primera de la lista
+  // ordenada: con «cada 8 h» desde las 09:00 la lista empieza en 01:00, y
+  // decir «desde las 01:00» sonaba a que te había cambiado la hora.
+  toast(t2('med.atajoHecho', '{n} tomas al día, desde las {h}',
+           { n: 24 / cada, h: base }));
 };
 
 window.guardarPauta = async function() {
@@ -811,12 +853,33 @@ window.guardarPauta = async function() {
   await cargarMedicacion();
 };
 
-/* Editar toca sólo lo que no define las ranuras: nombre, dosis,
-   nota y alargar el final. Las horas van por «cambiar horas», que
-   crea una pauta nueva. */
+/* ─────────────────────────────────────────────────────────────
+   EDITAR UNA PAUTA
+
+   Antes esto duplicaba el tratamiento, y con razón de ser pero sin
+   avisar: el enlace de «cambiar las horas» cerraba la pauta vieja y
+   creaba una nueva, y durante un día se veían dos «Vitamina D»
+   idénticas. Parecía un error de la aplicación.
+
+   Ahora hay dos caminos, y el que se usa depende de si la pauta tiene
+   tomas apuntadas:
+
+     · SIN tomas  → se edita entera en el sitio, horas incluidas. No hay
+       historia que romper, así que no hay nada que duplicar. Es además
+       el caso real: acabas de crearla y te has equivocado.
+
+     · CON tomas  → cambiar las horas sí cierra la vieja y abre una
+       nueva, porque las tomas ya apuntadas señalan ranuras que dejarían
+       de existir y el aviso volvería a pedir dosis ya dadas. Pero se
+       dice antes, y la lista enseña «termina hoy» / «empieza mañana»
+       para que se vea el relevo en vez de un duplicado.
+   ───────────────────────────────────────────────────────────── */
 window.abrirEditarPauta = function(id) {
   const p = medPautas.find(x => x.id === id);
   if (!p) return;
+
+  const conTomas = tieneTomas(p.id);
+  medForm = { id: p.id, rehacer: null, horas: p.horas.slice() };
 
   document.getElementById('comidaModalTitulo').textContent = p.nombre;
   document.getElementById('comidaModalCuerpo').innerHTML = `
@@ -824,34 +887,63 @@ window.abrirEditarPauta = function(id) {
       <label for="medENombre">${esc(t('med.f.nombre', 'Medicamento'))}</label>
       <input type="text" id="medENombre" maxlength="80" value="${esc(p.nombre)}">
     </div>
+
     <div class="field">
       <label for="medEDosis">${esc(t('med.f.dosis', 'Dosis'))}</label>
       <input type="text" id="medEDosis" maxlength="60" value="${p.dosis ? esc(p.dosis) : ''}">
     </div>
+
     <div class="field">
-      <label for="medENota">${esc(t('med.f.nota', 'Nota (opcional)'))}</label>
-      <input type="text" id="medENota" maxlength="200" value="${p.nota ? esc(p.nota) : ''}">
+      <label>${esc(t('med.f.horas', '¿A qué horas?'))}</label>
+      ${conTomas ? `
+        <p style="margin:0 0 6px;font-weight:600">⏰ ${esc(nombreHoras(p.horas))}</p>
+        <p class="hint-txt" style="margin:0">${esc(t('med.horasBloqueadas',
+          'Hay tomas apuntadas con estas horas, así que no se cambian aquí.'))}
+          <a href="#" onclick="event.preventDefault();abrirAltaPauta('${p.id}')"
+             >${esc(t('med.cambiarHoras', 'Cambiar las horas'))}</a>
+        </p>`
+      : `
+        <div id="medHoras" class="med-horas-lista"></div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+          <input type="time" id="medHoraNueva" value="${esc(p.horas[0] || '09:00')}" style="flex:1">
+          <button type="button" class="btn-mini btn-mini-pri" onclick="medAnadirHora()"
+            >${esc(t('med.f.anadirHora', 'Añadir'))}</button>
+        </div>
+        <div class="med-atajos">
+          <button type="button" class="btn-mini" onclick="medAtajo(12)">${esc(t('med.cada', 'cada'))} 12 h · 2</button>
+          <button type="button" class="btn-mini" onclick="medAtajo(8)">${esc(t('med.cada', 'cada'))} 8 h · 3</button>
+          <button type="button" class="btn-mini" onclick="medAtajo(6)">${esc(t('med.cada', 'cada'))} 6 h · 4</button>
+        </div>`}
     </div>
+
     <div class="field">
       <label for="medEHasta">${esc(t('med.f.hasta', 'Hasta el día'))}</label>
       <input type="date" id="medEHasta" value="${p.hasta || ''}">
-      <p class="hint-txt" style="margin:6px 0 0">
-        ⏰ ${esc(nombreHoras(p.horas))} —
-        <a href="#" onclick="event.preventDefault();abrirAltaPauta('${p.id}')"
-           >${esc(t('med.cambiarHoras', 'cambiar las horas'))}</a>
-      </p>
+      <p class="hint-txt" style="margin:6px 0 0">${esc(t('med.f.hastaAyuda',
+        'Vacío = sin fecha de fin.'))}</p>
+    </div>
+
+    <div class="field" style="margin-bottom:0">
+      <label for="medENota">${esc(t('med.f.nota', 'Nota (opcional)'))}</label>
+      <input type="text" id="medENota" maxlength="200" value="${p.nota ? esc(p.nota) : ''}">
     </div>`;
 
   document.getElementById('comidaModalBtns').innerHTML = `
     <button class="btn btn-primary" onclick="guardarEdicionPauta('${p.id}')"
       >${esc(t('btn.guardar', 'Guardar'))}</button>
-    ${pautaActiva(p) ? `<button class="btn btn-danger-sm" onclick="terminarPauta('${p.id}')"
-      >${esc(t('med.terminar', 'Terminar ya'))}</button>` : ''}`;
+    ${pautaActiva(p) ? `<button class="btn btn-secundario" onclick="terminarPauta('${p.id}')"
+      >${esc(t('med.terminar', 'Terminar ya'))}</button>` : ''}
+    <button class="btn btn-danger-sm" onclick="borrarPauta('${p.id}')"
+      >${esc(t('med.borrar', 'Borrar'))}</button>`;
 
   document.getElementById('comidaModal').style.display = '';
+  if (!conTomas) pintarHorasForm();
 };
 
 window.guardarEdicionPauta = async function(id) {
+  const p = medPautas.find(x => x.id === id);
+  if (!p) return;
+
   const cambios = {
     nombre: document.getElementById('medENombre').value.trim(),
     dosis:  document.getElementById('medEDosis').value.trim() || null,
@@ -860,8 +952,14 @@ window.guardarEdicionPauta = async function(id) {
   };
   if (!cambios.nombre) { toast('⚠️ El nombre no puede quedar vacío.'); return; }
 
-  // .select() a propósito: si RLS bloquea un UPDATE, Supabase no
-  // devuelve error, devuelve cero filas. Ya ha pasado dos veces.
+  // Las horas sólo viajan cuando se pueden tocar sin romper nada
+  if (!tieneTomas(id)) {
+    if (!medForm || !medForm.horas.length) { toast('⚠️ Añade al menos una hora.'); return; }
+    cambios.horas = medForm.horas;
+  }
+
+  // .select() a propósito: si RLS bloquea un UPDATE, Supabase no devuelve
+  // error, devuelve cero filas. Ya ha pasado dos veces en este proyecto.
   const { data, error } = await sb.from('med_pautas').update(cambios).eq('id', id).select();
   if (error) { toast('❌ ' + (error.message || 'No se pudo guardar'), 4500); return; }
   if (!data || !data.length) {
@@ -869,13 +967,13 @@ window.guardarEdicionPauta = async function(id) {
   }
 
   cerrarComidaModal();
+  medForm = null;
   toast('✅ Guardado');
   await cargarMedicacion();
 };
 
-/* Terminar pone el final AYER, no hoy: «ya no se la demos» quiere
-   decir que las tomas que quedaban hoy tampoco. Lo ya apuntado no
-   se toca. */
+/* Terminar pone el final AYER, no hoy: «ya no se la demos» quiere decir
+   que las tomas que quedaban hoy tampoco. Lo ya apuntado no se toca. */
 window.terminarPauta = async function(id) {
   const p = medPautas.find(x => x.id === id);
   if (!p) return;
@@ -890,5 +988,35 @@ window.terminarPauta = async function(id) {
 
   cerrarComidaModal();
   toast('🏁 ' + p.nombre + ' terminado');
+  await cargarMedicacion();
+};
+
+/* Borrar de verdad, para cuando la pauta no debería existir nunca: la
+   apuntaste mal, o te equivocaste de niño. «Terminar» la dejaría ahí para
+   siempre en la lista de terminados, que es basura si nunca fue real.
+
+   Las tomas se van con ella, y por eso se dice cuántas son antes: no es lo
+   mismo tirar una pauta recién creada que una con veinte dosis apuntadas.
+   El orden es obligatorio, las claves ajenas no llevan cascade. */
+window.borrarPauta = async function(id) {
+  const p = medPautas.find(x => x.id === id);
+  if (!p) return;
+
+  const n = medTomas.filter(x => x.pauta_id === id).length;
+  const aviso = '¿Borrar ' + p.nombre + ' del todo?\n\n'
+    + (n ? 'Se borrarán también sus ' + n + ' ' + plural(n, 'toma', 'tomas') + ' apuntadas.\n'
+         : 'No tiene ninguna toma apuntada.\n')
+    + '\nEsto no se puede deshacer. Si sólo quieres dejar de darla, usa «Terminar ya».';
+  if (!confirm(aviso)) return;
+
+  const { error: e1 } = await sb.from('med_tomas').delete().eq('pauta_id', id);
+  if (e1) { toast('❌ ' + (e1.message || 'No se pudieron borrar las tomas'), 4500); return; }
+
+  const { error: e2 } = await sb.from('med_pautas').delete().eq('id', id);
+  if (e2) { toast('❌ ' + (e2.message || 'No se pudo borrar'), 4500); return; }
+
+  cerrarComidaModal();
+  medForm = null;
+  toast('🗑️ ' + p.nombre + ' borrado');
   await cargarMedicacion();
 };

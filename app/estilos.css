@@ -274,6 +274,7 @@
     input[type="text"],
     input[type="datetime-local"],
     input[type="date"],
+    input[type="time"],
     textarea {
       display: block;
       width: 100%;
@@ -991,6 +992,22 @@
       :root:not([data-theme="light"]) .eco-fecha.viejo { color: #fbbf24; }
     }
 
+    /* ═══════════════════════════════════════════
+       CONTROLES NATIVOS
+
+       El desplegable de hora, el calendario y la ruedecita del campo
+       numérico los dibuja el navegador, no esta hoja: salían en blanco
+       sobre el tema oscuro como dos parches. color-scheme es la única
+       forma de decirle al navegador de qué color es el fondo; con eso
+       se pintan solos a juego.
+       ═══════════════════════════════════════════ */
+    :root { color-scheme: light; }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) { color-scheme: dark; }
+    }
+    :root[data-theme="dark"]  { color-scheme: dark; }
+    :root[data-theme="light"] { color-scheme: light; }
+
     :root[data-theme="dark"] .eco-fecha.viejo { color: #fbbf24; }
 
     .mas > summary .eco-fecha { margin-left: auto; }
@@ -1044,6 +1061,27 @@
     .med-nota  { font-size: .75rem; color: var(--text2); margin-top: 3px; font-style: italic; }
 
     .med-acciones { display: flex; gap: 6px; flex-shrink: 0; }
+
+    /* Los atajos son ACCIONES («rellena la lista»), no un modo en el que
+       te quedas. Con aspecto de chip parecían una opción elegida y por eso
+       confundían: puestos como botones, se entiende que rellenan y ya. */
+    .login-marca { text-decoration: none; color: inherit; display: block; }
+
+    .med-atajos { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 4px; }
+
+    .med-horas-lista {
+      display: flex; flex-wrap: wrap; gap: 6px;
+      margin: 0 0 10px; min-height: 34px; align-items: center;
+    }
+
+    .med-hora-chip {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid var(--primary);
+      background: var(--primary); color: #fff;
+      border-radius: 999px; padding: 6px 12px;
+      font-size: .85rem; font-weight: 600; font-family: inherit;
+      font-variant-numeric: tabular-nums; cursor: pointer;
+    }
 
     /* En un móvil estrecho, «Ya se la he dado» y el nombre no caben en la
        misma línea: el nombre se partía por la mitad («Vitamina / D»). Los

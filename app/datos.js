@@ -97,6 +97,69 @@ function nombreFicheroDatos(ext) {
        + new Date().toISOString().slice(0, 10) + '.' + ext;
 }
 
+/* La medicación, en su propio CSV.
+
+   Son dos cosas distintas —la pauta y lo que de verdad se dio— y aquí van
+   juntas: una fila por toma, con la pauta repetida al lado. Es lo que se
+   enseña en la consulta, y una hoja de cálculo no entiende de dos tablas.
+
+   Un tratamiento sin ninguna toma apuntada sale igualmente, con las
+   columnas de la toma vacías: si no, un tratamiento recién empezado
+   desaparecería del fichero sin avisar. */
+window.exportarMedicacionCSV = async function() {
+  const btn = document.getElementById('btnExportMed');
+  const txt = '\u2b07\ufe0f Medicinas (CSV)';
+  if (btn) { btn.disabled = true; btn.textContent = 'Preparando\u2026'; }
+
+  const r = await reunirDatos();
+
+  if (btn) { btn.disabled = false; btn.textContent = txt; }
+  if (r.error) { toast('\u274c ' + r.error, 4000); return; }
+
+  const pautas = r.paquete.medicacion || [];
+  const tomas  = r.paquete.medicacion_tomas || [];
+
+  if (!pautas.length) { toast('No hay ning\u00fan tratamiento que exportar.', 3500); return; }
+
+  const nombreDe = {};
+  r.paquete.hijos.forEach(h => { nombreDe[h.id] = h.nombre; });
+  const pautaDe = {};
+  pautas.forEach(p => { pautaDe[p.id] = p; });
+
+  const sep = separadorCSV();
+  const celda = v => {
+    if (v === null || v === undefined) return '';
+    const s = String(v);
+    return (s.indexOf(sep) >= 0 || /["\n\r]/.test(s))
+      ? '"' + s.replace(/"/g, '""') + '"' : s;
+  };
+
+  const cols = ['hijo', 'medicamento', 'dosis', 'horas_pauta', 'desde', 'hasta',
+                'nota_pauta', 'dia_previsto', 'hora_prevista', 'dada_en',
+                'estado', 'nota_toma'];
+
+  const fila = (p, x) => [
+    nombreDe[p.nino_id] || '',
+    p.nombre, p.dosis, (p.horas || []).join(' '), p.desde, p.hasta, p.nota,
+    x ? x.fecha_slot : '', x ? x.hora_slot : '', x ? x.dada_en : '',
+    x ? x.estado : '', x ? x.nota : ''
+  ].map(celda).join(sep);
+
+  const filas = [];
+  tomas.slice()
+       .sort((a, b) => (a.fecha_slot + a.hora_slot < b.fecha_slot + b.hora_slot ? -1 : 1))
+       .forEach(x => { const p = pautaDe[x.pauta_id]; if (p) filas.push(fila(p, x)); });
+
+  pautas.filter(p => !tomas.some(x => x.pauta_id === p.id))
+        .forEach(p => filas.push(fila(p, null)));
+
+  descargar('\ufeff' + cols.join(sep) + '\r\n' + filas.join('\r\n'),
+            nombreFicheroDatos('csv').replace('.csv', '-medicinas.csv'),
+            'text/csv;charset=utf-8');
+  toast('\u2705 ' + pautas.length + ' ' + plural(pautas.length, 'tratamiento', 'tratamientos')
+        + ' y ' + tomas.length + ' ' + plural(tomas.length, 'toma', 'tomas'));
+};
+
 window.exportarJSON = async function() {
   const btn = document.getElementById('btnExportJSON');
   if (btn) { btn.disabled = true; btn.textContent = 'Preparando…'; }

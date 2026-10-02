@@ -691,6 +691,12 @@ document.getElementById('guardarPwdBtn').addEventListener('click', async () => {
 document.getElementById('logoutBtn').addEventListener('click', async () => {
   modoRecuperacion(false);
   await sb.auth.signOut();      // limpiarEstado() lo hace onAuthStateChange
+
+  // Y a la puerta, no al cerrojo. Quien sale no suele querer volver a
+  // entrar ahora mismo: dejarle mirando el formulario de entrar es
+  // devolverle a donde acaba de irse. Con el .html puesto para que siga
+  // funcionando abriendo el fichero a mano, sin servidor.
+  window.location.href = '../index.html';
 });
 
 // Envuelto en una funcion a proposito: abrirAjustes() vive en familia.js,
