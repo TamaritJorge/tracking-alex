@@ -1,0 +1,75 @@
+Tracking Álex
+Copyright (c) 2025-2026 Jorge Segarra Tamarit. Todos los derechos reservados.
+
+
+QUÉ ES ESTE FICHERO
+───────────────────
+Este repositorio es público para que cualquiera pueda LEERLO: comprobar que
+la aplicación hace lo que dice, que no hay publicidad, ni rastreadores, ni
+nada escondido tratando con datos de niños. Esa transparencia es el motivo
+de tenerlo a la vista.
+
+Público no significa libre. Este NO es software de código abierto y no lleva
+una licencia MIT, Apache ni GPL, porque todas ésas autorizan expresamente la
+redistribución, que es justo lo que aquí no se concede.
+
+
+LO QUE SÍ PUEDES HACER, SIN PEDIR PERMISO
+─────────────────────────────────────────
+  · Leer el código, entero y con calma.
+  · Auditarlo, analizarlo y comentarlo públicamente.
+  · Aprender de él y aplicar las ideas o las técnicas en tu propio trabajo:
+    las ideas no se licencian, sólo esta expresión concreta de ellas.
+  · Citar fragmentos breves en una reseña, un artículo o una clase, con
+    atribución.
+  · Descargar una copia para examinarla en tu máquina.
+  · Comunicar un fallo o un problema de seguridad: se agradece de verdad.
+    info@trackingalex.app
+
+
+LO QUE NO SE CONCEDE
+────────────────────
+Sin permiso escrito previo del titular, no se autoriza:
+
+  · Copiar, reproducir o redistribuir el código, ni entero ni en partes
+    sustanciales.
+  · Publicar copias o versiones modificadas, con otro nombre o con el mismo.
+  · Desplegar este software como un servicio accesible a terceros.
+  · Usarlo con fines comerciales.
+  · Reutilizar el nombre «Tracking Álex», el logotipo, el diseño visual o los
+    textos.
+  · Incorporarlo a conjuntos de datos de entrenamiento de modelos de
+    inteligencia artificial. Esto es coherente con el robots.txt del sitio,
+    que declara «ai-train=no».
+
+No hacen falta estas líneas para que sea así: sin una licencia que lo permita,
+el derecho de autor ya lo reserva por defecto. Se escriben para que nadie
+tenga que adivinarlo.
+
+
+LO QUE NO ES MÍO Y NO CUBRE ESTE AVISO
+──────────────────────────────────────
+  · Los patrones de crecimiento infantil son de la Organización Mundial de la
+    Salud, de acceso público, con sus propias condiciones.
+  · Las recomendaciones de alimentación complementaria citan fuentes de
+    terceros (AESAN, AEP, ESPGHAN, EFSA y otras). Las referencias están en la
+    propia aplicación; el mérito y los derechos son de quien las publicó.
+  · Los datos que cada familia introduce en la aplicación son de esa familia.
+    Aquí no hay ninguno.
+
+
+SIN GARANTÍA
+────────────
+El software se ofrece «tal cual», sin garantía de ningún tipo. Tracking Álex
+es una libreta, no un dispositivo médico ni una herramienta de diagnóstico:
+ante cualquier duda sobre la salud de un niño, la respuesta está en su
+pediatra y no en esta aplicación. El titular no responde de los daños que se
+deriven del uso del software.
+
+
+PERMISOS
+────────
+Para cualquier cosa que no esté en la lista de arriba, basta con preguntar.
+La respuesta puede ser que sí.
+
+    Jorge Segarra Tamarit · info@trackingalex.app · https://trackingalex.app

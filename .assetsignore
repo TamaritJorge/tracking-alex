@@ -24,3 +24,11 @@ README.md
 # Las plantillas de correo viven en el repositorio para tener historial,
 # pero no son paginas de la web: se pegan en el panel de Supabase.
 correo
+
+# El aviso de derechos. Vive en el repositorio porque es donde GitHub lo
+# busca y donde tiene sentido leerlo; no es una página de la web. Lo que
+# los usuarios tienen que ver está en aviso-legal.html, escrito para
+# personas y no para quien va a clonar el repositorio. Sin esta línea se
+# serviría en trackingalex.app/LICENSE, porque no tiene extensión y no lo
+# recoge ninguna de las reglas de arriba.
+LICENSE
