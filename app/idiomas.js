@@ -197,6 +197,11 @@ window.cambiarIdioma = function(cual) {
 
   aplicarIdioma();
 
+  /* Los avisos del móvil los redacta el servidor, no esto. Hay que
+     decirle que este dispositivo ha cambiado de idioma o seguiría
+     mandándolos en el anterior para siempre. */
+  if (typeof actualizarIdiomaPush === 'function') actualizarIdiomaPush();
+
   // Lo pintado a mano, sólo si ya hay con qué
   if (typeof familia !== 'undefined' && familia) {
     if (typeof pintarCabecera === 'function') pintarCabecera();

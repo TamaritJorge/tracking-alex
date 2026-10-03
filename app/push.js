@@ -131,6 +131,7 @@ window.activarPush = async function() {
     p256dh:   j.keys.p256dh,
     auth:     j.keys.auth,
     agente:   navigator.userAgent.slice(0, 200),
+    idioma:   idiomaActivo(),
     fallos:   0
   }, { onConflict: 'endpoint' });
 
@@ -173,8 +174,36 @@ async function renovarPush() {
     p256dh:   j.keys.p256dh,
     auth:     j.keys.auth,
     agente:   navigator.userAgent.slice(0, 200),
+    idioma:   idiomaActivo(),
     fallos:   0
   }, { onConflict: 'endpoint' });
+}
+
+/* ── El idioma de los avisos ────────────────────────────────
+   El texto del aviso lo compone la Edge Function en el servidor: cuando
+   llega al móvil ya está escrito, y la traducción del cliente no puede
+   hacer nada con él. Por eso med_push guarda el idioma de cada
+   dispositivo y la función lo mira antes de redactar.
+
+   Esto lo llama cambiarIdioma(). Sin ello, quien ya tuviera los avisos
+   activados seguiría recibiéndolos en el idioma en que se suscribió, para
+   siempre — y sería de esos fallos que nadie denuncia porque parece que la
+   aplicación «es así».
+
+   Silenciosa a propósito: si falla, el aviso sigue llegando en el otro
+   idioma. Es molesto, no grave, y no merece un toast encima de lo que la
+   persona estuviera haciendo. */
+async function actualizarIdiomaPush() {
+  if (!pushSoportado() || Notification.permission !== 'granted') return;
+  const reg = swReg || await navigator.serviceWorker.getRegistration();
+  if (!reg) return;
+  const sus = await reg.pushManager.getSubscription();
+  if (!sus) return;
+
+  const { error } = await sb.from('med_push')
+    .update({ idioma: idiomaActivo() })
+    .eq('endpoint', sus.endpoint);
+  if (error) console.error('idioma del aviso:', error);
 }
 
 /* ── La tarjeta ─────────────────────────────────────────────── */

@@ -32,3 +32,14 @@ correo
 # serviría en trackingalex.app/LICENSE, porque no tiene extensión y no lo
 # recoge ninguna de las reglas de arriba.
 LICENSE
+
+# El codigo de servidor. Son las Edge Functions de Supabase: se despliegan
+# alli, no se sirven desde aqui. Sin esta linea se publicarian en
+# trackingalex.app/supabase/functions/... porque la carpeta de assets es la
+# raiz del repositorio.
+#
+# No llevan secretos —las claves VAPID y la de service_role son variables de
+# entorno de la funcion, no estan en el codigo— pero publicar codigo de
+# servidor no aporta nada y es la clase de descuido que algun dia si lleva
+# algo dentro.
+supabase

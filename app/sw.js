@@ -51,7 +51,19 @@ self.addEventListener('push', e => {
     body:  d.cuerpo || 'Toca una toma. Compruébalo en la aplicación.',
     icon:  '../marca/icono-192.png',
     badge: '../marca/icono-192.png',
-    lang:  'es',
+
+    /* El idioma lo manda el servidor en la carga, porque es él quien
+       escribe el texto. Aquí no se puede deducir: un service worker no ve
+       el localStorage de la página.
+
+       Importa de verdad y no es decorativo: `lang` es lo que usa el lector
+       de pantalla para elegir la voz, y lo que decide la dirección del
+       texto. Antes estaba clavado a 'es' y un aviso en inglés se leía en
+       voz alta con fonética española.
+
+       Si no viene —una carga antigua o un aviso de prueba—, 'es', que es
+       el idioma del texto por defecto de aquí arriba. */
+    lang:  d.idioma || 'es',
     // El tag hace que un aviso nuevo de la MISMA toma sustituya al
     // anterior en vez de apilarse. No borra el viejo de otra toma: eso
     // no se puede, y por eso el texto no da nada por hecho.
