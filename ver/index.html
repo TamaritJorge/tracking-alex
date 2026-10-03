@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       EL VISOR DE UN ENLACE COMPARTIDO
+
+       Esta página la abre gente SIN CUENTA: la abuela, la matrona, el
+       pediatra. No hay sesión, no se puede escribir nada y desde aquí
+       no se llega a ninguna otra parte de la aplicación.
+
+       El token va en el FRAGMENTO de la URL (/ver/#TOKEN) y no en la
+       query. Los fragmentos no se mandan al servidor: no aparecen en
+       los registros de Cloudflare ni de Supabase, ni en la cabecera
+       Referer al pulsar un enlace del pie.
+       ═══════════════════════════════════════════════════════════════ -->
+
+  <!-- ESTE SCRIPT VA EL PRIMERO DE TODO, y no es manía.
+
+       supabase-js se crea con detectSessionInUrl activado por defecto:
+       hurga en location.hash buscando un access_token y reescribe la
+       dirección. Y app.js, si encuentra un error de enlace de correo,
+       llama a history.replaceState y se lleva el fragmento por delante.
+       Leyendo el token aquí, antes de que se cargue nada, da igual lo
+       que hagan después. -->
+  <script>
+    window.MODO_ENLACE  = true;
+    window.TOKEN_ENLACE = (location.hash || '').replace(/^#/, '').trim();
+  </script>
+
+  <title>Gráficas compartidas · Tracking Álex</title>
+
+  <!-- noindex en la etiqueta y NADA en robots.txt. Es la doctrina que ya
+       está escrita allí: Disallow impide RASTREAR, así que Google nunca
+       llegaría a leer este noindex y la URL podría acabar listada igual.
+       Tampoco entra en sitemap.xml. -->
+  <meta name="robots" content="noindex, nofollow">
+
+  <!-- Que no se filtre la dirección (con su token) al pulsar un enlace -->
+  <meta name="referrer" content="no-referrer">
+
+  <!-- La tarjeta al compartir, deliberadamente GENÉRICA.
+       WhatsApp pide /ver/ SIN el fragmento, así que no puede ver ningún
+       dato aunque quisiera. Pero esa tarjeta aparece en un chat que
+       puede ser de grupo antes de que nadie haya abierto nada, así que
+       aquí no va ni el nombre del bebé ni nada que se le parezca. -->
+  <meta property="og:type"         content="website">
+  <meta property="og:site_name"    content="Tracking Álex">
+  <meta property="og:locale"       content="es_ES">
+  <meta property="og:title"        content="Gráficas compartidas">
+  <meta property="og:description"  content="Alguien ha compartido contigo el seguimiento de un bebé. Ábrelo para verlo.">
+  <meta property="og:image"        content="https://trackingalex.app/marca/og.png">
+  <meta property="og:image:width"  content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card"        content="summary_large_image">
+
+  <link rel="icon" href="/favicon.ico" sizes="32x32">
+  <link rel="icon" href="/marca/icono-96.png" type="image/png" sizes="96x96">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/marca/icono-180.png">
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns@3/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+
+  <link rel="stylesheet" href="../marca.css">
+  <link rel="stylesheet" href="../app/estilos.css">
+</head>
+<body>
+
+<!-- toast() busca este nodo sin comprobar que exista -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="logoTA" viewBox="0 0 100 100">
+      <path d="M20 86 L50 36 L80 86" fill="none" stroke="currentColor"
+            stroke-width="13" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M41 21 L64 8" fill="none" stroke="currentColor"
+            stroke-width="8.5" stroke-linecap="round"/>
+    </symbol>
+  </defs>
+</svg>
+
+
+<!-- Mismas clases que la cabecera de la aplicación (.header /
+     .header-title / .header-right): así hereda el sticky, la altura y
+     el margen de seguridad del notch sin una línea de CSS nueva. -->
+<div class="header">
+  <span class="header-title logo-marca">
+    <svg width="26" height="26" aria-hidden="true"><use href="#logoTA"/></svg>
+    <span id="visorTitulo">Tracking Álex</span>
+  </span>
+  <div class="header-right">
+    <button class="icon-btn" id="themeBtn2" type="button"
+            title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+  </div>
+</div>
+
+<main>
+
+  <!-- Mientras se pide el enlace, y donde se explica si algo falla -->
+  <div class="card" id="visorEstado">
+    <p class="card-title">Abriendo…</p>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════
+       LAS TARJETAS
+
+       Copiadas de app/index.html (pestaña de Gráficas). Si se tocan
+       allí hay que tocarlas aquí: es duplicación a propósito, para no
+       arrastrar a esta página el resto de la aplicación, pero es
+       duplicación y se olvida. Hay un comentario igual al otro lado.
+
+       Sin data-captura: compartir.js no se carga aquí, porque arrastra
+       html2canvas (~200 KB) para una función distinta.
+       ═══════════════════════════════════════════════════════════════ -->
+  <div id="visorContenido" style="display:none">
+
+    <!-- Lo más importante de esta página después de las gráficas. Sin
+         esta línea, una matrona puede leer una curva de peso plana como
+         un hallazgo clínico cuando lo que pasa es que hace tres semanas
+         que nadie apunta nada. -->
+    <p class="hint-txt" id="visorHasta" style="margin:0 0 14px"></p>
+
+    <div class="card">
+      <p class="card-title" data-i18n="resumen.titulo">🕐 Últimas 24 h</p>
+      <p class="card-sub" data-resumen-desde>—</p>
+      <div class="sum-grid" data-resumen></div>
+    </div>
+
+    <!-- Igual que en la aplicación: avisarPocosPipis() le reescribe la
+         clase entera, así que aquí no se le pone ninguna. Que salga es
+         deliberado — callar un aviso de seguridad para no tener una
+         conversación incómoda es el valor por defecto equivocado. -->
+    <p id="avisoPipi" data-modulo="panales" style="display:none"></p>
+
+    <div class="card" data-modulo="peso">
+      <p class="card-title">⚖️ Peso</p>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:var(--ok)"></span>Pesadas</span>
+        <span class="legend-item"><span class="legend-line legend-dash"></span>Tendencia</span>
+        <span class="legend-item"><span class="legend-line"></span>Percentiles OMS</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chartPeso"></canvas></div>
+      <p class="hint-txt" id="avisoPesoMes"></p>
+      <p class="hint-txt" id="notaTendencia"></p>
+    </div>
+
+    <div class="card" data-modulo="panales">
+      <p class="card-title">💧 Pañales</p>
+      <div class="legend" id="leyendaPanal"></div>
+      <div class="chart-wrap"><canvas id="chartPanal"></canvas></div>
+      <p class="hint-txt" id="notaPanal"></p>
+    </div>
+
+    <div class="card" data-modulo="extraccion">
+      <p class="card-title">🍼 Extracción de leche</p>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot" style="background:var(--info)"></span>Izquierdo</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--danger)"></span>Derecho</span>
+      </div>
+      <div class="chart-wrap"><canvas id="chartExt"></canvas></div>
+    </div>
+
+
+    <!-- El descargo. La aplicación mide mucho el lenguaje al hablar de
+         percentiles; una página que puede acabar leyendo un pediatra no
+         puede ir sin nada. -->
+    <div class="card">
+      <p class="hint-txt" style="margin:0">
+        Esto es una libreta, no un informe médico ni una herramienta de
+        diagnóstico. Los percentiles salen de los patrones de crecimiento de
+        la <strong>Organización Mundial de la Salud</strong> y son una
+        referencia estadística: un percentil bajo, o un cambio de percentil,
+        no son por sí solos un problema. Ante cualquier duda sobre la salud
+        del niño, la respuesta está en su pediatra.
+      </p>
+    </div>
+
+  </div>
+
+  <!-- Mismo pie que el de Ajustes, con las mismas clases -->
+  <p class="hint-txt" style="margin-top:14px;text-align:center">
+    <a href="/privacidad" rel="noopener noreferrer">Privacidad</a> ·
+    <a href="/terminos" rel="noopener noreferrer">Condiciones</a> ·
+    <a href="/" rel="noopener noreferrer">Qué es Tracking Álex</a>
+  </p>
+
+</main>
+
+
+<!-- Sólo lo imprescindible. NO se cargan familia.js (39 KB de cuentas y
+     ajustes en una página anónima), comida.js, medicacion.js, registros.js,
+     historial.js, datos.js, alimentos.js, push.js, bienvenida.js ni
+     compartir.js.
+
+     app.js SÍ se carga, y es una decisión pensada: ahí vive renderResumen(),
+     que son 150 líneas de criterio clínico —los umbrales de g/día y el
+     lenguaje medido de los percentiles—. Eso no puede existir dos veces,
+     porque el día que se corrija una copia la otra se queda mintiendo. -->
+<script src="../app/idiomas.js"></script>
+<script src="../app/idiomas/en.js"></script>
+<script src="../app/app.js"></script>
+<script src="../app/modulos.js"></script>
+<script src="../app/oms.js"></script>
+<script src="../app/graficas.js"></script>
+<script src="ver.js"></script>
+
+</body>
+</html>

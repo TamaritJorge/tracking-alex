@@ -75,6 +75,9 @@
     <li>Si entras con Google, lo que Google comparte al iniciar sesión: tu correo
         y los datos básicos de tu perfil. No se pide acceso a nada más de tu cuenta.</li>
     <li>El nombre que le pongas a tu familia.</li>
+    <li>Si creas enlaces para compartir las gráficas: el propio enlace, la nota
+        que le pongas para acordarte de para quién era, qué decidiste enseñar,
+        cuándo caduca y cuándo se abrió por última vez.</li>
   </ul>
   <p><strong>De tu hijo o hija:</strong></p>
   <ul>
@@ -125,10 +128,41 @@
 
   <h2>5. Quién más puede verlos</h2>
   <p>
-    Nadie fuera de tu familia. La base de datos aplica reglas de acceso por fila
-    que impiden que una familia lea datos de otra, y están comprobadas contra la
-    API directamente, no sólo en la interfaz.
+    Nadie fuera de tu familia, salvo que tú decidas compartirlos. La base de datos
+    aplica reglas de acceso por fila que impiden que una familia lea datos de otra,
+    y están comprobadas contra la API directamente, no sólo en la interfaz.
   </p>
+
+  <h3>Los enlaces que creas tú</h3>
+  <p>
+    Desde ⚙️ Ajustes puedes crear un <strong>enlace de sólo lectura</strong> para
+    que alguien de fuera —los abuelos, la matrona, el pediatra— vea las gráficas
+    de tu hijo sin tener cuenta. Es una <strong>cesión de datos de salud que
+    decides tú</strong>, así que conviene saber exactamente qué implica:
+  </p>
+  <ul>
+    <li><strong>El enlace es la credencial.</strong> No hay contraseña: quien
+        tenga la dirección entra. Es una cadena aleatoria imposible de adivinar
+        y la página lleva <code>noindex</code>, así que no aparece en buscadores,
+        pero si reenvías el enlace estás dando acceso.</li>
+    <li><strong>Sólo se ve lo que marques</strong> al crearlo: el peso, los
+        pañales, la extracción y el resumen de 24 horas, en la combinación que
+        elijas. Lo que no marques <em>no sale del servidor</em>, no es que se
+        oculte en la pantalla.</li>
+    <li><strong>Las notas que escribes nunca se comparten</strong>, en ningún
+        caso y con ninguna combinación.</li>
+    <li><strong>Tampoco sale nada tuyo:</strong> ni tu correo, ni el nombre de
+        la familia, ni que existe una cuenta. Del niño se ve su nombre, su fecha
+        de nacimiento y su sexo, que es lo que hace falta para dibujar la curva
+        de la OMS correcta.</li>
+    <li><strong>Quien lo abre no puede escribir nada</strong>, ni ve el historial,
+        ni la alimentación, ni las medicinas.</li>
+    <li><strong>Caduca y se puede desactivar</strong> en cualquier momento desde
+        ⚙️ Ajustes, con efecto inmediato.</li>
+    <li>De cada enlace se guarda <strong>la fecha en que se abrió por última
+        vez</strong>, para que sepas si sigue en uso. No se guarda quién lo abrió,
+        ni desde dónde, ni cuántas veces.</li>
+  </ul>
   <p>Hay dos proveedores que participan técnicamente en el servicio:</p>
   <dl>
     <dt>Supabase</dt>

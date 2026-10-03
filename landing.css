@@ -366,6 +366,16 @@ a { color: var(--marca); }
   margin: 32px 0 10px;
 }
 
+/* Un escalón por debajo del h2, para los apartados dentro de un
+   apartado. Sin esto saldría con el tamaño por defecto del navegador,
+   que es MÁS grande que el h2 de aquí al lado. */
+.legal h3 {
+  font-size: 0.98rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  margin: 20px 0 8px;
+}
+
 .legal p, .legal li, .legal dd { color: var(--tinta2); }
 .legal p  { margin-bottom: 12px; }
 .legal ul { margin: 0 0 12px 20px; }

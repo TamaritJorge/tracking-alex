@@ -37,7 +37,7 @@ async function reunirDatos() {
 
   try {
     const [miembros, ajustes, registrosTodos, alimentos, alimAjustes,
-           medPautasTodas, medTomasTodas] = await Promise.all([
+           medPautasTodas, medTomasTodas, enlacesTodos] = await Promise.all([
       sb.from('familia_miembros').select('*').eq('familia_id', familia.id)
         .then(r => { if (r.error) throw r.error; return r.data || []; }),
       sb.from('familia_ajustes').select('*').eq('familia_id', familia.id)
@@ -46,7 +46,8 @@ async function reunirDatos() {
       porHijo('alim_registros'),
       porHijo('alim_ajustes'),
       porHijo('med_pautas'),
-      porHijo('med_tomas')
+      porHijo('med_tomas'),
+      porHijo('enlaces')
     ]);
 
     return {
@@ -64,7 +65,20 @@ async function reunirDatos() {
         ajustes_familia: ajustes,
         ajustes_comida:  alimAjustes,
         medicacion:      medPautasTodas,
-        medicacion_tomas: medTomasTodas
+        medicacion_tomas: medTomasTodas,
+
+        /* Los enlaces compartidos SIN su token.
+           El token es una credencial viva: quien lo tiene, entra. Este
+           fichero acaba en la carpeta de Descargas y de ahí se manda por
+           correo o se sube al portal de un médico, así que meter aquí los
+           tokens enteros sería, con diferencia, la forma más probable de
+           que un enlace se escape.
+           Con el principio se reconoce cuál es cada uno, que es para lo
+           que sirve una exportación; para volver a usarlo están Ajustes. */
+        enlaces_compartidos: enlacesTodos.map(e => ({
+          ...e,
+          token: e.token ? e.token.slice(0, 6) + '…(recortado)' : null
+        }))
       },
       resumen: {
         hijos: hijos.length,

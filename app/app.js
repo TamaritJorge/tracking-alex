@@ -51,7 +51,25 @@ if (errorEnlace) {
 }
 
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* En el visor de un enlace compartido (/ver/) el cliente se crea distinto,
+   y las tres opciones importan:
+
+     detectSessionInUrl  por defecto hurga en location.hash buscando un
+                         access_token y REESCRIBE la dirección. Ahí es
+                         donde viaja el token del enlace.
+     persistSession      no hay sesión que guardar, y guardar algo en el
+                         móvil de la abuela sería de mala educación.
+     autoRefreshToken    no hay nada que refrescar.
+
+   Y hay un motivo menos obvio: si un padre abre su propio enlace estando
+   dentro, sin esto lo recorrería como `authenticated` y el camino real
+   —el de anon, que es el que usa todo el mundo— no se probaría nunca. */
+const sb = createClient(SUPABASE_URL, SUPABASE_KEY,
+  window.MODO_ENLACE
+    ? { auth: { persistSession: false, detectSessionInUrl: false,
+                autoRefreshToken: false } }
+    : undefined);
 
 /* ─────────────────────────────────────────────────────────────
    COLORES DE CACA
@@ -105,6 +123,21 @@ function esc(s) {
   return String(s ?? '').replace(/[&<>"']/g, c => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[c]));
+}
+
+/* Engancha un manejador sólo si el nodo existe.
+
+   Los de abajo (login, Google, registro, olvidé la contraseña, salir,
+   ajustes) se enganchan al CARGAR el fichero, no dentro de init(). La
+   página del visor de enlaces compartidos (/ver/) reutiliza app.js y no
+   tiene ninguno de esos nodos: sin esta comprobación, el primero lanzaba
+   una excepción a mitad de la carga y dejaba sin definir TODO lo que
+   app.js declara más abajo —switchTab(), renderResumen(), cargarDatos()—,
+   mientras los <script> siguientes se ejecutaban igual contra un ámbito a
+   medio construir. */
+function enganchar(id, evento, fn) {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener(evento, fn);
 }
 
 let toastTimer;
@@ -334,8 +367,8 @@ function aplicarTema(t) {
 
 function toggleTema() { aplicarTema(esDark() ? 'light' : 'dark'); }
 
-document.getElementById('themeBtn1').addEventListener('click', toggleTema);
-document.getElementById('themeBtn2').addEventListener('click', toggleTema);
+enganchar('themeBtn1', 'click', toggleTema);
+enganchar('themeBtn2', 'click', toggleTema);
 aplicarTema(tema);
 
 /* ─────────────────────────────────────────────────────────────
@@ -616,7 +649,7 @@ document.addEventListener('visibilitychange', () => {
 /* ─────────────────────────────────────────────────────────────
    AUTH — LOGIN / LOGOUT
    ───────────────────────────────────────────────────────────── */
-document.getElementById('loginBtn').addEventListener('click', async () => {
+enganchar('loginBtn', 'click', async () => {
   const email = document.getElementById('loginEmail').value.trim();
   const pwd   = document.getElementById('loginPwd').value;
   const btn   = document.getElementById('loginBtn');
@@ -636,12 +669,12 @@ document.getElementById('loginBtn').addEventListener('click', async () => {
 });
 
 // Pulsar Enter en el campo contraseña hace login
-document.getElementById('loginPwd').addEventListener('keydown', e => {
+enganchar('loginPwd', 'keydown', e => {
   if (e.key === 'Enter') document.getElementById('loginBtn').click();
 });
 
 /* ── Google ── */
-document.getElementById('googleBtn').addEventListener('click', async () => {
+enganchar('googleBtn', 'click', async () => {
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: window.location.origin + window.location.pathname }
@@ -654,7 +687,7 @@ document.getElementById('googleBtn').addEventListener('click', async () => {
 });
 
 /* ── Registrarse con correo ── */
-document.getElementById('registroBtn').addEventListener('click', async () => {
+enganchar('registroBtn', 'click', async () => {
   const email = document.getElementById('loginEmail').value.trim();
   const pwd   = document.getElementById('loginPwd').value;
   const errEl = document.getElementById('loginErr');
@@ -724,7 +757,7 @@ function modoRecuperacion(activo) {
   if (nueva)  nueva.style.display  = activo ? '' : 'none';
 }
 
-document.getElementById('olvideBtn').addEventListener('click', async (e) => {
+enganchar('olvideBtn', 'click', async (e) => {
   e.preventDefault();
   const email = document.getElementById('loginEmail').value.trim();
   const errEl = document.getElementById('loginErr');
@@ -749,7 +782,7 @@ document.getElementById('olvideBtn').addEventListener('click', async (e) => {
     : t('recup.enviado', 'Si esa dirección tiene cuenta, te llega un correo en un minuto.');
 });
 
-document.getElementById('guardarPwdBtn').addEventListener('click', async () => {
+enganchar('guardarPwdBtn', 'click', async () => {
   const pwd   = document.getElementById('nuevaPwd').value;
   const errEl = document.getElementById('nuevaPwdErr');
   const btn   = document.getElementById('guardarPwdBtn');
@@ -783,7 +816,7 @@ document.getElementById('guardarPwdBtn').addEventListener('click', async () => {
 
 /* Al volver a la pantalla de entrar hay que deshacer el modo recuperacion:
    si no, quien cierre sesion vuelve y se encuentra el formulario equivocado. */
-document.getElementById('logoutBtn').addEventListener('click', async () => {
+enganchar('logoutBtn', 'click', async () => {
   modoRecuperacion(false);
   await sb.auth.signOut();      // limpiarEstado() lo hace onAuthStateChange
 
@@ -797,7 +830,7 @@ document.getElementById('logoutBtn').addEventListener('click', async () => {
 // Envuelto en una funcion a proposito: abrirAjustes() vive en familia.js,
 // que se carga DESPUES que este fichero. Pasarla por referencia aqui
 // lanzaba "abrirAjustes is not defined" y abortaba el resto de app.js.
-document.getElementById('ajustesBtn').addEventListener('click', () => abrirAjustes());
+enganchar('ajustesBtn', 'click', () => abrirAjustes());
 
 /* ─────────────────────────────────────────────────────────────
    TABS
@@ -1066,4 +1099,12 @@ function renderResumen() {
    se llama directamente: DOMContentLoaded salta cuando ya se han
    ejecutado todos los <script> del final del body.
    ───────────────────────────────────────────────────────────── */
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  /* El visor de un enlace compartido (/ver/) arranca por su cuenta, en
+     ver.js. init() no vale allí: da por hechos nodos que no existen
+     (#rowCacaQty, #rowPipiQty, #rowCacaColor, #comidaModal) y se
+     suscribe a los cambios de sesión, que en una página sin cuenta no
+     van a llegar nunca. */
+  if (window.MODO_ENLACE) return;
+  init();
+});

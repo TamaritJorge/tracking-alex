@@ -555,6 +555,22 @@ window.abrirAjustes = function() {
                 onclick="exportarMedicacionCSV()">⬇️ Medicinas (CSV)</button>` : ''}
       </div>
 
+      <div class="field">
+        <label>${t('ajustes.compartir', 'Compartir las gráficas')}</label>
+        <p class="hint-txt" style="margin:0 0 10px">
+          Un enlace para que los abuelos, la matrona o el pediatra vean las
+          gráficas de ${esc(nombreHijo())} sin tener cuenta. <strong>Sólo
+          mirar:</strong> no pueden apuntar nada, ni ven el historial, ni la
+          comida, ni las medicinas, ni nada tuyo.
+        </p>
+        <div id="listaEnlaces">
+          <p class="hint-txt" style="margin:0">Cargando…</p>
+        </div>
+        <button class="btn btn-secundario" style="margin-top:8px"
+                id="btnNuevoEnlace" onclick="abrirNuevoEnlace()"
+          >🔗 ${t('ajustes.nuevoEnlace', 'Crear un enlace')}</button>
+      </div>
+
       <div class="field" style="margin-bottom:0">
         <label>${t('ajustes.borrarCuenta', 'Borrar la cuenta')}</label>
         <p class="hint-txt" style="margin:0 0 10px">
@@ -576,6 +592,10 @@ window.abrirAjustes = function() {
     <p id="ajustesErr" class="error-txt" style="display:none"></p>`;
   document.getElementById('comidaModalBtns').innerHTML = '';
   document.getElementById('comidaModal').style.display = '';
+
+  // La lista de enlaces compartidos es una consulta, y abrirAjustes() no
+  // es asíncrona: se pinta aparte, sobre el hueco que acaba de quedar.
+  if (typeof pintarEnlaces === 'function') pintarEnlaces();
 };
 
 /* ─────────────────────────────────────────────────────────────
@@ -800,7 +820,7 @@ window.borrarHijo = async function(id) {
   // Orden obligatorio: primero lo que apunta al niño, el niño al final.
   // Y dentro de medicación, las tomas antes que las pautas: la cadena
   // de claves ajenas es toma → pauta → niño.
-  for (const t of ['med_tomas', 'med_pautas',
+  for (const t of ['enlaces', 'med_tomas', 'med_pautas',
                    'alim_registros', 'alim_ajustes', 'registros']) {
     const { error } = await sb.from(t).delete().eq('nino_id', id);
     if (error) {
