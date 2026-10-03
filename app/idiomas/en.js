@@ -16,6 +16,8 @@ TEXTOS.en = {
 
   /* ── Plurales ──────────────────────────────────────────────── */
   'dia.one':       'day',
+  'dosis.one':     'dose given',
+  'dosis.other':   'doses given',
   'dia.other':     'days',
   'vez.one':       'time',
   'vez.other':     'times',
@@ -91,6 +93,11 @@ TEXTOS.en = {
   'med.pospuesto':   '⏾ Still not given. I will remind you in {n} min.',
   'med.tu':          'you',
   'med.pareja':      'your partner',
+  'med.historial':   'Dose history',
+  'med.en30':        'in 30 days',
+  'med.anulada':     'undone',
+  'med.hoy.dia':     'Today',
+  'med.ayer.dia':    'Yesterday',
   'med.tratamientos':'Treatments',
   'med.sinactivos':  'None under way.',
   'med.terminados':  'Finished treatments',

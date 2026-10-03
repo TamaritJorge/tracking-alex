@@ -453,6 +453,46 @@
         <button class="btn btn-primary" id="btnExt">Guardar extracción</button>
       </div>
 
+
+      <!-- ── HISTORIAL ────────────────────
+           Era una pestaña propia. Vive aquí porque es el mismo ámbito
+           —lo que acabas de apuntar y lo que apuntaste antes— y porque
+           así la barra de abajo se queda con un hueco libre.
+
+           Plegado: lo normal al entrar es apuntar algo, no repasar.
+           Pero el contenido está en el HTML servido, no lo inyecta
+           nadie, así que sigue siendo buscable y accesible. -->
+      <details class="mas" id="histDetalle">
+        <summary>📋 <span data-i18n="tab.historial">Historial de registros</span></summary>
+        <div style="padding:12px 12px 14px">
+      <div class="chip-row" id="filtroRow">
+        <button type="button" class="chip sel" data-f="todo"       aria-pressed="true">Todo</button>
+        <button type="button" class="chip"     data-f="extraccion" aria-pressed="false" data-modulo="extraccion">🍼 Leche</button>
+        <button type="button" class="chip"     data-f="peso"       aria-pressed="false" data-modulo="peso">⚖️ Peso</button>
+        <button type="button" class="chip"     data-f="caca"       aria-pressed="false" data-modulo="panales">💩 Caca</button>
+        <button type="button" class="chip"     data-f="pipi"       aria-pressed="false" data-modulo="panales">💧 Pipí</button>
+      </div>
+
+      <div class="card card-no-pad">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Fecha</th>
+                <th>Tipo</th>
+                <th>Detalle</th>
+                <th id="thAcc">Acc.</th>
+              </tr>
+            </thead>
+            <tbody id="histBody">
+              <tr><td colspan="4" class="empty-state">Cargando…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+        </div>
+      </details>
+
     </div>
 
 
@@ -521,36 +561,6 @@
           </div>
         </div>
         <div class="chart-wrap"><canvas id="chartExt"></canvas></div>
-      </div>
-    </div>
-
-
-    <!-- ── TAB: HISTORIAL ────────────────────── -->
-    <div id="tab-historial" class="tab-panel">
-      <div class="chip-row" id="filtroRow">
-        <button type="button" class="chip sel" data-f="todo"       aria-pressed="true">Todo</button>
-        <button type="button" class="chip"     data-f="extraccion" aria-pressed="false" data-modulo="extraccion">🍼 Leche</button>
-        <button type="button" class="chip"     data-f="peso"       aria-pressed="false" data-modulo="peso">⚖️ Peso</button>
-        <button type="button" class="chip"     data-f="caca"       aria-pressed="false" data-modulo="panales">💩 Caca</button>
-        <button type="button" class="chip"     data-f="pipi"       aria-pressed="false" data-modulo="panales">💧 Pipí</button>
-      </div>
-
-      <div class="card card-no-pad">
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Fecha</th>
-                <th>Tipo</th>
-                <th>Detalle</th>
-                <th id="thAcc">Acc.</th>
-              </tr>
-            </thead>
-            <tbody id="histBody">
-              <tr><td colspan="4" class="empty-state">Cargando…</td></tr>
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
 
@@ -651,9 +661,6 @@
     </button>
     <button class="tab-btn" data-tab="comida" data-modulo="comida">
       <span class="tab-icon">🥑</span><span data-i18n="tab.comida">Comida</span>
-    </button>
-    <button class="tab-btn" data-tab="historial">
-      <span class="tab-icon">📋</span><span data-i18n="tab.historial">Historial</span>
     </button>
   </nav>
 </div>

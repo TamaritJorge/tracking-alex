@@ -36,6 +36,24 @@
 const AMBAR_MIN    = 30;    // «toca ahora»: los primeros 30 min
 const ROJO_MIN      = 150;  // 30 + 120 → dos horas de rojo
 const GRIS_MIN     = 720;   // 12 h: deja de gritar, no deja de estar
+
+/* Cuánto sigue una toma YA MARCADA en «Ahora mismo».
+
+   Antes era el día natural —hoy y ayer— y fallaba por los dos lados: la
+   toma de ayer a las 10:00 seguía ahí 38 horas después, y la de ayer a
+   las 23:00 desaparecía de golpe al dar las doce, que es justo cuando
+   podrías dudar de si se dio.
+
+   12 h no es un número nuevo: es la misma ventana hacia atrás que usa
+   med_pendientes() (interval '-12 hours'), así que lo hecho y lo
+   pendiente se miran exactamente igual de lejos.
+
+   Lo que de verdad evita la doble dosis no es esta lista, es
+   avisarYaMarcada(): saltaría igual aunque aquí no se viera nada. Esto
+   sólo sirve para responder de un vistazo a «¿se la han dado ya?», y
+   para eso 12 horas sobran. El resto está en el historial de abajo. */
+const AHORA_MIN    = 720;
+
 const POSPONER_MIN = 30;
 const POSPONER_MAX = 2;     // a la tercera ya no se pospone
 
@@ -522,6 +540,7 @@ function renderMedicacion() {
 
   cont.innerHTML = htmlAhora() + htmlTratamientos()
                  + (typeof htmlPush === 'function' ? htmlPush() : '')
+                 + htmlHistorialMed()
                  + piePrudencia();
   medFoco = null;
 }
@@ -530,7 +549,7 @@ function renderMedicacion() {
    junto. Las pendientes salen de med_pendientes(); las marcadas,
    de las tomas. Aquí no se calcula ninguna ranura. */
 function htmlAhora() {
-  const hoy = hoyISO(), ayer = diasAtras(1);
+  const desde = Date.now() - AHORA_MIN * 60000;
 
   const filas = [];
 
@@ -541,7 +560,11 @@ function htmlAhora() {
     if (!filas.some(f => f.clave === claveSlot(p))) filas.push(filaPendiente(p));
   });
 
-  medTomas.filter(x => x.estado !== 'anulada' && (x.fecha_slot === hoy || x.fecha_slot === ayer))
+  // La ranura, no el momento en que se marcó: una toma de las 23:00 que
+  // se apuntó a las 02:00 sigue siendo la de las 23:00, y es por su hora
+  // prevista por la que se pregunta.
+  medTomas.filter(x => x.estado !== 'anulada'
+                    && new Date(x.fecha_slot + 'T' + x.hora_slot) >= desde)
           .forEach(x => filas.push(filaHecha(x)));
 
   if (!filas.length) {
@@ -657,6 +680,82 @@ function htmlTratamientos() {
         <div style="padding:4px 0">${viejas.map(fila).join('')}</div>
       </details>` : ''}
   </div>`;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   HISTORIAL DE TOMAS
+
+   Lo que «Ahora mismo» ya no tiene por qué cargar. Sale de las
+   mismas medTomas que ya se traen al cargar —30 días— así que no
+   hay ni una consulta nueva.
+
+   Las anuladas SÍ salen, tachadas. Anular existe precisamente
+   para dejar rastro: una toma que desaparece sin dejar nada es
+   justo lo que este módulo intenta evitar.
+   ───────────────────────────────────────────────────────────── */
+function htmlHistorialMed() {
+  const tomas = medTomas.slice().sort((a, b) =>
+    (b.fecha_slot + b.hora_slot).localeCompare(a.fecha_slot + a.hora_slot));
+
+  if (!tomas.length) return '';
+
+  // Agrupadas por día, de hoy hacia atrás. Dentro del día, de la
+  // última a la primera: lo reciente arriba, que es lo que se busca.
+  const dias = [];
+  tomas.forEach(x => {
+    let d = dias.find(g => g.fecha === x.fecha_slot);
+    if (!d) { d = { fecha: x.fecha_slot, filas: [] }; dias.push(d); }
+    d.filas.push(x);
+  });
+
+  const fila = x => {
+    const pauta = medPautas.find(p => p.id === x.pauta_id);
+    const anulada = x.estado === 'anulada';
+
+    const icono = anulada ? '🚫' : x.estado === 'dada' ? '✅' : '⊘';
+    const detalle = anulada
+      ? t('med.anulada', 'anulada')
+      : x.estado === 'dada'
+        ? t('med.dadaA', 'dada a las') + ' ' + new Date(x.dada_en)
+            .toLocaleTimeString(localeActivo(), { hour: '2-digit', minute: '2-digit' })
+          + ' · ' + quienMarco(x)
+        : t('med.nodada', 'no se dio') + ' · ' + quienMarco(x);
+
+    return `
+      <div class="med-fila med-hecha">
+        <div class="med-cuando ${anulada ? 'med-pt-pasada' : 'med-pt-ok'}">${esc(x.hora_slot)}</div>
+        <div class="med-info">
+          <div class="med-nom"${anulada ? ' style="text-decoration:line-through"' : ''}
+            >${esc(pauta ? pauta.nombre : '—')}</div>
+          <div class="med-sello">${icono} ${esc(detalle)}</div>
+        </div>
+      </div>`;
+  };
+
+  const dadas = tomas.filter(x => x.estado === 'dada').length;
+
+  return `<div class="card card-no-pad">
+    <details class="mas" style="margin:0;border:none;background:none">
+      <summary style="padding:18px">${esc(t('med.historial', 'Historial de tomas'))}
+        <span class="med-otras">· ${dadas} ${esc(plural(dadas, 'dada', 'dadas', 'dosis'))}
+        ${esc(t('med.en30', 'en 30 días'))}</span></summary>
+      <div style="padding:0 0 8px">
+        ${dias.map(d => `
+          <p class="hint-txt" style="margin:10px 18px 2px">${esc(nombreDia(d.fecha))}</p>
+          ${d.filas.map(fila).join('')}`).join('')}
+      </div>
+    </details>
+  </div>`;
+}
+
+/* «hoy», «ayer» o la fecha. etiquetaDia() hace casi lo mismo pero
+   devuelve cadena vacía para hoy y lleva el separador pegado,
+   porque allí va delante de la hora. Aquí es un encabezado. */
+function nombreDia(fecha) {
+  if (fecha === hoyISO())     return t('med.hoy.dia', 'Hoy');
+  if (fecha === diasAtras(1)) return t('med.ayer.dia', 'Ayer');
+  return fechaCorta(fecha + 'T12:00',
+    { weekday: 'long', day: 'numeric', month: 'long' });
 }
 
 /* Esto no es un adorno legal: la app no avisa con el móvil

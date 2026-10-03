@@ -924,9 +924,25 @@ function configurarRealtime() {
 /* ─────────────────────────────────────────────────────────────
    RESUMEN DE LAS ÚLTIMAS 24 H
 
-   El mismo panel se pinta en la pestaña Registrar y en la de
-   Gráficas: se busca por [data-resumen], así que basta con
-   añadir el contenedor donde haga falta.
+   Se busca por [data-resumen] y se pinta en TODOS los que
+   encuentre, así que para ponerlo en un sitio nuevo basta con
+   añadir el contenedor. Hoy hay dos, y no están en el mismo
+   documento:
+
+     · app/index.html, en la pestaña de Gráficas
+     · ver/index.html, la página de los enlaces compartidos
+
+   (Durante un tiempo hubo también uno en la pestaña Registrar.
+   Se quitó, y este comentario siguió diciendo que estaba.)
+
+   Dos avisos para quien añada el tercero:
+
+     · Las casillas de alimentación NO son de las últimas 24 h,
+       son un acumulado. Lo dice cada una en su pie.
+     · Esto corre también sin sesión, en el visor. Todo lo que
+       se llame desde aquí tiene que tolerar que comida.js,
+       bienvenida.js y familia.js no existan — de ahí los
+       typeof de más abajo, que no son paranoia.
    ───────────────────────────────────────────────────────────── */
 function renderResumen() {
   const conts = document.querySelectorAll('[data-resumen]');
@@ -1065,6 +1081,39 @@ function renderResumen() {
       <div class="sum-lbl">🍼 Leche</div>
       <div class="sum-extra">Izq ${mlIzq} · Der ${mlDer}</div>
     </div>`);
+  }
+
+  /* Alimentación complementaria.
+
+     Las cuentas las hace comida.js, que es donde viven el catálogo y los
+     registros; aquí sólo se pinta. Con typeof porque este mismo
+     renderResumen() corre en la página de los enlaces compartidos
+     (/ver/), donde comida.js no se carga a propósito.
+
+     A diferencia del resto de casillas, ésta NO es de las últimas 24 h:
+     es un acumulado. Por eso lleva su propio pie —«en total»— en vez de
+     dejar que se lea bajo el título de arriba, que dice 24 h. */
+  if (moduloActivo('comida') && typeof resumenComida === 'function') {
+    const c = resumenComida();
+    if (c) {
+      casillas.push(`
+    <div class="sum-item">
+      <div class="sum-val">${c.probados}</div>
+      <div class="sum-lbl">🥑 Alimentos</div>
+      <div class="sum-extra">de ${c.total} · en total</div>
+    </div>`);
+
+      // Una reacción es lo más importante que puede haber aquí, así que
+      // se dice en la casilla y no escondido dentro de la pestaña.
+      casillas.push(`
+    <div class="sum-item">
+      <div class="sum-val">${c.alergIntro}/${c.alergTotal}</div>
+      <div class="sum-lbl">⚠️ Alérgenos</div>
+      ${c.conReaccion
+        ? `<div class="sum-trend bajo">${c.conReaccion} con reacción</div>`
+        : '<div class="sum-extra">sin reacciones</div>'}
+    </div>`);
+    }
   }
 
   // El recuento ya está hecho aquí arriba, así que el aviso se decide

@@ -13,6 +13,11 @@
    ═════════════════════════════════════════════════════════════ */
 
 let comidas   = [];
+
+/* Si ya se ha intentado cargar. Distingue «no ha probado nada» de
+   «todavía no lo sé», que es lo que necesita resumenComida() para no
+   anunciar 0 de 146 durante el primer segundo. */
+let comidaCargada = false;
 let ajustes   = { plan: { retrasos: {}, descartados: [] }, inicio: null,
                   preparacion: {}, personalizados: [] };
 let canalRTComida = null;
@@ -45,6 +50,7 @@ async function cargarComida() {
     // Se pinta igualmente con lo que hay: el catálogo y las fichas no
     // dependen de la base de datos, y poder consultarlos sigue siendo útil.
     comidas = [];
+    comidaCargada = true;
     renderComida();
     return;
   }
@@ -67,7 +73,16 @@ async function cargarComida() {
   if (!ajustes.plan.descartados) ajustes.plan.descartados = [];
   if (!ajustes.personalizados)   ajustes.personalizados = [];
 
+  comidaCargada = true;
   renderComida();
+
+  /* El panel de 24 h enseña dos casillas de alimentación, y vive en la
+     pestaña Registrar. Sin esto no aparecerían hasta que cambiaras de
+     pestaña: cargarDatos() y cargarComida() corren en paralelo y gana
+     cualquiera de los dos. También es lo que las mantiene al día cuando
+     el otro adulto apunta un alimento, porque el canal de realtime
+     vuelve a pasar por aquí. */
+  if (typeof renderResumen === 'function') renderResumen();
 }
 
 function configurarRealtimeComida() {
@@ -232,6 +247,37 @@ function estadoAlergenos() {
     };
   }
   return out;
+}
+
+/* Las cuatro cifras que enseña el panel de 24 h de la pestaña Registrar.
+
+   Vive aquí y no en app.js porque las cuentas necesitan el catálogo y los
+   registros, que son de este fichero. app.js la llama con un typeof.
+
+   Devuelve null mientras no haya nada cargado: es la diferencia entre «no
+   ha probado ningún alimento» y «todavía no sé», y enseñar 0 de 146 al
+   abrir la aplicación sería decir lo primero cuando pasa lo segundo. */
+function resumenComida() {
+  if (!comidaCargada) return null;
+
+  const cat = catalogo();
+  const probados = new Set(comidas.map(c => c.alimento_id));
+
+  // Se cuentan contra el catálogo, no contra los registros: un alimento
+  // que se borró del catálogo personalizado no debería inflar la cuenta.
+  const ids = new Set(cat.map(a => a.id));
+  let n = 0;
+  probados.forEach(id => { if (ids.has(id)) n++; });
+
+  const al = Object.values(estadoAlergenos());
+
+  return {
+    probados:   n,
+    total:      cat.length,
+    alergIntro: al.filter(e => e.introducido).length,
+    alergTotal: al.length,
+    conReaccion: al.filter(e => e.conReaccion).length
+  };
 }
 
 // Alérgeno cuya ventana de 3 días sigue abierta (si hay alguno)
