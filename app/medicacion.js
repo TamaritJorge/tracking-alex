@@ -297,7 +297,7 @@ function pintarBannerMed() {
   // hablando de UNA sola: un aviso que enumera no se lee.
   const otras = vivas.length - 1;
   const cola  = otras > 0
-    ? ` <span class="med-otras">+${otras} ${plural(otras, 'más', 'más')}</span>` : '';
+    ? ` <span class="med-otras">+${otras} ${plural(otras, 'más', 'más', 'mas')}</span>` : '';
 
   const puedePosponer = vecesPospuesto(p) < POSPONER_MAX;
 
@@ -384,11 +384,11 @@ window.marcarToma = async function(clave, estado) {
       const minDesde = (Date.now() - new Date(ult.dada_en)) / 60000;
       const intervalo = intervaloPauta(pauta.horas);
       if (minDesde < intervalo / 2) {
-        const ok = confirm(
-          '⚠️ ' + pauta.nombre + '\n\n' +
-          'La anterior fue hace ' + desdeHace(minDesde) +
-          ', y entre tomas deberían pasar ' + desdeHace(intervalo) + '.\n\n' +
-          '¿Seguro que toca otra?');
+        const ok = confirm('⚠️ ' + pauta.nombre + '\n\n'
+          + t2('med.muySeguida',
+              'La anterior fue hace {a}, y entre tomas deberían pasar {b}.',
+              { a: desdeHace(minDesde), b: desdeHace(intervalo) })
+          + '\n\n' + t('med.otraMas', '¿Seguro que toca otra?'));
         if (!ok) return;
       }
     }
@@ -397,8 +397,9 @@ window.marcarToma = async function(clave, estado) {
   if (estado === 'saltada') {
     const ok = confirm(
       pauta.nombre + ' · ' + hora + '\n\n' +
-      'Vas a dejar constancia de que esta toma NO se ha dado.\n' +
-      'El aviso desaparecerá también del móvil de tu pareja.\n\n¿Seguir?');
+      t('med.noDadaAviso', 'Vas a dejar constancia de que esta toma NO se ha dado.') + '\n' +
+      t('med.noDadaAviso2', 'El aviso desaparecerá también del móvil de tu pareja.')
+      + '\n\n' + t('med.seguir', '¿Seguir?'));
     if (!ok) return;
   }
 
@@ -422,13 +423,14 @@ window.marcarToma = async function(clave, estado) {
       await cargarMedicacion();
       return;
     }
-    toast('❌ No se pudo guardar: ' + (error.message || 'error desconocido'), 4500);
+    toast(t('med.noGuardado', '❌ No se pudo guardar: ')
+          + (error.message || t('reg.errorRaro', 'error desconocido')), 4500);
     return;
   }
 
   toast(estado === 'dada'
     ? '✅ ' + pauta.nombre + ' · ' + hora
-    : '📝 Anotado: no se dio la de las ' + hora);
+    : t2('med.anotadoNo', '📝 Anotado: no se dio la de las {h}', { h: hora }));
   await cargarMedicacion();
 };
 
@@ -441,15 +443,18 @@ function avisarYaMarcada(toma, pauta, carrera) {
   const minDesde = (Date.now() - new Date(toma.dada_en)) / 60000;
 
   if (toma.estado === 'dada' && (carrera || minDesde < 10)) {
-    alert('⚠️ ' + pauta.nombre + '\n\n' +
-          'La marcó ' + quien + ' hace ' + desdeHace(minDesde) + '.\n\n' +
-          'Si se la acabas de dar tú también, ha habido doble dosis: ' +
-          'comprobadlo antes de volver a darla.');
+    alert('⚠️ ' + pauta.nombre + '\n\n'
+      + t2('med.laMarco', 'La marcó {q} hace {t}.',
+           { q: quien, t: desdeHace(minDesde) })
+      + '\n\n' + t('med.dobleDosis',
+          'Si se la acabas de dar tú también, ha habido doble dosis: '
+          + 'comprobadlo antes de volver a darla.'));
     return;
   }
   toast(toma.estado === 'dada'
-    ? '👌 Ya la había marcado ' + quien + ' (' + fechaHora(toma.dada_en) + ')'
-    : '👌 Ya estaba anotada como no dada');
+    ? t2('med.yaMarcada', '👌 Ya la había marcado {q} ({f})',
+         { q: quien, f: fechaHora(toma.dada_en) })
+    : t('med.yaNoDada', '👌 Ya estaba anotada como no dada'));
 }
 
 /* «Tú» o «tu pareja», y no un nombre: familia_miembros guarda
@@ -466,14 +471,14 @@ function quienMarco(toma) {
 window.anularToma = async function(id) {
   const toma = medTomas.find(x => x.id === id);
   if (!toma) return;
-  if (!confirm('¿Deshacer esta toma?\n\nQueda anotada como anulada y el aviso volverá a aparecer.')) return;
+  if (!confirm(t('med.deshacerQ', '¿Deshacer esta toma?\n\nQueda anotada como anulada y el aviso volverá a aparecer.'))) return;
 
   const { data, error } = await sb.from('med_tomas')
     .update({ estado: 'anulada' }).eq('id', id).select();
 
   if (error) { toast('❌ ' + (error.message || 'No se pudo deshacer'), 4500); return; }
   if (!data || !data.length) {
-    toast('⚠️ No se modificó nada. Revisa la policy de UPDATE de med_tomas.', 6000); return;
+    toast(t('med.rlsTomas', '⚠️ No se modificó nada. Revisa la policy de UPDATE de med_tomas.'), 6000); return;
   }
   toast('↩️ Deshecha');
   await cargarMedicacion();
@@ -813,7 +818,7 @@ window.abrirAltaPauta = function(desdePauta) {
   document.getElementById('comidaModalCuerpo').innerHTML = `
     ${base ? `<p class="aviso aviso-suave">${esc(t('med.rehacerAviso',
       'Las horas de una pauta no se tocan en marcha: lo apuntado dejaría de cuadrar. ' +
-      'Se cierra ésta hoy y la nueva empieza mañana.'))}</p>` : ''}
+      t('med.cierraHoy', 'Se cierra ésta hoy y la nueva empieza mañana.')))}</p>` : ''}
 
     <div class="field">
       <label for="medNombre">${esc(t('med.f.nombre', 'Medicamento'))}</label>
@@ -876,7 +881,7 @@ window.abrirAltaPauta = function(desdePauta) {
     <button class="btn btn-primary" onclick="guardarPauta()"
       >${esc(t('btn.guardar', 'Guardar'))}</button>`;
 
-  document.getElementById('comidaModal').style.display = '';
+  abrirModal();
   pintarHorasForm();
 };
 
@@ -933,9 +938,9 @@ window.guardarPauta = async function() {
   const desde  = document.getElementById('medDesde').value;
   const dias   = parseInt(document.getElementById('medDias').value, 10);
 
-  if (!nombre)              { toast('⚠️ Ponle nombre al medicamento.'); return; }
-  if (!medForm.horas.length) { toast('⚠️ Añade al menos una hora.'); return; }
-  if (!desde)               { toast('⚠️ Falta la fecha de inicio.'); return; }
+  if (!nombre)              { toast(t('med.faltaNombre', '⚠️ Ponle nombre al medicamento.')); return; }
+  if (!medForm.horas.length) { toast(t('med.faltaHora', '⚠️ Añade al menos una hora.')); return; }
+  if (!desde)               { toast(t('med.faltaInicio', '⚠️ Falta la fecha de inicio.')); return; }
 
   let hasta = null;
   if (!isNaN(dias) && dias > 0) {
@@ -1054,7 +1059,7 @@ window.abrirEditarPauta = function(id) {
     <button class="btn btn-danger-sm" onclick="borrarPauta('${p.id}')"
       >${esc(t('med.borrar', 'Borrar'))}</button>`;
 
-  document.getElementById('comidaModal').style.display = '';
+  abrirModal();
   if (!conTomas) pintarHorasForm();
 };
 
@@ -1068,20 +1073,20 @@ window.guardarEdicionPauta = async function(id) {
     nota:   document.getElementById('medENota').value.trim() || null,
     hasta:  document.getElementById('medEHasta').value || null
   };
-  if (!cambios.nombre) { toast('⚠️ El nombre no puede quedar vacío.'); return; }
+  if (!cambios.nombre) { toast(t('med.nombreVacio', '⚠️ El nombre no puede quedar vacío.')); return; }
 
   // Las horas sólo viajan cuando se pueden tocar sin romper nada
   if (!tieneTomas(id)) {
-    if (!medForm || !medForm.horas.length) { toast('⚠️ Añade al menos una hora.'); return; }
+    if (!medForm || !medForm.horas.length) { toast(t('med.faltaHora', '⚠️ Añade al menos una hora.')); return; }
     cambios.horas = medForm.horas;
   }
 
   // .select() a propósito: si RLS bloquea un UPDATE, Supabase no devuelve
   // error, devuelve cero filas. Ya ha pasado dos veces en este proyecto.
   const { data, error } = await sb.from('med_pautas').update(cambios).eq('id', id).select();
-  if (error) { toast('❌ ' + (error.message || 'No se pudo guardar'), 4500); return; }
+  if (error) { toast('❌ ' + (error.message || t('med.noGuardado2', 'No se pudo guardar')), 4500); return; }
   if (!data || !data.length) {
-    toast('⚠️ No se modificó nada. Revisa la policy de UPDATE de med_pautas.', 6000); return;
+    toast(t('med.rlsPautas', '⚠️ No se modificó nada. Revisa la policy de UPDATE de med_pautas.'), 6000); return;
   }
 
   cerrarComidaModal();
@@ -1095,17 +1100,20 @@ window.guardarEdicionPauta = async function(id) {
 window.terminarPauta = async function(id) {
   const p = medPautas.find(x => x.id === id);
   if (!p) return;
-  if (!confirm('¿Terminar ' + p.nombre + '?\n\nDejará de avisar, incluidas las tomas que quedaban hoy.\nLo apuntado no se borra.')) return;
+  if (!confirm(t2('med.terminarQ', '¿Terminar {m}?', { m: p.nombre })
+    + '\n\n' + t('med.terminarTxt',
+        'Dejará de avisar, incluidas las tomas que quedaban hoy.')
+    + '\n' + t('med.terminarTxt2', 'Lo apuntado no se borra.'))) return;
 
   const { data, error } = await sb.from('med_pautas')
     .update({ hasta: diasAtras(1) }).eq('id', id).select();
-  if (error) { toast('❌ ' + (error.message || 'No se pudo terminar'), 4500); return; }
+  if (error) { toast('❌ ' + (error.message || t('med.noTerminado', 'No se pudo terminar')), 4500); return; }
   if (!data || !data.length) {
-    toast('⚠️ No se modificó nada. Revisa la policy de UPDATE de med_pautas.', 6000); return;
+    toast(t('med.rlsPautas', '⚠️ No se modificó nada. Revisa la policy de UPDATE de med_pautas.'), 6000); return;
   }
 
   cerrarComidaModal();
-  toast('🏁 ' + p.nombre + ' terminado');
+  toast(t2('med.terminado', '🏁 {m} terminado', { m: p.nombre }));
   await cargarMedicacion();
 };
 
@@ -1121,14 +1129,16 @@ window.borrarPauta = async function(id) {
   if (!p) return;
 
   const n = medTomas.filter(x => x.pauta_id === id).length;
-  const aviso = '¿Borrar ' + p.nombre + ' del todo?\n\n'
-    + (n ? 'Se borrarán también sus ' + n + ' ' + plural(n, 'toma', 'tomas') + ' apuntadas.\n'
-         : 'No tiene ninguna toma apuntada.\n')
-    + '\nEsto no se puede deshacer. Si sólo quieres dejar de darla, usa «Terminar ya».';
+  const aviso = t2('med.borrarQ', '¿Borrar {m} del todo?', { m: p.nombre }) + '\n\n'
+    + (n ? t2('med.borrarTomas', 'Se borrarán también sus {n} {p} apuntadas.',
+             { n: n, p: plural(n, 'toma', 'tomas', 'tomas') })
+         : t('med.sinTomas', 'No tiene ninguna toma apuntada.')) + '\n'
+    + '\n' + t('med.borrarIrrev',
+        'Esto no se puede deshacer. Si sólo quieres dejar de darla, usa «Terminar ya».');
   if (!confirm(aviso)) return;
 
   const { error: e1 } = await sb.from('med_tomas').delete().eq('pauta_id', id);
-  if (e1) { toast('❌ ' + (e1.message || 'No se pudieron borrar las tomas'), 4500); return; }
+  if (e1) { toast('❌ ' + (e1.message || t('med.noBorradasTomas', 'No se pudieron borrar las tomas')), 4500); return; }
 
   const { error: e2 } = await sb.from('med_pautas').delete().eq('id', id);
   if (e2) { toast('❌ ' + (e2.message || 'No se pudo borrar'), 4500); return; }

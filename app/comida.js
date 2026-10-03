@@ -43,9 +43,9 @@ async function cargarComida() {
     const c = document.getElementById('comidaError');
     if (c) {
       c.style.display = '';
-      c.textContent = '❌ No se pudieron cargar los alimentos: '
+      c.textContent = t('com.noCargan', '❌ No se pudieron cargar los alimentos: ')
                     + ((regs.error || ajs.error).message || '')
-                    + ' — ¿has ejecutado migracion-alimentos.sql?';
+                    + t('com.migracion', ' — ¿has ejecutado migracion-alimentos.sql?');
     }
     // Se pinta igualmente con lo que hay: el catálogo y las fichas no
     // dependen de la base de datos, y poder consultarlos sigue siendo útil.
@@ -104,10 +104,10 @@ function configurarRealtimeComida() {
 function mensajeError(error) {
   const m = (error && error.message) || '';
   if (/revisado/i.test(m)) {
-    return 'falta la columna "revisado" — ejecuta migracion-alimentos-2.sql en Supabase';
+    return t('com.sinColumna', 'falta la columna "revisado" — ejecuta migracion-alimentos-2.sql en Supabase');
   }
   if (/row-level security/i.test(m)) {
-    return 'no tienes sesión iniciada (o caducó). Vuelve a entrar.';
+    return t('com.sinSesion', 'no tienes sesión iniciada (o caducó). Vuelve a entrar.');
   }
   return m || 'error desconocido';
 }
@@ -120,7 +120,7 @@ async function guardarAjuste(clave, valor) {
             { onConflict: 'nino_id,clave' });
   if (error) {
     console.error(error);
-    toast('❌ No se pudo guardar: ' + mensajeError(error), 5000);
+    toast(t('com.noGuardado', '❌ No se pudo guardar: ') + mensajeError(error), 5000);
     return false;
   }
   return true;
@@ -140,10 +140,10 @@ function diasPara6Meses() {
 function yaEmpezado() { return !!ajustes.inicio; }
 
 const SENALES = [
-  { id: 'sentado',   txt: 'Se mantiene sentado con poco apoyo' },
-  { id: 'cabeza',    txt: 'Sostiene bien la cabeza' },
-  { id: 'extrusion', txt: 'Ya no empuja la comida fuera con la lengua' },
-  { id: 'interes',   txt: 'Muestra interés: mira, coge, se lleva cosas a la boca' }
+  { id: 'sentado',   txt: t('com.senal1', 'Se mantiene sentado con poco apoyo') },
+  { id: 'cabeza',    txt: t('com.senal2', 'Sostiene bien la cabeza') },
+  { id: 'extrusion', txt: t('com.senal3', 'Ya no empuja la comida fuera con la lengua') },
+  { id: 'interes',   txt: t('com.senal4', 'Muestra interés: mira, coge, se lleva cosas a la boca') }
 ];
 
 function senalesListas() {
@@ -406,16 +406,17 @@ function renderEstado() {
     const faltan = diasPara6Meses();
     const listo  = senalesListas();
     cont.innerHTML = `
-      <p class="card-title">🥑 Aún no habéis empezado</p>
+      <p class="card-title">🥑 ${esc(t('com.noEmpezado', 'Aún no habéis empezado'))}</p>
       <p class="card-sub">
         ${faltan > 0
-          ? `Faltan ${faltan} ${plural(faltan, 'día', 'días', 'dia')} para los 6 meses`
-          : `Ya ha cumplido los 6 meses`}
+          ? esc(t2('com.faltanDias', 'Faltan {n} {p} para los 6 meses',
+              { n: faltan, p: plural(faltan, 'día', 'días', 'dia') }))
+          : esc(t('com.yaSeis', 'Ya ha cumplido los 6 meses'))}
       </p>
 
       <p class="hint-txt" style="margin-top:0">
-        Los 6 meses son la referencia, no una fecha exacta. Lo que manda es que
-        ${esc(nombreHijo())} esté listo:
+        ${esc(t2('com.seisMeses', 'Los 6 meses son la referencia, no una fecha '
+          + 'exacta. Lo que manda es que {h} esté listo:', { h: nombreHijo() }))}
       </p>
 
       <div class="check-list">
@@ -428,14 +429,15 @@ function renderEstado() {
       </div>
 
       ${listo ? `<p class="aviso aviso-ok" style="margin-top:12px">
-                   ✅ Con las cuatro señales, parece listo para empezar.
+                   ✅ ${esc(t('com.cuatroSenales', 'Con las cuatro señales, parece listo para empezar.'))}
                  </p>` : ''}
 
       <button class="btn btn-primary" style="margin-top:14px" onclick="empezarComplementaria()">
-        Ya hemos empezado
+        ${esc(t('com.yaEmpezamos', 'Ya hemos empezado'))}
       </button>
       <p class="hint-txt" style="margin:8px 0 0">
-        Púlsalo cuando le ofrezcáis comida por primera vez, falten los días que falten.
+        ${esc(t('com.pulsaloTxt', 'Púlsalo cuando le ofrezcáis comida por primera vez, '
+          + 'falten los días que falten.'))}
       </p>`;
     return;
   }
@@ -485,7 +487,7 @@ window.empezarComplementaria = async function() {
   const hoy = new Date().toISOString().slice(0, 10);
   if (await guardarAjuste('inicio', { fecha: hoy })) {
     ajustes.inicio = hoy;
-    toast('🥑 ¡A comer!');
+    toast(t('com.aComer', '🥑 ¡A comer!'));
     renderComida();
   }
 };
@@ -557,15 +559,18 @@ function renderCola() {
   if (!c.length) {
     cont.innerHTML = `<p class="card-title">👉 Siguiente</p>
       <p class="empty-state">${yaEmpezado()
-        ? 'No queda nada pendiente para su edad. Mira el catálogo para repetir algo o recuperar lo que saltaste.'
-        : 'Aquí aparecerá qué ofrecerle cuando empecéis. Pulsa «Ya hemos empezado» arriba.'}</p>`;
+        ? t('com.nadaPendiente', 'No queda nada pendiente para su edad. Mira el catálogo '
+    + 'para repetir algo o recuperar lo que saltaste.')
+        : t('com.cuandoEmpiece', 'Aquí aparecerá qué ofrecerle cuando empecéis. '
+    + 'Pulsa «Ya hemos empezado» arriba.')}</p>`;
     return;
   }
 
   cont.innerHTML = `
-    <p class="card-title">👉 Siguiente</p>
-    <p class="card-sub">Orden sugerido priorizando el hierro. No es una pauta
-      oficial: la AEP dice que el orden no importa, así que muévelo a tu gusto.</p>
+    <p class="card-title">👉 ${esc(t('com.siguiente', 'Siguiente'))}</p>
+    <p class="card-sub">${esc(t('com.ordenTxt', 'Orden sugerido priorizando el hierro. '
+      + 'No es una pauta oficial: la AEP dice que el orden no importa, así que '
+      + 'muévelo a tu gusto.'))}</p>
     ${c.slice(0, 3).map(a => {
       const bloqueado = v && a.alergeno && a.alergeno !== v.clave;
       return `
@@ -580,7 +585,7 @@ function renderCola() {
           : ''}
         <div class="cola-btns">
           <button class="btn-mini btn-mini-pri" onclick="abrirRegistro('${a.id}')">Registrar</button>
-          <button class="btn-mini" onclick="verFicha('${a.id}')">Cómo darlo</button>
+          <button class="btn-mini" onclick="verFicha('${a.id}')">${esc(t('com.comoDarlo', 'Cómo darlo'))}</button>
           <button class="btn-mini" onclick="posponer('${a.id}')">Posponer</button>
           <button class="btn-mini" onclick="saltar('${a.id}')">Saltar</button>
         </div>
@@ -599,9 +604,11 @@ function renderCatalogo() {
   const estAl = estadoAlergenos();   // se calcula una vez, no por fila
 
   cont.innerHTML = `
-    <p class="card-title">📚 Catálogo</p>
-    <p class="card-sub">${todos.length} alimentos${mios ? ` (${mios} vuestros)` : ''}.
-      Toca uno para ver cómo ofrecerlo.</p>
+    <p class="card-title">📚 ${esc(t('com.catalogo', 'Catálogo'))}</p>
+    <p class="card-sub">${esc(t2('com.catalogoSub', '{n} alimentos{m}. Toca uno para '
+      + 'ver cómo ofrecerlo.',
+      { n: todos.length,
+        m: mios ? t2('com.vuestros', ' ({n} vuestros)', { n: mios }) : '' }))}</p>
     ${Object.entries(CATEGORIAS).map(([clave, cat]) => {
       const items = todos.filter(a => a.cat === clave)
                          .sort((x, y) => ordenEfectivo(x) - ordenEfectivo(y));
@@ -618,7 +625,7 @@ function renderCatalogo() {
     }).join('')}
     ${modoVer ? '' : `
       <button class="btn" style="margin-top:14px;background:var(--surface2);color:var(--text)"
-              onclick="nuevoAlimento()">➕ Añadir un alimento vuestro</button>`}`;
+              onclick="nuevoAlimento()">➕ ${esc(t('com.anadirVuestro', 'Añadir un alimento vuestro'))}</button>`}`;
 }
 
 /* Etiqueta de alérgeno, que sólo sale cuando dice algo útil.
@@ -759,11 +766,12 @@ function renderFuentes() {
   cont.innerHTML = `
     <button type="button" class="cat-cab" onclick="toggleFuentes()"
             aria-expanded="${fuentesAbiertas}">
-      <span>📖 De dónde sale todo esto</span>
+      <span>📖 ${esc(t('com.deDonde', 'De dónde sale todo esto'))}</span>
       <span>${fuentesAbiertas ? '−' : '+'}</span>
     </button>
     <p class="card-sub" style="margin-top:8px">
-      ${FUENTES.length} referencias. Cada edad y cada cifra de esta pestaña sale de ahí.
+      ${esc(t2('com.referencias', '{n} referencias. Cada edad y cada cifra de esta '
+        + 'pestaña sale de ahí.', { n: FUENTES.length }))}
     </p>
     ${lista}`;
 }
@@ -778,7 +786,7 @@ function renderDiario() {
     .slice(0, 30);
   if (!ultimos.length) {
     cont.innerHTML = `<p class="card-title">📖 Diario</p>
-      <p class="empty-state">Todavía no hay nada registrado.</p>`;
+      <p class="empty-state">${esc(t('com.nadaRegistrado', 'Todavía no hay nada registrado.'))}</p>`;
     return;
   }
 
@@ -799,7 +807,8 @@ function renderDiario() {
               ? `<span class="nota-txt" style="color:var(--danger)">⚠ ${esc(c.reaccion.sintoma || 'reacción')}`
                 + `${c.reaccion.nota ? ' — ' + esc(c.reaccion.nota) : ''}</span>`
               : c.revisado
-                ? '<span class="nota-txt" style="color:var(--ok)">✓ Le sentó bien</span>'
+                ? '<span class="nota-txt" style="color:var(--ok)">✓ '
+      + esc(t('com.sentoBien', 'Le sentó bien')) + '</span>'
                 : '<span class="nota-txt" style="color:var(--target)">⏳ Sin revisar</span>';
 
             const nota = c.nota ? `<span class="nota-txt">📝 ${esc(c.nota)}</span>` : '';
@@ -822,9 +831,9 @@ function renderDiario() {
 }
 
 window.borrarComida = async function(id) {
-  if (!confirm('¿Borrar este registro?')) return;
+  if (!confirm(t('com.borrarRegQ', '¿Borrar este registro?'))) return;
   const { error } = await sb.from('alim_registros').delete().eq('id', id);
-  if (error) { console.error(error); toast('❌ No se pudo borrar: ' + mensajeError(error), 4000); }
+  if (error) { console.error(error); toast(t('com.noBorrado', '❌ No se pudo borrar: ') + mensajeError(error), 4000); }
   else { toast('🗑️ Borrado'); await cargarComida(); }
 };
 
@@ -908,7 +917,7 @@ window.verFicha = function(id) {
     <button class="btn btn-primary" onclick="abrirRegistro('${id}')">Registrar que lo ha probado</button>
     ${a.mio ? `<button class="btn" style="background:var(--surface2);color:var(--text)"
                  onclick="nuevoAlimento('${id}')">Editar o borrar este alimento</button>` : ''}`;
-  document.getElementById('comidaModal').style.display = '';
+  abrirModal();
 };
 
 /* ─────────────────────────────────────────────────────────────
@@ -981,7 +990,7 @@ window.abrirRegistro = function(id) {
   document.getElementById('btnGuardarComida')
           .addEventListener('click', () => guardarComida(id));
 
-  document.getElementById('comidaModal').style.display = '';
+  abrirModal();
 };
 
 async function guardarComida(id) {
@@ -990,12 +999,12 @@ async function guardarComida(id) {
   // Si hay restricción de seguridad vigente hace falta confirmarlo
   const chk = document.getElementById('confirmaRiesgo');
   if (avisosEdad(a).duro && chk && !chk.checked) {
-    toast('⚠️ Marca la casilla para registrarlo de todos modos.', 4000);
+    toast(t('com.marcaCasilla', '⚠️ Marca la casilla para registrarlo de todos modos.'), 4000);
     return;
   }
 
   const fecha = leerFechaISO('comidaFecha');
-  if (!fecha) { toast('⚠️ La fecha no es válida.'); return; }
+  if (!fecha) { toast(t('reg.fechaMala', '⚠️ La fecha no es válida.')); return; }
 
   const nota = document.getElementById('comidaNota').value.trim();
 
@@ -1024,11 +1033,11 @@ async function guardarComida(id) {
 
   if (error) {
     console.error(error);
-    toast('❌ No se pudo guardar: ' + mensajeError(error), 5000);
+    toast(t('com.noGuardado', '❌ No se pudo guardar: ') + mensajeError(error), 5000);
     return;
   }
 
-  toast('✅ Registrado · marca luego qué tal le sentó');
+  toast(t('com.registrado', '✅ Registrado · marca luego qué tal le sentó'));
   cerrarComidaModal();
   await cargarComida();
 }
@@ -1046,7 +1055,7 @@ window.nuevoAlimento = function(idEditar) {
   const aleSel = p ? (p.alergeno || '') : '';
 
   document.getElementById('comidaModalTitulo').textContent =
-    p ? 'Editar ' + p.nombre : '➕ Añadir alimento';
+    p ? 'Editar ' + p.nombre : t('com.anadirAlimento', '➕ Añadir alimento');
 
   const btnCat = Object.entries(CATEGORIAS).map(([k, c]) =>
     `<button type="button" class="color-btn${k === catSel ? ' sel' : ''}" data-v="${k}">
@@ -1089,12 +1098,12 @@ window.nuevoAlimento = function(idEditar) {
   document.getElementById('btnGuardarAlimento')
           .addEventListener('click', () => guardarPersonalizado(idEditar));
 
-  document.getElementById('comidaModal').style.display = '';
+  abrirModal();
 };
 
 async function guardarPersonalizado(idEditar) {
   const nombre = document.getElementById('nuevoNombre').value.trim();
-  if (!nombre) { toast('⚠️ Ponle un nombre.'); return; }
+  if (!nombre) { toast(t('com.ponNombre', '⚠️ Ponle un nombre.')); return; }
 
   const cat = valorSel('rowNuevaCat', 'otros');
   const ale = valorSel('rowNuevoAle', '') || null;
@@ -1125,7 +1134,7 @@ async function guardarPersonalizado(idEditar) {
   if (!ok) return;
 
   ajustes.personalizados = lista;
-  toast(idEditar ? '✅ Alimento actualizado' : '✅ Alimento añadido');
+  toast(idEditar ? '✅ Alimento actualizado' : t('com.okAlimento', '✅ Alimento añadido'));
   cerrarComidaModal();
   await cargarComida();
 }
@@ -1134,8 +1143,9 @@ window.borrarPersonalizado = async function(id) {
   const n = registrosDe(id).length;
   const msg = n
     ? `Tiene ${n} ${n === 1 ? 'toma registrada' : 'tomas registradas'}. Si lo borras, `
-      + 'esas tomas se quedan en el diario pero ya no contarán en el catálogo. ¿Seguir?'
-    : '¿Borrar este alimento?';
+      + t('com.borrarAlimTxt', 'esas tomas se quedan en el diario pero ya no contarán '
+    + 'en el catálogo. ¿Seguir?')
+    : t('com.borrarAlimQ', '¿Borrar este alimento?');
   if (!confirm(msg)) return;
 
   const lista = (ajustes.personalizados || []).filter(x => x.id !== id);
@@ -1163,7 +1173,7 @@ window.editarComida = function(id) {
   const tieneReaccion = !!c.reaccion;
   const sint = tieneReaccion ? (c.reaccion.sintoma || 'otra') : 'piel';
 
-  document.getElementById('comidaModalTitulo').textContent = 'Qué tal fue: ' + c.nombre;
+  document.getElementById('comidaModalTitulo').textContent = t('com.queTalFue', 'Qué tal fue: ') + c.nombre;
 
   const opt = (fila, v, txt, sel) =>
     `<button type="button" class="toggle-opt${sel ? ' sel' : ''}" data-v="${v}">${txt}</button>`;
@@ -1177,7 +1187,7 @@ window.editarComida = function(id) {
       <label>¿Le sentó bien?</label>
       <div class="toggle-row" id="rowReaccion">
         ${opt('rowReaccion', 'no', 'Todo bien', !tieneReaccion)}
-        ${opt('rowReaccion', 'si', 'Hubo reacción', tieneReaccion)}
+        ${opt('rowReaccion', 'si', t('com.huboReaccion', 'Hubo reacción'), tieneReaccion)}
       </div>
     </div>
 
@@ -1247,12 +1257,12 @@ window.editarComida = function(id) {
     }, 0);
   });
 
-  document.getElementById('comidaModal').style.display = '';
+  abrirModal();
 };
 
 async function guardarRevision(id) {
   const fecha = leerFechaISO('comidaFecha');
-  if (!fecha) { toast('⚠️ La fecha no es válida.'); return; }
+  if (!fecha) { toast(t('reg.fechaMala', '⚠️ La fecha no es válida.')); return; }
 
   const hay = valorSel('rowReaccion') === 'si';
   const nota = document.getElementById('comidaNota').value.trim();
@@ -1282,15 +1292,15 @@ async function guardarRevision(id) {
 
   if (error) {
     console.error(error);
-    toast('❌ No se pudo guardar: ' + mensajeError(error), 5000);
+    toast(t('com.noGuardado', '❌ No se pudo guardar: ') + mensajeError(error), 5000);
     return;
   }
   if (!data || !data.length) {
-    toast('⚠️ No se modificó nada. ¿Has iniciado sesión?', 5000);
+    toast(t('com.sinCambios', '⚠️ No se modificó nada. ¿Has iniciado sesión?'), 5000);
     return;
   }
 
-  toast(hay ? '⚠️ Anotada la reacción' : '✅ Todo bien, anotado');
+  toast(hay ? t('com.okReaccion', '⚠️ Anotada la reacción') : '✅ Todo bien, anotado');
   cerrarComidaModal();
   await cargarComida();
 }
@@ -1316,7 +1326,7 @@ window.copiarResumen = async function() {
     .sort((x, y) => x.e.primera - y.e.primera);
 
   const f = x => fechaCorta(x);
-  let txt = 'ALIMENTACIÓN COMPLEMENTARIA — ' + nombreHijo() + '\n';
+  let txt = t('com.resTitulo', 'ALIMENTACIÓN COMPLEMENTARIA — ') + nombreHijo() + '\n';
   txt += 'Inicio: ' + (ajustes.inicio ? f(new Date(ajustes.inicio)) : '—') + '\n';
   txt += 'Edad actual: ' + mesesAlex().toFixed(1) + ' meses\n\n';
 
@@ -1324,7 +1334,7 @@ window.copiarResumen = async function() {
   probados.forEach(x => {
     txt += '· ' + x.a.nombre + ' — desde ' + f(x.e.primera)
          + ', ' + x.e.veces + (x.e.veces === 1 ? ' vez' : ' veces')
-         + (x.e.estado === 'reaccion' ? ' — REACCIÓN' : '') + '\n';
+         + (x.e.estado === 'reaccion' ? t('com.resReaccion', ' — REACCIÓN') : '') + '\n';
   });
 
   const conR = probados.filter(x => x.e.reaccion);
@@ -1336,24 +1346,24 @@ window.copiarResumen = async function() {
     });
   }
 
-  txt += '\nALÉRGENOS\n';
+  txt += '\n' + t('com.resAlergenos', 'ALÉRGENOS') + '\n';
   Object.values(estadoAlergenos()).forEach(e => {
     txt += '· ' + e.nombre + ': '
-         + (!e.introducido ? 'sin introducir'
-            : e.conReaccion ? 'con reacción'
+         + (!e.introducido ? t('com.sinIntroducir', 'sin introducir')
+            : e.conReaccion ? t('com.conReaccion', 'con reacción')
             : 'tolerado desde ' + f(e.primera)) + '\n';
   });
 
   try {
     await navigator.clipboard.writeText(txt);
-    toast('📋 Copiado al portapapeles');
+    toast(t('com.copiado', '📋 Copiado al portapapeles'));
   } catch {
     // En file:// o sin permiso el portapapeles falla: se muestra para copiar a mano
-    document.getElementById('comidaModalTitulo').textContent = 'Resumen para la pediatra';
+    document.getElementById('comidaModalTitulo').textContent = t('com.resumenPedi', 'Resumen para la pediatra');
     document.getElementById('comidaModalCuerpo').innerHTML =
       `<textarea rows="16" readonly style="font-size:.8rem">${esc(txt)}</textarea>`;
     document.getElementById('comidaModalBtns').innerHTML = '';
-    document.getElementById('comidaModal').style.display = '';
+    abrirModal();
   }
 };
 

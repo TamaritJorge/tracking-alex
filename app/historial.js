@@ -13,17 +13,19 @@ function describir(r) {
 
   if (r.tipo === 'extraccion') {
     return {
-      tipo:    d.pecho === 'izquierdo' ? '🍼 Izq.' : '🍼 Der.',
+      tipo:    d.pecho === 'izquierdo'
+        ? t('hist.izq', '🍼 Izq.')
+        : t('hist.der', '🍼 Der.'),
       detalle: `${esc(d.ml)} ml`
     };
   }
   if (r.tipo === 'peso') {
-    return { tipo: '⚖️ Peso', detalle: `${esc(d.gramos)} g` };
+    return { tipo: t('hist.pesoTipo', '⚖️ Peso'), detalle: `${esc(d.gramos)} g` };
   }
   if (r.tipo === 'caca') {
     const c = infoColor(d.color);
     return {
-      tipo: '💩 Caca',
+      tipo: t('hist.cacaTipo', '💩 Caca'),
       detalle: `<span class="color-swatch" style="background:${c.hex};`
              + `display:inline-block;vertical-align:-3px;margin-right:6px"></span>`
              + `${esc(d.cantidad)} · ${esc(c.label)}${nota}`
@@ -31,8 +33,10 @@ function describir(r) {
   }
   if (r.tipo === 'pipi') {
     return {
-      tipo: '💧 Pipí',
-      detalle: `${esc(d.cantidad)} · ${d.transparente ? 'transparente' : 'no transparente'}${nota}`
+      tipo: t('hist.pipiTipo', '💧 Pipí'),
+      detalle: `${esc(d.cantidad)} · ${d.transparente
+          ? t('hist.transp',   'transparente')
+          : t('hist.noTransp', 'no transparente')}${nota}`
     };
   }
   // Tipo desconocido (por si en el futuro se añade otro)
@@ -53,9 +57,9 @@ function renderTabla() {
 
   if (!filas.length) {
     const vacio = !Object.keys(MODULO_DE_TIPO).some(t => tipoVisible(t))
-      ? 'Están todos los módulos ocultos. Se encienden en ⚙️ Ajustes.'
-      : filtroHist === 'todo' ? 'No hay registros todavía.'
-      : 'No hay registros de este tipo.';
+      ? t('hist.todoOculto', 'Están todos los módulos ocultos. Se encienden en ⚙️ Ajustes.')
+      : filtroHist === 'todo' ? t('hist.vacio',     'No hay registros todavía.')
+      :                         t('hist.vacioTipo', 'No hay registros de este tipo.');
     tbody.innerHTML = `<tr><td colspan="4" class="empty-state">${vacio}</td></tr>`;
     return;
   }
@@ -65,8 +69,8 @@ function renderTabla() {
 
     const accCell = modoVer ? '' : `
       <td style="white-space:nowrap">
-        <button class="btn-edit-sm"   onclick="editar('${r.id}')" aria-label="Editar">✏️</button>
-        <button class="btn-danger-sm" onclick="borrar('${r.id}')" style="margin-left:4px" aria-label="Borrar">🗑️</button>
+        <button class="btn-edit-sm"   onclick="editar('${r.id}')" aria-label="${esc(t('aria.editar', 'Editar'))}">✏️</button>
+        <button class="btn-danger-sm" onclick="borrar('${r.id}')" style="margin-left:4px" aria-label="${esc(t('aria.borrar', 'Borrar'))}">🗑️</button>
       </td>`;
 
     return `<tr>
@@ -83,15 +87,17 @@ function renderTabla() {
    ───────────────────────────────────────────────────────────── */
 window.borrar = async function(id) {
   const r = registros.find(x => x.id === id);
-  const q = r ? `¿Borrar el registro de ${fmtFechaHora(r.fecha_hora)}?` : '¿Borrar este registro?';
+  const q = r
+    ? t2('hist.borrarQ', '¿Borrar el registro de {f}?', { f: fmtFechaHora(r.fecha_hora) })
+    : t('hist.borrarQ2', '¿Borrar este registro?');
   if (!confirm(q)) return;
 
   const { error } = await sb.from('registros').delete().eq('id', id);
   if (error) {
     console.error(error);
-    toast('❌ No se pudo borrar: ' + (error.message || ''), 4000);
+    toast(t('hist.noBorrado', '❌ No se pudo borrar: ') + (error.message || ''), 4000);
   } else {
-    toast('🗑️ Registro borrado');
+    toast(t('hist.borrado', '🗑️ Registro borrado'));
     await cargarDatos();
   }
 };

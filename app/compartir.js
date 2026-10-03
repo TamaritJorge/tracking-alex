@@ -61,7 +61,7 @@ async function compartirTarjeta(card) {
     // AbortError = el usuario cerró el diálogo de compartir. No es un fallo.
     if (e && e.name === 'AbortError') return;
     console.error(e);
-    toast('❌ No se pudo generar la imagen: ' + (e.message || ''), 4000);
+    toast(t('comp.noImagen', '❌ No se pudo generar la imagen: ') + (e.message || ''), 4000);
   } finally {
     btn.textContent = textoOriginal;
     btn.disabled = false;

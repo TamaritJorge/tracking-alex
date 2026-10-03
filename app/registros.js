@@ -55,9 +55,9 @@ function mostrarFormulario(cual) {
 async function guardarRegistro(btnId, textoBtn, tipo, fechaISO, datos, alTerminar) {
   const btn = document.getElementById(btnId);
   btn.disabled = true;
-  btn.textContent = 'Guardando…';
+  btn.textContent = t('btn.guardando', 'Guardando…');
 
-  if (!ninoActivo) { toast('⚠️ No hay ningún hijo seleccionado.'); return; }
+  if (!ninoActivo) { toast(t('reg.sinHijo', '⚠️ No hay ningún hijo seleccionado.')); return; }
 
   const { error } = await sb.from('registros')
     .insert({ tipo, fecha_hora: fechaISO, datos, nino_id: ninoActivo.id });
@@ -67,7 +67,8 @@ async function guardarRegistro(btnId, textoBtn, tipo, fechaISO, datos, alTermina
 
   if (error) {
     console.error(error);
-    toast('❌ No se pudo guardar: ' + (error.message || 'error desconocido'), 4500);
+    toast(t('reg.noGuardado', '❌ No se pudo guardar: ')
+      + (error.message || t('reg.errorRaro', 'error desconocido')), 4500);
     return;
   }
   if (alTerminar) alTerminar();
@@ -79,14 +80,14 @@ document.getElementById('btnExt').addEventListener('click', () => {
   const fecha = leerFechaISO('extFecha');
 
   if (!fecha || isNaN(ml) || ml < 0) {
-    toast('⚠️ Indica los ml y la fecha.');
+    toast(t('reg.faltaMlFecha', '⚠️ Indica los ml y la fecha.'));
     return;
   }
 
-  guardarRegistro('btnExt', 'Guardar extracción', 'extraccion', fecha,
+  guardarRegistro('btnExt', t('reg.guardaExt', 'Guardar extracción'), 'extraccion', fecha,
     { pecho: valorSel('rowPecho', 'izquierdo'), ml },
     () => {
-      toast('✅ Extracción guardada');
+      toast(t('reg.okExt', '✅ Extracción guardada'));
       document.getElementById('extMl').value    = '';
       reiniciarFecha('extFecha');
     });
@@ -98,13 +99,13 @@ document.getElementById('btnPeso').addEventListener('click', () => {
   const fecha  = leerFechaISO('pesoFecha');
 
   if (!fecha || isNaN(gramos) || gramos < 500) {
-    toast('⚠️ Indica el peso (mínimo 500 g) y la fecha.');
+    toast(t('reg.faltaPesoFecha', '⚠️ Indica el peso (mínimo 500 g) y la fecha.'));
     return;
   }
 
-  guardarRegistro('btnPeso', 'Guardar peso', 'peso', fecha, { gramos },
+  guardarRegistro('btnPeso', t('reg.guardaPeso', 'Guardar peso'), 'peso', fecha, { gramos },
     () => {
-      toast('✅ Peso guardado');
+      toast(t('reg.okPeso', '✅ Peso guardado'));
       document.getElementById('pesoG').value     = '';
       reiniciarFecha('pesoFecha');
     });
@@ -118,15 +119,15 @@ document.getElementById('btnCaca').addEventListener('click', () => {
   const fecha    = leerFechaISO('cacaFecha');
 
   if (cantidad === null || !fecha) {
-    toast('⚠️ Indica la cantidad y la fecha.');
+    toast(t('reg.faltaCantFecha', '⚠️ Indica la cantidad y la fecha.'));
     return;
   }
 
   const datos = { cantidad, color };
   if (nota) datos.nota = nota;
 
-  guardarRegistro('btnCaca', 'Guardar caca', 'caca', fecha, datos, () => {
-    toast('✅ Caca guardada');
+  guardarRegistro('btnCaca', t('reg.guardaCaca', 'Guardar caca'), 'caca', fecha, datos, () => {
+    toast(t('reg.okCaca', '✅ Caca guardada'));
     document.getElementById('cacaNota').value  = '';
     reiniciarFecha('cacaFecha');
   });
@@ -139,15 +140,15 @@ document.getElementById('btnPipi').addEventListener('click', () => {
   const fecha    = leerFechaISO('pipiFecha');
 
   if (cantidad === null || !fecha) {
-    toast('⚠️ Indica la cantidad y la fecha.');
+    toast(t('reg.faltaCantFecha', '⚠️ Indica la cantidad y la fecha.'));
     return;
   }
 
   const datos = { cantidad, transparente: valorSel('rowPipiTrans', 'si') === 'si' };
   if (nota) datos.nota = nota;
 
-  guardarRegistro('btnPipi', 'Guardar pipí', 'pipi', fecha, datos, () => {
-    toast('✅ Pipí guardado');
+  guardarRegistro('btnPipi', t('reg.guardaPipi', 'Guardar pipí'), 'pipi', fecha, datos, () => {
+    toast(t('reg.okPipi', '✅ Pipí guardado'));
     document.getElementById('pipiNota').value  = '';
     reiniciarFecha('pipiFecha');
   });
@@ -232,7 +233,7 @@ window.editar = function(id) {
       </div>${campoFecha}`;
 
   } else {
-    toast('Este tipo de registro no se puede editar aquí.');
+    toast(t('reg.noEditable', 'Este tipo de registro no se puede editar aquí.'));
     return;
   }
 
@@ -257,23 +258,23 @@ document.getElementById('btnSaveEdit').addEventListener('click', async () => {
   if (!editandoId) return;
 
   const fecha_hora = leerFechaISO('editFecha');
-  if (!fecha_hora) { toast('⚠️ La fecha no es válida.'); return; }
+  if (!fecha_hora) { toast(t('reg.fechaMala', '⚠️ La fecha no es válida.')); return; }
 
   let datos;
 
   if (editandoTipo === 'extraccion') {
     const ml = parseFloat(document.getElementById('editMl').value);
-    if (isNaN(ml) || ml < 0) { toast('⚠️ Indica los ml.'); return; }
+    if (isNaN(ml) || ml < 0) { toast(t('reg.faltaMl', '⚠️ Indica los ml.')); return; }
     datos = { pecho: valorSel('rowEditPecho', 'izquierdo'), ml };
 
   } else if (editandoTipo === 'peso') {
     const gramos = parseInt(document.getElementById('editGramos').value, 10);
-    if (isNaN(gramos) || gramos < 500) { toast('⚠️ Indica el peso (mínimo 500 g).'); return; }
+    if (isNaN(gramos) || gramos < 500) { toast(t('reg.faltaPeso', '⚠️ Indica el peso (mínimo 500 g).')); return; }
     datos = { gramos };
 
   } else if (editandoTipo === 'caca' || editandoTipo === 'pipi') {
     const cantidad = cantidadSel('rowEditQty');
-    if (cantidad === null) { toast('⚠️ Indica la cantidad.'); return; }
+    if (cantidad === null) { toast(t('reg.faltaCant', '⚠️ Indica la cantidad.')); return; }
     const nota = document.getElementById('editNota').value.trim();
 
     datos = editandoTipo === 'caca'
@@ -288,7 +289,7 @@ document.getElementById('btnSaveEdit').addEventListener('click', async () => {
 
   const btn = document.getElementById('btnSaveEdit');
   btn.disabled = true;
-  btn.textContent = 'Guardando…';
+  btn.textContent = t('btn.guardando', 'Guardando…');
 
   // .select() nos dice cuántas filas se han modificado de verdad:
   // si RLS bloquea el UPDATE, Supabase no da error pero devuelve 0.
@@ -299,20 +300,21 @@ document.getElementById('btnSaveEdit').addEventListener('click', async () => {
     .select();
 
   btn.disabled = false;
-  btn.textContent = 'Guardar cambios';
+  btn.textContent = t('btn.guardar2', 'Guardar cambios');
 
   if (error) {
     console.error(error);
-    toast('❌ No se pudo guardar: ' + (error.message || ''), 4500);
+    toast(t('reg.noGuardado', '❌ No se pudo guardar: ') + (error.message || ''), 4500);
     return;
   }
 
   if (!data || !data.length) {
-    toast('⚠️ No se modificó nada. Falta la policy de UPDATE en Supabase (migracion.sql).', 6000);
+    toast(t('reg.sinCambios',
+        '⚠️ No se modificó nada. Falta la policy de UPDATE en Supabase (migracion.sql).'), 6000);
     return;
   }
 
-  toast('✅ Registro actualizado');
+  toast(t('reg.okEditado', '✅ Registro actualizado'));
   cerrarModal();
   await cargarDatos();
 });

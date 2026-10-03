@@ -109,7 +109,7 @@ async function guardarModulos() {
     actualizado_en: new Date().toISOString()
   }, { onConflict: 'familia_id,clave' });
 
-  return error ? { error: error.message || 'No se pudo guardar' } : { ok: true };
+  return error ? { error: error.message || t('mod.noGuardado', 'No se pudo guardar') } : { ok: true };
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -160,13 +160,23 @@ function aplicarModulos() {
    Viven en el modal de ajustes (familia.js), que los pinta
    llamando a htmlModulos().
    ───────────────────────────────────────────────────────────── */
+/* El nombre y la descripcion de un modulo, traducidos.
+
+   Viven en MODULOS como literales espanoles y se traducen al pintarlos,
+   no al declararlos: el objeto se construye al cargar el fichero, antes
+   de que se sepa que idioma toca, y ademas hay que poder cambiar de
+   idioma sin recargar. El espanol del objeto es el valor por defecto de
+   t(), que es el patron de todo el proyecto. */
+function nombreModulo(k) { return t('mod.' + k + '.nombre', MODULOS[k].nombre); }
+function descModulo(k)   { return t('mod.' + k + '.desc',   MODULOS[k].desc); }
+
 function htmlModulos() {
   return Object.entries(MODULOS).map(([k, m]) => `
     <label class="modulo-fila">
       <input type="checkbox" data-mod="${k}"${moduloActivo(k) ? ' checked' : ''}>
       <span class="modulo-txt">
-        <span class="modulo-nom">${m.icono} ${esc(m.nombre)}</span>
-        <span class="modulo-desc">${esc(m.desc)}</span>
+        <span class="modulo-nom">${m.icono} ${esc(nombreModulo(k))}</span>
+        <span class="modulo-desc">${esc(descModulo(k))}</span>
       </span>
     </label>`).join('');
 }
@@ -197,8 +207,8 @@ function htmlModulosAlta() {
     <label class="modulo-fila">
       <input type="checkbox" data-mod-alta="${k}"${MODULOS_INICIO[k] ? ' checked' : ''}>
       <span class="modulo-txt">
-        <span class="modulo-nom">${m.icono} ${esc(m.nombre)}</span>
-        <span class="modulo-desc">${esc(m.desc)}</span>
+        <span class="modulo-nom">${m.icono} ${esc(nombreModulo(k))}</span>
+        <span class="modulo-desc">${esc(descModulo(k))}</span>
       </span>
     </label>`).join('');
 }
@@ -222,7 +232,7 @@ window.cambiarModulo = async function(clave, activo) {
     modulos[clave] = antes;                 // deshacer: no mentir al usuario
     const cb = document.querySelector(`[data-mod="${clave}"]`);
     if (cb) cb.checked = antes !== false;
-    toast('❌ No se pudo guardar: ' + r.error, 4000);
+    toast(t('mod.noGuardado2', '❌ No se pudo guardar: ') + r.error, 4000);
     return;
   }
 
@@ -253,8 +263,9 @@ window.cambiarModulo = async function(clave, activo) {
 
   // Encender un módulo que estaba apagado no recupera nada de la
   // base de datos: los registros nunca se fueron.
-  toast(activo ? '✅ ' + MODULOS[clave].nombre + ' activado'
-               : '🚫 ' + MODULOS[clave].nombre + ' oculto (no se ha borrado nada)');
+  toast(activo
+    ? t2('mod.on',  '✅ {m} activado', { m: nombreModulo(clave) })
+    : t2('mod.off', '🚫 {m} oculto (no se ha borrado nada)', { m: nombreModulo(clave) }));
 };
 
 /* El cuerpo del modal se pinta con innerHTML cada vez que se abre, así

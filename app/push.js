@@ -102,8 +102,9 @@ window.activarPush = async function() {
   const permiso = await Notification.requestPermission();
   if (permiso !== 'granted') {
     toast(permiso === 'denied'
-      ? '🔕 Has bloqueado los avisos. Se vuelven a permitir desde los ajustes del navegador.'
-      : '🔕 Sin permiso no puedo avisarte.', 5000);
+      ? t('push.bloqueado',
+      '🔕 Has bloqueado los avisos. Se vuelven a permitir desde los ajustes del navegador.')
+      : t('push.sinPermiso', '🔕 Sin permiso no puedo avisarte.'), 5000);
     await refrescarPush();
     return;
   }
@@ -120,7 +121,7 @@ window.activarPush = async function() {
     });
   } catch (e) {
     console.error(e);
-    toast('❌ El navegador no dejó suscribirse: ' + (e.message || ''), 5000);
+    toast(t('push.noSuscrito', '❌ El navegador no dejó suscribirse: ') + (e.message || ''), 5000);
     return;
   }
 
@@ -133,9 +134,9 @@ window.activarPush = async function() {
     fallos:   0
   }, { onConflict: 'endpoint' });
 
-  if (error) { toast('❌ No se pudo guardar: ' + (error.message || ''), 4500); return; }
+  if (error) { toast(t('push.noGuardado', '❌ No se pudo guardar: ') + (error.message || ''), 4500); return; }
 
-  toast('🔔 Listo: este móvil ya recibe los avisos');
+  toast(t('push.on', '🔔 Listo: este móvil ya recibe los avisos'));
   await refrescarPush();
 };
 
@@ -151,7 +152,7 @@ window.desactivarPush = async function() {
   await sb.from('med_push').delete().eq('endpoint', sus.endpoint);
   await sus.unsubscribe();
 
-  toast('🔕 Este móvil deja de recibir avisos');
+  toast(t('push.off', '🔕 Este móvil deja de recibir avisos'));
   await refrescarPush();
 };
 
@@ -208,14 +209,14 @@ function htmlPush() {
   if (pushEstado === 'activo') {
     return cajaPush('🔔', t('push.on.titulo', 'Este móvil recibe los avisos'),
       t('push.on.txt', 'Te avisará cuando toque una toma y nadie la haya marcado. ' +
-        'Sólo este móvil: el de tu pareja se activa desde su propio teléfono.'),
+        t('push.soloEste', 'Sólo este móvil: el de tu pareja se activa desde su propio teléfono.')),
       `<button class="btn btn-secundario" onclick="desactivarPush()"
         >${esc(t('push.off', 'Dejar de avisarme en este móvil'))}</button>`);
   }
 
   return cajaPush('🔔', t('push.off.titulo', 'Avisarme en el móvil'),
     t('push.off.txt', 'Ahora mismo el aviso sólo aparece cuando abres la aplicación. ' +
-      'Con esto, el móvil suena aunque esté cerrada.'),
+      t('push.conEsto', 'Con esto, el móvil suena aunque esté cerrada.')),
     `<button class="btn btn-primary" onclick="activarPush()"
       >${esc(t('push.on', 'Activar los avisos'))}</button>`);
 }

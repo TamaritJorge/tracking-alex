@@ -1,0 +1,43 @@
+{
+  "name": "Tracking Álex",
+  "short_name": "Tracking Álex",
+  "description": "Your baby's day: nappies, weight, food and the medicines your doctor prescribed.",
+  "lang": "en",
+  "dir": "ltr",
+  "start_url": "./",
+  "scope": "./",
+  "id": "/app/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#6d28d9",
+  "background_color": "#f1f5f9",
+  "categories": ["health", "lifestyle"],
+  "icons": [
+    {
+      "src": "../marca/icono-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../marca/icono-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "../marca/icono-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Medicines",
+      "short_name": "Medicines",
+      "url": "./?tab=medicacion",
+      "icons": [{ "src": "../marca/icono-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

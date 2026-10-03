@@ -3,7 +3,68 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Tracking Álex · seguimiento diario de tu bebé</title>
+  <title data-en="Tracking Álex · daily baby tracking">Tracking Álex · seguimiento diario de tu bebé</title>
+
+  <!-- ══ EL IDIOMA ═══════════════════════════════════════════════════
+       Las dos versiones del texto están en el HTML que se sirve; esto
+       sólo decide cuál se enseña. Es deliberado y es la diferencia que
+       importa: inyectar el texto con JavaScript al abrir sí perjudica al
+       SEO, servirlo entero y ocultar la mitad con CSS no. Lo dice el
+       comentario de las preguntas de más abajo, y vale igual aquí.
+
+       Va en línea y aquí arriba —no en un fichero aparte— para que el
+       atributo esté puesto antes de que se pinte nada y no se vea un
+       instante el idioma que no es. Mismo truco que el tema oscuro.
+
+       La clave de localStorage es la MISMA que usa app/idiomas.js
+       ('idioma'), así que elegir inglés aquí hace que la aplicación
+       arranque también en inglés, y al revés. -->
+  <script>
+    (function () {
+      var L = 'es';
+      try {
+        var g = localStorage.getItem('idioma');
+        if (g === 'es' || g === 'en') {
+          L = g;
+        } else {
+          var nav = (navigator.languages && navigator.languages[0])
+                 || navigator.language || 'es';
+          if (nav.slice(0, 2).toLowerCase() === 'en') L = 'en';
+        }
+      } catch (e) { /* modo privado: nos quedamos en español */ }
+
+      var h = document.documentElement;
+      h.setAttribute('data-lang', L);
+      h.lang = L;
+
+      document.addEventListener('DOMContentLoaded', function () {
+        /* El <title> y las og: sólo pueden tener un valor en el HTML
+           servido, así que el título inglés viaja en un atributo. La
+           tarjeta al compartir se queda en español: con una sola
+           dirección no hay forma de que sea otra cosa. */
+        var t = document.querySelector('title');
+        if (L === 'en' && t && t.getAttribute('data-en')) {
+          document.title = t.getAttribute('data-en');
+        }
+        var b = document.querySelectorAll('[data-idioma]');
+        for (var i = 0; i < b.length; i++) {
+          b[i].setAttribute('aria-current', b[i].getAttribute('data-idioma') === L ? 'true' : 'false');
+          b[i].addEventListener('click', function () {
+            try { localStorage.setItem('idioma', this.getAttribute('data-idioma')); } catch (e) {}
+            location.reload();
+          });
+        }
+      });
+    })();
+  </script>
+
+  <!-- Sin JavaScript no hay data-lang, no casa ninguna de las dos reglas
+       de landing.css y se verían los dos idiomas seguidos. Esto deja el
+       español, que es el idioma del documento servido. Son tres líneas y
+       evitan que la página se vea rota en el único caso en que el script
+       de arriba no llega a ejecutarse. -->
+  <noscript><style>[lang="en"] { display: none; }</style></noscript>
+
   <meta name="description" content="Pañales, peso con percentiles de la OMS, alimentación complementaria y las medicinas del pediatra. Para los dos padres, desde el móvil.">
 
   <!-- ══ Al compartir el enlace ══════════════════════════════════════
@@ -107,7 +168,17 @@
     <svg width="30" height="30" aria-hidden="true"><use href="#logoTA"/></svg>
     <span class="logo-txt">Tracking <em>Álex</em></span>
   </a>
-  <a class="btn btn-sec" href="app/">Entrar</a>
+  <span class="cab-dcha">
+    <!-- ES · EN. Recarga en vez de intercambiar en caliente: esta página
+         no tiene estado que perder, y recargar deja el <title> y el lang
+         correctos sin escribir más código. -->
+    <nav class="sel-idioma" aria-label="Idioma / Language">
+      <button type="button" data-idioma="es">ES</button>
+      <button type="button" data-idioma="en">EN</button>
+    </nav>
+    <a class="btn btn-sec" href="app/" lang="es">Entrar</a>
+    <a class="btn btn-sec" href="app/" lang="en">Sign in</a>
+  </span>
 </header>
 
 
@@ -115,16 +186,23 @@
   <section class="contenedor hero">
     <svg class="hero-logo" width="88" height="88" aria-hidden="true"><use href="#logoTAPastilla"/></svg>
 
-    <h1>El día a día de tu bebé,<br>apuntado en dos toques</h1>
+    <h1 lang="es">El día a día de tu bebé,<br>apuntado en dos toques</h1>
+    <h1 lang="en">Your baby's day,<br>logged in two taps</h1>
 
-    <p>
+    <p lang="es">
       Pañales, peso con los percentiles de la OMS, alimentación complementaria
       y las medicinas que os haya pautado el pediatra.
       Pensado para usarse con una mano, en el móvil, a las tres de la mañana.
     </p>
+    <p lang="en">
+      Nappies, weight with WHO percentiles, first foods and the medicines your
+      paediatrician prescribed.
+      Built for one hand, on a phone, at three in the morning.
+    </p>
 
     <div class="hero-botones">
-      <a class="btn btn-pri btn-grande" href="app/">Entrar</a>
+      <a class="btn btn-pri btn-grande" href="app/" lang="es">Entrar</a>
+      <a class="btn btn-pri btn-grande" href="app/" lang="en">Get started</a>
     </div>
 
   </section>
@@ -133,50 +211,79 @@
   <section class="contenedor rejilla">
     <article class="ficha">
       <span class="ficha-icono" aria-hidden="true">💧</span>
-      <h2>Pañales sin ceremonia</h2>
-      <p>
+      <h2 lang="es">Pañales sin ceremonia</h2>
+      <h2 lang="en">Nappies without the fuss</h2>
+      <p lang="es">
         Pipí y caca con cantidad, color y notas. Una pantalla, un botón.
         Las gráficas cuentan cuántos ha habido en las últimas 24 horas,
         que es lo que de verdad se mira.
+      </p>
+      <p lang="en">
+        Wet and dirty, with amount, colour and notes. One screen, one
+        button. The charts count the last 24 hours, which is the number
+        anyone actually looks at.
       </p>
     </article>
 
     <article class="ficha">
       <span class="ficha-icono" aria-hidden="true">⚖️</span>
-      <h2>Percentiles de verdad</h2>
-      <p>
+      <h2 lang="es">Percentiles de verdad</h2>
+      <h2 lang="en">Percentiles, properly</h2>
+      <p lang="es">
         Las tablas oficiales de la OMS, con su método LMS y una curva
         distinta para niños y para niñas. No una aproximación dibujada
         a ojo.
+      </p>
+      <p lang="en">
+        The official WHO tables, with their LMS method and a separate
+        curve for boys and for girls. Not a line drawn roughly in the
+        right place.
       </p>
     </article>
 
     <article class="ficha">
       <span class="ficha-icono" aria-hidden="true">🥑</span>
-      <h2>Empezar con la comida</h2>
-      <p>
+      <h2 lang="es">Empezar con la comida</h2>
+      <h2 lang="en">Starting solids</h2>
+      <p lang="es">
         Qué alimento toca, a qué edad y qué vigilar. Con los catorce
         alérgenos de la norma europea y la regla de los tres días para
         introducirlos.
+      </p>
+      <p lang="en">
+        Which food next, from what age, and what to watch for. With the
+        fourteen allergens named in EU law and the three-day rule for
+        introducing them.
       </p>
     </article>
 
     <article class="ficha">
       <span class="ficha-icono" aria-hidden="true">💊</span>
-      <h2>Que no se la deis dos veces</h2>
-      <p>
+      <h2 lang="es">Que no se la deis dos veces</h2>
+      <h2 lang="en">So nobody doses twice</h2>
+      <p lang="es">
         Las pautas del pediatra con sus horas. Si toca una toma, te avisa;
         cuando uno de los dos la marca, el aviso desaparece del móvil del
         otro. Nadie repite dosis por no saber si ya se la habían dado.
+      </p>
+      <p lang="en">
+        Your paediatrician's schedule, hour by hour. When a dose is due
+        you get a reminder; the moment one of you marks it, the reminder
+        clears on the other's phone. Nobody gives it again just in case.
       </p>
     </article>
 
     <article class="ficha">
       <span class="ficha-icono" aria-hidden="true">👫</span>
-      <h2>Los dos padres, al día</h2>
-      <p>
+      <h2 lang="es">Los dos padres, al día</h2>
+      <h2 lang="en">Both of you, in sync</h2>
+      <p lang="es">
         Lo que apunta uno aparece en el móvil del otro al instante. Y una
         captura limpia para enseñarle a la pediatra en la consulta.
+      </p>
+      <p lang="en">
+        What one of you writes down shows up on the other's phone straight
+        away. Plus a clean screenshot to hand the doctor at the appointment.
       </p>
     </article>
   </section>
@@ -187,8 +294,9 @@
        convence más que cualquier lista de características, y conviene
        leerlo antes de ponerse a resolver dudas. -->
   <section class="contenedor historia">
-    <h2>¿Y por qué se llama así?</h2>
-    <p>
+    <h2 lang="es">¿Y por qué se llama así?</h2>
+    <h2 lang="en">Why that name?</h2>
+    <p lang="es">
       Porque Álex es nuestro hijo. Esto empezó siendo una libreta para no perder
       el hilo de sus pañales y su peso, siguió siendo una hoja de cálculo y
       acabó siendo esto. Lo hemos publicado para que otras familias puedan usarlo,
@@ -196,6 +304,15 @@
       <a href="https://ko-fi.com/trackingalex" target="_blank" rel="noopener noreferrer"
          >invitarnos a un café</a> ayuda a que siga en pie. No hay publicidad ni
       datos de terceros, y no los habrá.
+    </p>
+    <p lang="en">
+      Because Álex is our son. This started out as a notebook for keeping track
+      of his nappies and his weight, became a spreadsheet, and ended up as this.
+      We have published it so other families can use it, free. We pay for the
+      server ourselves, and if anyone feels like
+      <a href="https://ko-fi.com/trackingalex" target="_blank" rel="noopener noreferrer"
+         >buying us a coffee</a> it helps keep it running. There are no ads and
+      no third-party data, and there never will be.
     </p>
   </section>
 
@@ -216,12 +333,13 @@
        a propósito: si estuvieran todas cerradas, alguien podría no
        darse cuenta de que se abren. -->
   <section class="contenedor faq" id="preguntas">
-    <h2 class="faq-titulo">Lo que suele preguntarse todo el mundo</h2>
+    <h2 class="faq-titulo" lang="es">Lo que suele preguntarse todo el mundo</h2>
+    <h2 class="faq-titulo" lang="en">What everybody asks</h2>
 
     <div class="faq-lista">
       <details class="faq-item" open>
-        <summary><h3>¿Cuánto cuesta?</h3></summary>
-        <div class="faq-cuerpo">
+        <summary><h3 lang="es">¿Cuánto cuesta?</h3><h3 lang="en">What does it cost?</h3></summary>
+        <div class="faq-cuerpo" lang="es">
           <p>
             <strong>Nada.</strong> La aplicación es gratuita y está entera: no hay
             versión de pago, ni funciones guardadas detrás de un muro, ni límite
@@ -237,40 +355,78 @@
             aquí y dentro de la aplicación con antelación.
           </p>
         </div>
+        <div class="faq-cuerpo" lang="en">
+          <p>
+            <strong>Nothing.</strong> The app is free and it is all there: no paid
+            tier, no features kept behind a wall, no limit on entries. There are
+            no ads and no data is sold, and there never will be.
+          </p>
+          <p>
+            What there is, is a
+            <a href="https://ko-fi.com/trackingalex" target="_blank" rel="noopener noreferrer"
+               >Ko-fi tip jar</a> for anyone who wants to help pay for the server.
+            It is voluntary and it <strong>gets you nothing in return</strong>: people
+            who give see exactly the same app as people who do not. If that ever
+            changed, it would be said here and inside the app beforehand.
+          </p>
+        </div>
       </details>
       <details class="faq-item">
-        <summary><h3>¿Quién ve los datos de mi bebé?</h3></summary>
-        <div class="faq-cuerpo">
+        <summary><h3 lang="es">¿Quién ve los datos de mi bebé?</h3><h3 lang="en">Who can see my baby's data?</h3></summary>
+        <div class="faq-cuerpo" lang="es">
           <p>
             Sólo quien esté en tu familia: tú y la persona a la que invites.
             No hay publicidad, no se venden a terceros y no los habrá.
             Está todo escrito en la <a href="privacidad">política de privacidad</a>.
           </p>
         </div>
+        <div class="faq-cuerpo" lang="en">
+          <p>
+            Only the people in your family: you and whoever you invite.
+            There are no ads, nothing is sold to third parties, and that will
+            not change. It is all written down in the
+            <a href="privacidad">privacy policy</a>.
+          </p>
+        </div>
       </details>
       <details class="faq-item">
-        <summary><h3>¿Sirve para los dos a la vez?</h3></summary>
-        <div class="faq-cuerpo">
+        <summary><h3 lang="es">¿Sirve para los dos a la vez?</h3><h3 lang="en">Does it work for both of us at once?</h3></summary>
+        <div class="faq-cuerpo" lang="es">
           <p>
             Para eso se hizo. Invitas a tu pareja con un código y lo que apunta
             uno aparece en el móvil del otro al instante, sin recargar nada.
             Es lo que evita la dosis repetida a las cuatro de la mañana.
           </p>
         </div>
+        <div class="faq-cuerpo" lang="en">
+          <p>
+            That is what it was built for. You invite your partner with a code,
+            and what one of you writes down appears on the other's phone straight
+            away, without reloading anything. That is what stops the repeated dose
+            at four in the morning.
+          </p>
+        </div>
       </details>
       <details class="faq-item">
-        <summary><h3>¿Hay que instalar algo?</h3></summary>
-        <div class="faq-cuerpo">
+        <summary><h3 lang="es">¿Hay que instalar algo?</h3><h3 lang="en">Do I have to install anything?</h3></summary>
+        <div class="faq-cuerpo" lang="es">
           <p>
             No: se abre en el navegador del móvil o del ordenador. Si la añades
             a la pantalla de inicio llegan los avisos de medicación — y en
             iPhone instalarla es la <em>única</em> forma de que lleguen.
           </p>
         </div>
+        <div class="faq-cuerpo" lang="en">
+          <p>
+            No: it opens in your phone's browser, or your computer's. If you add it
+            to the home screen you get the medicine reminders — and on iPhone,
+            installing it is the <em>only</em> way they arrive.
+          </p>
+        </div>
       </details>
       <details class="faq-item">
-        <summary><h3>No necesito la comida ni las medicinas</h3></summary>
-        <div class="faq-cuerpo">
+        <summary><h3 lang="es">No necesito la comida ni las medicinas</h3><h3 lang="en">I do not need the food or the medicines</h3></summary>
+        <div class="faq-cuerpo" lang="es">
           <p>
             Pues se apagan. Cada cosa —pañales, peso, extracción, comida,
             medicinas— se enciende y se apaga en Ajustes. Lo que esté apagado
@@ -278,25 +434,48 @@
             el día que haga falta.
           </p>
         </div>
+        <div class="faq-cuerpo" lang="en">
+          <p>
+            Then turn them off. Each part —nappies, weight, pumping, food,
+            medicines— switches on and off in Settings. Whatever is off disappears
+            from the bar and stays out of the way. You can switch it back on the
+            day you need it.
+          </p>
+        </div>
       </details>
       <details class="faq-item">
-        <summary><h3>¿Puedo llevarme mis datos?</h3></summary>
-        <div class="faq-cuerpo">
+        <summary><h3 lang="es">¿Puedo llevarme mis datos?</h3><h3 lang="en">Can I take my data with me?</h3></summary>
+        <div class="faq-cuerpo" lang="es">
           <p>
             Cuando quieras: se descarga todo en un fichero JSON, y las medicinas
             además en CSV para abrirlo con una hoja de cálculo. Y si decides
             irte, se borra la cuenta entera desde la propia aplicación.
           </p>
         </div>
+        <div class="faq-cuerpo" lang="en">
+          <p>
+            Whenever you like: everything downloads as a JSON file, and the
+            medicines also as CSV to open in a spreadsheet. And if you decide to
+            leave, the whole account deletes from inside the app itself.
+          </p>
+        </div>
       </details>
       <details class="faq-item">
-        <summary><h3>¿Sustituye al pediatra?</h3></summary>
-        <div class="faq-cuerpo">
+        <summary><h3 lang="es">¿Sustituye al pediatra?</h3><h3 lang="en">Does it replace the doctor?</h3></summary>
+        <div class="faq-cuerpo" lang="es">
           <p>
             No, y conviene decirlo claro: <strong>esto no es un producto
             sanitario</strong>. Sirve para no perder el hilo y para llegar a la
             consulta con los datos a mano, no para diagnosticar ni para decidir
             nada por tu cuenta.
+          </p>
+        </div>
+        <div class="faq-cuerpo" lang="en">
+          <p>
+            No, and it is worth saying plainly: <strong>this is not a medical
+            device</strong>. It is for keeping track and for turning up to the
+            appointment with the numbers to hand — not for diagnosing anything or
+            deciding anything on your own.
           </p>
         </div>
       </details>
@@ -307,9 +486,12 @@
        ningún botón. Quien llega hasta aquí leyendo es precisamente
        quien ya estaba convencido. -->
   <section class="contenedor cierre">
-    <h2>¿Lo probamos?</h2>
-    <p>Se tarda menos en crear la familia que en terminar de leer esta frase.</p>
-    <a class="btn btn-pri btn-grande" href="app/">Empezar</a>
+    <h2 lang="es">¿Lo probamos?</h2>
+    <h2 lang="en">Shall we?</h2>
+    <p lang="es">Se tarda menos en crear la familia que en terminar de leer esta frase.</p>
+    <p lang="en">Setting up takes less time than reading this sentence.</p>
+    <a class="btn btn-pri btn-grande" href="app/" lang="es">Empezar</a>
+    <a class="btn btn-pri btn-grande" href="app/" lang="en">Get started</a>
   </section>
 
 </main>
@@ -317,12 +499,19 @@
 
 <footer class="contenedor pie">
   <span>© 2026 Tracking Álex</span>
-  <span class="pie-enlaces">
+  <span class="pie-enlaces" lang="es">
     <a href="privacidad">Privacidad</a>
     <a href="terminos">Condiciones</a>
     <a href="aviso-legal">Aviso legal</a>
     <a href="https://ko-fi.com/trackingalex" target="_blank" rel="noopener noreferrer"
        >☕ Invitar a un café</a>
+  </span>
+  <span class="pie-enlaces" lang="en">
+    <a href="privacidad">Privacy</a>
+    <a href="terminos">Terms</a>
+    <a href="aviso-legal">Legal notice</a>
+    <a href="https://ko-fi.com/trackingalex" target="_blank" rel="noopener noreferrer"
+       >☕ Buy us a coffee</a>
   </span>
 </footer>
 

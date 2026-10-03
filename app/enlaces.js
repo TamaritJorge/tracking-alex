@@ -32,9 +32,9 @@ const LARGO_TOKEN     = 22;
 const MAX_ENLACES = 10;
 
 const CADUCIDADES = [
-  { dias: 30,  txt: '30 días' },
-  { dias: 180, txt: '6 meses' },
-  { dias: 0,   txt: 'No caduca' }
+  { dias: 30,  txt: t('enl.30dias', '30 días') },
+  { dias: 180, txt: t('enl.6meses', '6 meses') },
+  { dias: 0,   txt: t('enl.nunca', 'No caduca') }
 ];
 
 /* 6 meses por defecto. «No caduca» tiene que ser una decisión que
@@ -68,27 +68,28 @@ function tokenCorto(token) {
 
 function queEnsena(e) {
   const partes = [];
-  if (e.ver_peso)       partes.push('peso');
-  if (e.ver_panales)    partes.push('pañales');
-  if (e.ver_extraccion) partes.push('extracción');
-  if (e.ver_resumen)    partes.push('resumen de 24 h');
+  if (e.ver_peso)       partes.push(t('enl.q.peso', 'peso'));
+  if (e.ver_panales)    partes.push(t('enl.q.panales', 'pañales'));
+  if (e.ver_extraccion) partes.push(t('enl.q.ext', 'extracción'));
+  if (e.ver_resumen)    partes.push(t('enl.q.resumen', 'resumen de 24 h'));
   return partes.join(', ');
 }
 
 function textoCaducidad(e) {
-  if (!e.caduca_en) return 'No caduca';
+  if (!e.caduca_en) return t('enl.nunca', 'No caduca');
   const d = new Date(e.caduca_en);
   const dias = Math.ceil((d - Date.now()) / 864e5);
-  if (dias <= 0) return 'Caducado';
-  return 'Caduca en ' + dias + ' ' + plural(dias, 'día', 'días', 'dia');
+  if (dias <= 0) return t('enl.caducadoYa', 'Caducado');
+  return t2('enl.caducaEn', 'Caduca en {d} {p}',
+    { d: dias, p: plural(dias, 'día', 'días', 'dia') });
 }
 
 function textoUltimoAcceso(e) {
-  if (!e.ultimo_acceso) return 'Sin abrir todavía';
+  if (!e.ultimo_acceso) return t('enl.sinAbrir', 'Sin abrir todavía');
   const dias = Math.floor((Date.now() - new Date(e.ultimo_acceso)) / 864e5);
-  if (dias <= 0) return 'Visto hoy';
-  if (dias === 1) return 'Visto ayer';
-  return 'Visto hace ' + dias + ' días';
+  if (dias <= 0) return t('enl.vistoHoy', 'Visto hoy');
+  if (dias === 1) return t('enl.vistoAyer', 'Visto ayer');
+  return t2('enl.vistoHace', 'Visto hace {d} días', { d: dias });
 }
 
 
@@ -115,33 +116,34 @@ async function pintarEnlaces() {
   const lista = await cargarEnlaces();
 
   if (lista === null) {
-    cont.innerHTML = '<p class="hint-txt" style="margin:0">No se han podido cargar.</p>';
+    cont.innerHTML = '<p class="hint-txt" style="margin:0">'
+                   + esc(t('enl.noCargan', 'No se han podido cargar.')) + '</p>';
     return;
   }
 
   if (!lista.length) {
     cont.innerHTML = '<p class="hint-txt" style="margin:0">' +
-      'Ahora mismo no hay ningún enlace activo.</p>';
+      esc(t('enl.ninguno', 'Ahora mismo no hay ningún enlace activo.')) + '</p>';
     return;
   }
 
   cont.innerHTML = lista.map(e => `
     <div class="modulo-fila" style="cursor:default;flex-direction:column;align-items:stretch;gap:8px">
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:baseline">
-        <strong>${esc(e.etiqueta || 'Sin nombre')}</strong>
+        <strong>${esc(e.etiqueta || t('enl.sinNombre', 'Sin nombre'))}</strong>
         <span class="hint-txt" style="white-space:nowrap">${esc(textoCaducidad(e))}</span>
       </div>
       <p class="hint-txt" style="margin:0">
-        Enseña: ${esc(queEnsena(e))}<br>
+        ${esc(t('enl.ensena', 'Enseña:'))} ${esc(queEnsena(e))}<br>
         <span style="font-family:monospace">…/ver/#${esc(tokenCorto(e.token))}</span>
         · ${esc(textoUltimoAcceso(e))}
       </p>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         <button class="btn btn-secundario" style="flex:1"
-                onclick="copiarEnlace('${esc(e.token)}')">📋 Copiar</button>
+                onclick="copiarEnlace('${esc(e.token)}')">📋 ${esc(t('enl.copiar', 'Copiar'))}</button>
         <button class="btn btn-secundario" style="flex:1;color:var(--danger);border-color:var(--danger)"
                 data-revocar="${esc(e.id)}"
-                onclick="revocarEnlace(this, '${esc(e.id)}')">Desactivar</button>
+                onclick="revocarEnlace(this, '${esc(e.id)}')">${esc(t('enl.desactivar', 'Desactivar'))}</button>
       </div>
     </div>`).join('');
 }
@@ -157,30 +159,30 @@ window.abrirNuevoEnlace = function() {
       <span>${esc(etiqueta)}</span>
     </label>` : '';
 
-  document.getElementById('comidaModalTitulo').textContent = '🔗 Compartir las gráficas';
+  document.getElementById('comidaModalTitulo').textContent = t('enl.tituloNuevo', '🔗 Compartir las gráficas');
   document.getElementById('comidaModalCuerpo').innerHTML = `
     <div class="field">
-      <label for="enlEtiqueta">¿Para quién es?</label>
-      <input type="text" id="enlEtiqueta" maxlength="60" placeholder="la abuela, la matrona…">
+      <label for="enlEtiqueta">${t('enl.paraQuien', '¿Para quién es?')}</label>
+      <input type="text" id="enlEtiqueta" maxlength="60" placeholder="${esc(t('enl.phEtiqueta', 'la abuela, la matrona…'))}">
       <p class="hint-txt" style="margin:8px 0 0">
-        Es sólo para que sepas cuál desactivar después. No lo ve quien abra el
-        enlace.
+        ${t('enl.etiquetaTxt', 'Es sólo para que sepas cuál desactivar después. '
+          + 'No lo ve quien abra el enlace.')}
       </p>
     </div>
 
     <div class="field">
-      <label>¿Qué podrá ver?</label>
-      ${casilla('peso', '⚖️ Peso y percentiles')}
-      ${casilla('panales', '💧 Pañales')}
-      ${casilla('extraccion', '🍼 Extracción de leche')}
+      <label>${t('enl.quePodra', '¿Qué podrá ver?')}</label>
+      ${casilla('peso', t('enl.cPeso', '⚖️ Peso y percentiles'))}
+      ${casilla('panales', t('enl.cPanales', '💧 Pañales'))}
+      ${casilla('extraccion', t('enl.cExt', '🍼 Extracción de leche'))}
       <label class="modulo-fila" style="margin-bottom:0">
         <input type="checkbox" data-ver="resumen" checked>
-        <span>🕐 El resumen de las últimas 24 h</span>
+        <span>${t('enl.cResumen', '🕐 El resumen de las últimas 24 h')}</span>
       </label>
     </div>
 
     <div class="field" style="margin-bottom:0">
-      <label for="enlCaduca">¿Cuánto tiempo?</label>
+      <label for="enlCaduca">${t('enl.cuanto', '¿Cuánto tiempo?')}</label>
       <select id="enlCaduca">
         ${CADUCIDADES.map(c => `<option value="${c.dias}"${
           c.dias === CADUCIDAD_DEFECTO ? ' selected' : ''}>${esc(c.txt)}</option>`).join('')}
@@ -196,9 +198,9 @@ window.abrirNuevoEnlace = function() {
 
   document.getElementById('comidaModalBtns').innerHTML = `
     <button class="btn btn-primary" id="btnCrearEnlace"
-            onclick="guardarEnlace()">Crear el enlace</button>
+            onclick="guardarEnlace()">${t('enl.crear', 'Crear el enlace')}</button>
     <button class="btn" onclick="abrirAjustes()"
-            style="background:var(--surface2);color:var(--text)">← Volver</button>`;
+            style="background:var(--surface2);color:var(--text)">← ${t('btn.volver', 'Volver')}</button>`;
 };
 
 
@@ -216,7 +218,7 @@ window.guardarEnlace = async function() {
   // ninguna gráfica está roto, porque el resumen solo no tiene de dónde
   // sacar los números.
   if (!ver.peso && !ver.panales && !ver.extraccion) {
-    err.textContent = 'Elige al menos una gráfica para compartir.';
+    err.textContent = t('enl.eligeUna', 'Elige al menos una gráfica para compartir.');
     err.style.display = '';
     return;
   }
@@ -233,7 +235,7 @@ window.guardarEnlace = async function() {
   const token    = tokenNuevo();
 
   btn.disabled = true;
-  btn.textContent = 'Creando…';
+  btn.textContent = t('enl.creando', 'Creando…');
 
   // creado_por lo pone la base de datos con DEFAULT auth.uid(), y la
   // política del INSERT exige que sea justo ése.
@@ -249,11 +251,11 @@ window.guardarEnlace = async function() {
   });
 
   btn.disabled = false;
-  btn.textContent = 'Crear el enlace';
+  btn.textContent = t('enl.crear', 'Crear el enlace');
 
   if (error) {
     console.error(error);
-    err.textContent = 'No se ha podido crear el enlace.';
+    err.textContent = t('enl.noCreado', 'No se ha podido crear el enlace.');
     err.style.display = '';
     return;
   }
@@ -267,7 +269,7 @@ window.guardarEnlace = async function() {
 function mostrarEnlaceCreado(token, etiqueta) {
   const url = urlEnlace(token);
 
-  document.getElementById('comidaModalTitulo').textContent = '✅ Enlace creado';
+  document.getElementById('comidaModalTitulo').textContent = t('enl.creado', '✅ Enlace creado');
   document.getElementById('comidaModalCuerpo').innerHTML = `
     <div class="field">
       <p class="hint-txt" style="margin:0 0 10px">
@@ -277,7 +279,7 @@ function mostrarEnlaceCreado(token, etiqueta) {
       <input type="text" id="enlUrl" readonly value="${esc(url)}"
              style="font-size:.85rem" onclick="this.select()">
       <button class="btn btn-primary" style="margin-top:8px"
-              onclick="copiarEnlace('${esc(token)}')">📋 Copiar el enlace</button>
+              onclick="copiarEnlace('${esc(token)}')">📋 ${t('enl.copiarEnlace', 'Copiar el enlace')}</button>
     </div>
 
     <div class="field" style="margin-bottom:0">
@@ -290,7 +292,7 @@ function mostrarEnlaceCreado(token, etiqueta) {
 
   document.getElementById('comidaModalBtns').innerHTML = `
     <button class="btn" onclick="abrirAjustes()"
-            style="background:var(--surface2);color:var(--text)">← Volver a Ajustes</button>`;
+            style="background:var(--surface2);color:var(--text)">← ${t('enl.volverAjustes', 'Volver a Ajustes')}</button>`;
 }
 
 
@@ -299,18 +301,18 @@ window.copiarEnlace = async function(token) {
   const url = urlEnlace(token);
   try {
     await navigator.clipboard.writeText(url);
-    toast('📋 Enlace copiado');
+    toast(t('enl.copiado', '📋 Enlace copiado'));
   } catch {
     // En file:// o sin permiso el portapapeles falla. Se enseña para
     // copiarlo a mano, igual que hace el resumen de alérgenos.
     const campo = document.getElementById('enlUrl');
     if (campo) { campo.select(); return; }
-    document.getElementById('comidaModalTitulo').textContent = 'Copia el enlace';
+    document.getElementById('comidaModalTitulo').textContent = t('enl.copiaManual', 'Copia el enlace');
     document.getElementById('comidaModalCuerpo').innerHTML =
       `<textarea rows="3" readonly style="font-size:.8rem">${esc(url)}</textarea>`;
     document.getElementById('comidaModalBtns').innerHTML = `
       <button class="btn" onclick="abrirAjustes()"
-              style="background:var(--surface2);color:var(--text)">← Volver</button>`;
+              style="background:var(--surface2);color:var(--text)">← ${t('btn.volver', 'Volver')}</button>`;
   }
 };
 
@@ -322,18 +324,18 @@ window.copiarEnlace = async function(token) {
 window.revocarEnlace = async function(btn, id) {
   if (btn.dataset.seguro !== 'si') {
     btn.dataset.seguro = 'si';
-    btn.textContent = '¿Seguro?';
+    btn.textContent = t('enl.seguro', '¿Seguro?');
     setTimeout(() => {
       if (btn.isConnected && btn.dataset.seguro === 'si') {
         btn.dataset.seguro = '';
-        btn.textContent = 'Desactivar';
+        btn.textContent = t('enl.desactivar', 'Desactivar');
       }
     }, 4000);
     return;
   }
 
   btn.disabled = true;
-  btn.textContent = 'Desactivando…';
+  btn.textContent = t('enl.desactivando', 'Desactivando…');
 
   // Se marca, no se borra: así quien abra el enlace lee «ya no está
   // activo» en vez de un error genérico.
@@ -346,12 +348,12 @@ window.revocarEnlace = async function(btn, id) {
 
   if (error || !data || !data.length) {
     console.error(error);
-    toast('No se ha podido desactivar');
+    toast(t('enl.noDesactivado', 'No se ha podido desactivar'));
     btn.disabled = false;
-    btn.textContent = 'Desactivar';
+    btn.textContent = t('enl.desactivar', 'Desactivar');
     return;
   }
 
-  toast('🔒 Enlace desactivado');
+  toast(t('enl.desactivado', '🔒 Enlace desactivado'));
   pintarEnlaces();
 };

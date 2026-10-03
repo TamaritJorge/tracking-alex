@@ -80,7 +80,7 @@ const COLORES_CACA = {
   mostaza:     { label: 'Amarillo mostaza', hex: '#d4a017' },
   amarillo:    { label: 'Amarillo claro',   hex: '#f2c94c' },
   verde:       { label: 'Verdoso',          hex: '#4d9c5a' },
-  marron:      { label: 'Marrón',           hex: '#8a5a34' },
+  marron:      { label: 'Marrón',          hex: '#8a5a34' },
   naranja:     { label: 'Naranja',          hex: '#e07b39' },
   negro:       { label: 'Negro (meconio)',  hex: '#3b3b3b' },
   blanquecino: { label: 'Blanquecino ⚠️',    hex: '#e8e4d9' },
@@ -90,8 +90,14 @@ const COLORES_CACA = {
 const COLOR_CACA_DEF = 'mostaza';
 const COLOR_PIPI     = '#38bdf8';
 
+/* El label se traduce AQUÍ y no en COLORES_CACA: ese objeto se construye
+   al cargar el fichero, antes de que se sepa el idioma, y además hay que
+   poder cambiar de idioma sin recargar. El español del objeto es el valor
+   por defecto, como en todo el proyecto. */
 function infoColor(clave) {
-  return COLORES_CACA[clave] || { label: clave || '—', hex: '#8a5a34' };
+  const c = COLORES_CACA[clave];
+  if (!c) return { label: clave || '—', hex: '#8a5a34' };
+  return { label: t('color.' + clave, c.label), hex: c.hex };
 }
 
 /* ── Estado ────────────────────────────────────────────────── */
@@ -138,6 +144,26 @@ function esc(s) {
 function enganchar(id, evento, fn) {
   const el = document.getElementById(id);
   if (el) el.addEventListener(evento, fn);
+}
+
+/* Abre el modal compartido dejando dicho QUIÉN lo pintó.
+
+   Lo usa cambiarIdioma() para repintarlo traducido sin adivinar. Antes lo
+   adivinaba olfateando si el título empezaba por '⚙', y eso ataba el
+   idioma del texto a la lógica: traducir ese título rompía el repintado
+   en silencio.
+
+   Las pantallas que necesitan argumentos —la ficha de un alimento, editar
+   un hijo— llaman sin nombre: se quedan en el idioma en que se abrieron,
+   que es mucho mejor que repintar encima una pantalla distinta. Por eso
+   el atributo se BORRA cuando no se pasa nombre; si se quedara el
+   anterior, abrir una ficha y cambiar de idioma te dejaría Ajustes. */
+function abrirModal(repintar) {
+  const m = document.getElementById('comidaModal');
+  if (!m) return;
+  if (repintar) m.dataset.repintar = repintar;
+  else delete m.dataset.repintar;
+  m.style.display = '';
 }
 
 let toastTimer;
@@ -279,10 +305,11 @@ function htmlCantidad(valor = 0) {
 function htmlColores(valor = COLOR_CACA_DEF) {
   const botones = Object.entries(COLORES_CACA).map(([clave, c]) => {
     const sel = clave === valor;
-    const ojo = /⚠/.test(c.label);          // los dos de aviso llevan ⚠️
+    const etiq = infoColor(clave).label;    // traducida
+    const ojo  = /⚠/.test(etiq);            // los dos de aviso llevan ⚠️
     return `<button type="button" class="color-btn${sel ? ' sel' : ''}" `
-         + `data-v="${clave}" aria-pressed="${sel}" aria-label="${esc(c.label)}" `
-         + `title="${esc(c.label)}" style="--muestra:${c.hex}">`
+         + `data-v="${clave}" aria-pressed="${sel}" aria-label="${esc(etiq)}" `
+         + `title="${esc(etiq)}" style="--muestra:${c.hex}">`
          + (ojo ? '<span class="color-ojo" aria-hidden="true">⚠️</span>' : '')
          + `</button>`;
   }).join('');
@@ -490,7 +517,8 @@ function avisarSuscripcion() {
   el.textContent = dias > 0
     ? t2('plan.prueba', 'Prueba gratuita: quedan {n} {dias}.',
           { n: dias, dias: plural(dias, 'día', 'días', 'dia') })
-    : 'La prueba ha terminado. Puedes consultar y exportar todo, pero no añadir registros nuevos.';
+    : t('plan.terminada', 'La prueba ha terminado. Puedes consultar y exportar todo, '
+      + 'pero no añadir registros nuevos.');
 }
 
 /* ─────────────────────────────────────────────────────
@@ -693,7 +721,7 @@ enganchar('registroBtn', 'click', async () => {
   const errEl = document.getElementById('loginErr');
 
   if (!email || pwd.length < 8) {
-    errEl.textContent = 'Pon un correo y una contraseña de al menos 8 caracteres.';
+    errEl.textContent = t('auth.corto', 'Pon un correo y una contraseña de al menos 8 caracteres.');
     errEl.style.display = '';
     return;
   }
@@ -708,17 +736,17 @@ enganchar('registroBtn', 'click', async () => {
   errEl.style.display = '';
   errEl.textContent = error
     ? traducirAuth(error)
-    : 'Cuenta creada. Mira el correo para confirmarla y luego entra.';
+    : t('auth.creada', 'Cuenta creada. Mira el correo para confirmarla y luego entra.');
 });
 
 function traducirAuth(error) {
   const m = (error && error.message) || '';
-  if (/Invalid login credentials/i.test(m)) return 'Correo o contraseña incorrectos.';
-  if (/already registered/i.test(m))        return 'Ese correo ya tiene cuenta. Entra en vez de registrarte.';
-  if (/Email not confirmed/i.test(m))       return 'Confirma el correo antes de entrar.';
-  if (/provider is not enabled/i.test(m))   return 'El acceso con Google aún no está configurado en Supabase.';
-  if (/rate limit|too many/i.test(m))       return 'Demasiados intentos. Espera un minuto.';
-  return m || 'No se ha podido completar.';
+  if (/Invalid login credentials/i.test(m)) return t('auth.malas', 'Correo o contraseña incorrectos.');
+  if (/already registered/i.test(m))        return t('auth.yaExiste', 'Ese correo ya tiene cuenta. Entra en vez de registrarte.');
+  if (/Email not confirmed/i.test(m))       return t('auth.sinConfirmar', 'Confirma el correo antes de entrar.');
+  if (/provider is not enabled/i.test(m))   return t('auth.sinGoogle', 'El acceso con Google aún no está configurado en Supabase.');
+  if (/rate limit|too many/i.test(m))       return t('auth.muchos', 'Demasiados intentos. Espera un minuto.');
+  return m || t('auth.generico', 'No se ha podido completar.');
 }
 
 /* ─────────────────────────────────────────────────────
@@ -997,8 +1025,8 @@ function renderResumen() {
     // Distinguir "aún no hay datos" de "las hay, pero demasiado juntas":
     // si no, con dos pesadas seguidas el aviso despista.
     trend = pesos.length >= 2
-      ? `<div class="sum-trend nd">g/día: pesadas muy juntas</div>`
-      : `<div class="sum-trend nd">g/día: faltan pesadas</div>`;
+      ? `<div class="sum-trend nd">${esc(t('sum.juntas', 'g/día: pesadas muy juntas'))}</div>`
+      : `<div class="sum-trend nd">${esc(t('sum.faltan', 'g/día: faltan pesadas'))}</div>`;
   } else {
     const g     = Math.round(tend.gPorDia);
     const signo = g > 0 ? '+' : '';
@@ -1006,19 +1034,24 @@ function renderResumen() {
     let clase, porque;
     if (necesario !== null && g >= Math.round(necesario)) {
       clase  = 'ok';
-      porque = 'Mantiene su percentil';
+      porque = t('sum.mantiene', 'Mantiene su percentil');
     } else if (primerMes && g < OBJETIVO_G_DIA) {
       clase  = 'bajo';
-      porque = 'En el primer mes se suelen esperar al menos '
-             + OBJETIVO_G_DIA + ' g/día';
+      porque = t2('sum.primerMes',
+        'En el primer mes se suelen esperar al menos {o} g/día',
+        { o: OBJETIVO_G_DIA });
     } else {
       clase  = 'justo';
-      porque = 'Por debajo de lo que haría falta para seguir por el mismo '
-             + 'percentil. Bajar de percentil no es, por sí solo, un problema';
+      porque = t('sum.pordebajo',
+        'Por debajo de lo que haría falta para seguir por el mismo percentil. '
+        + 'Bajar de percentil no es, por sí solo, un problema');
     }
 
-    trend = `<div class="sum-trend ${clase}" title="${porque}. Ajuste sobre ${tend.n} pesadas de los últimos ${tend.dias.toFixed(1)} días">`
-          + `${signo}${g} g/día</div>`;
+    const ajuste = t2('sum.ajuste',
+      'Ajuste sobre {n} pesadas de los últimos {d} días',
+      { n: tend.n, d: numero(tend.dias, 1) });
+    trend = `<div class="sum-trend ${clase}" title="${esc(porque)}. ${esc(ajuste)}">`
+          + `${signo}${g} ${esc(t('u.gdia', 'g/día'))}</div>`;
   }
 
   // Percentil OMS de la última pesada (peso para la edad)
@@ -1027,9 +1060,11 @@ function renderResumen() {
   let pctTxt = '';
   if (ultimo) {
     pctTxt = pct
-      ? `<div class="sum-pct" title="Peso para la edad (OMS). ${Math.floor(pct.dias)} días de edad, z = ${pct.z.toFixed(2)}">`
-        + `${textoPercentil(pct.pct)} <span class="sum-pct-lbl">OMS</span></div>`
-      : '<div class="sum-pct nd">percentil n/d</div>';
+      ? `<div class="sum-pct" title="${esc(t2('sum.pctTit',
+            'Peso para la edad (OMS). {d} días de edad, z = {z}',
+            { d: Math.floor(pct.dias), z: numero(pct.z, 2) }))}">`
+        + `${textoPercentil(pct.pct)} <span class="sum-pct-lbl">${esc(t('sum.oms', 'OMS'))}</span></div>`
+      : `<div class="sum-pct nd">${esc(t('sum.pctNd', 'percentil n/d'))}</div>`;
   }
 
   /* Línea de referencia.
@@ -1038,9 +1073,18 @@ function renderResumen() {
      llega. No es eso: es la pendiente que hace falta para seguir por el
      MISMO percentil, y bajar de percentil no es enfermar. Ahora se dice
      lo que de verdad significa, con el percentil delante. */
+  const needTit = t('sum.needTit',
+    'Pendiente de la curva de la OMS en su punto actual: lo que tendría que '
+    + 'ganar para seguir por la misma línea. Cambia con la edad —sube hasta las '
+    + '3 semanas y luego baja— y bajar de percentil no es, por sí solo, un problema.');
+
   const needTxt = (tend && necesario !== null)
-    ? `<div class="sum-need" title="Pendiente de la curva de la OMS en su punto actual: lo que tendría que ganar para seguir por la misma línea. Cambia con la edad —sube hasta las 3 semanas y luego baja— y bajar de percentil no es, por sí solo, un problema.">`
-      + `${Math.round(necesario)} g/día para ${pct ? 'mantener ' + textoPercentil(pct.pct) : 'mantener su percentil'}</div>`
+    ? `<div class="sum-need" title="${esc(needTit)}">`
+      + `${esc(pct
+          ? t2('sum.need',   '{g} g/día para mantener {p}',
+               { g: Math.round(necesario), p: textoPercentil(pct.pct) })
+          : t2('sum.needSin', '{g} g/día para mantener su percentil',
+               { g: Math.round(necesario) }))}</div>`
     : '';
 
   // Cada casilla depende de su módulo: si la familia no se saca leche,
@@ -1053,12 +1097,12 @@ function renderResumen() {
     casillas.push(`
     <div class="sum-item">
       <div class="sum-val">${pipis}</div>
-      <div class="sum-lbl">💧 Pipís</div>
+      <div class="sum-lbl">💧 ${esc(t('sum.pipis', 'Pipís'))}</div>
     </div>`);
     casillas.push(`
     <div class="sum-item">
       <div class="sum-val">${cacas}</div>
-      <div class="sum-lbl">💩 Cacas</div>
+      <div class="sum-lbl">💩 ${esc(t('sum.cacas', 'Cacas'))}</div>
     </div>`);
   }
 
@@ -1069,8 +1113,9 @@ function renderResumen() {
       ${trend}
       ${needTxt}
       ${pctTxt}
-      <div class="sum-lbl">Último peso</div>
-      <div class="sum-extra">${ultimo ? esc(fmtFechaHora(ultimo.fecha_hora)) : 'sin datos'}</div>
+      <div class="sum-lbl">${esc(t('sum.ultimoPeso', 'Último peso'))}</div>
+      <div class="sum-extra">${ultimo ? esc(fmtFechaHora(ultimo.fecha_hora))
+                                      : esc(t('sum.sinDatos', 'sin datos'))}</div>
     </div>`);
   }
 
@@ -1078,8 +1123,8 @@ function renderResumen() {
     casillas.push(`
     <div class="sum-item">
       <div class="sum-val">${mlIzq + mlDer} ml</div>
-      <div class="sum-lbl">🍼 Leche</div>
-      <div class="sum-extra">Izq ${mlIzq} · Der ${mlDer}</div>
+      <div class="sum-lbl">🍼 ${esc(t('sum.leche', 'Leche'))}</div>
+      <div class="sum-extra">${esc(t('sum.izq', 'Izq'))} ${mlIzq} · ${esc(t('sum.der', 'Der'))} ${mlDer}</div>
     </div>`);
   }
 
@@ -1099,8 +1144,8 @@ function renderResumen() {
       casillas.push(`
     <div class="sum-item">
       <div class="sum-val">${c.probados}</div>
-      <div class="sum-lbl">🥑 Alimentos</div>
-      <div class="sum-extra">de ${c.total} · en total</div>
+      <div class="sum-lbl">🥑 ${esc(t('sum.alimentos', 'Alimentos'))}</div>
+      <div class="sum-extra">${esc(t2('sum.deTotal', 'de {n} · en total', { n: c.total }))}</div>
     </div>`);
 
       // Una reacción es lo más importante que puede haber aquí, así que
@@ -1108,10 +1153,10 @@ function renderResumen() {
       casillas.push(`
     <div class="sum-item">
       <div class="sum-val">${c.alergIntro}/${c.alergTotal}</div>
-      <div class="sum-lbl">⚠️ Alérgenos</div>
+      <div class="sum-lbl">⚠️ ${esc(t('sum.alergenos', 'Alérgenos'))}</div>
       ${c.conReaccion
-        ? `<div class="sum-trend bajo">${c.conReaccion} con reacción</div>`
-        : '<div class="sum-extra">sin reacciones</div>'}
+        ? `<div class="sum-trend bajo">${esc(t2('sum.conReaccion', '{n} con reacción', { n: c.conReaccion }))}</div>`
+        : `<div class="sum-extra">${esc(t('sum.sinReaccion', 'sin reacciones'))}</div>`}
     </div>`);
     }
   }
@@ -1122,7 +1167,8 @@ function renderResumen() {
 
   const html = casillas.length
     ? casillas.join('')
-    : '<p class="hint-txt" style="margin:0">Todo está oculto. Se enciende de nuevo en ⚙️ Ajustes.</p>';
+    : `<p class="hint-txt" style="margin:0">${esc(t('sum.todoOculto',
+        'Todo está oculto. Se enciende de nuevo en ⚙️ Ajustes.'))}</p>`;
 
   // La lista de primeros pasos se cuelga de aquí: son ocho los sitios
   // que llaman a renderResumen() —cargar datos, cambiar de pestaña, el

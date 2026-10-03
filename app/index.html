@@ -35,7 +35,37 @@
 
   <!-- Instalable en la pantalla de inicio. En iPhone no es un adorno:
        es la unica forma de que lleguen las notificaciones. -->
-  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="manifest" href="manifest.webmanifest" id="manifiesto">
+
+  <!-- El manifiesto es lo que ve quien instala la aplicación en el móvil:
+       el nombre, la descripción y el atajo. Un fichero estático no tiene
+       conmutador de idioma, así que hay dos y se elige aquí.
+
+       Va en línea y antes que nada por lo mismo que en el landing: el
+       navegador lee el manifiesto en cuanto analiza la etiqueta, y si se
+       cambiara más tarde algunos ya se habrían quedado con el otro.
+
+       Se lee la MISMA clave de localStorage que usa idiomas.js. -->
+  <script>
+    (function () {
+      var L = 'es';
+      try {
+        var g = localStorage.getItem('idioma');
+        if (g === 'es' || g === 'en') {
+          L = g;
+        } else {
+          var nav = (navigator.languages && navigator.languages[0])
+                 || navigator.language || 'es';
+          if (nav.slice(0, 2).toLowerCase() === 'en') L = 'en';
+        }
+      } catch (e) { /* modo privado: español */ }
+
+      if (L === 'en') {
+        var m = document.getElementById('manifiesto');
+        if (m) m.setAttribute('href', 'manifest-en.webmanifest');
+      }
+    })();
+  </script>
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Tracking Alex">
@@ -114,7 +144,7 @@
       <span class="logo-txt"><span class="hide-narrow">Tracking </span><em>Álex</em></span>
     </a>
     <div class="header-right">
-      <button class="icon-btn" id="themeBtn1" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
+      <button class="icon-btn" id="themeBtn1" title="Cambiar tema" aria-label="Cambiar tema" data-i18n-attr="aria-label:aria.tema">🌙</button>
     </div>
   </div>
 
@@ -136,7 +166,7 @@
 
       <div class="field">
         <label for="loginEmail" data-i18n="login.correo">Correo electrónico</label>
-        <input type="email" id="loginEmail" placeholder="tu@correo.com" autocomplete="username">
+        <input type="email" id="loginEmail" placeholder="tu@correo.com" data-i18n-attr="placeholder:ph.correo" autocomplete="username">
       </div>
       <div class="field">
         <label for="loginPwd" data-i18n="login.pwd">Contraseña</label>
@@ -182,15 +212,15 @@
       <span class="logo-txt"><span class="hide-narrow">Tracking </span><em>Álex</em></span>
     </span>
     <div class="header-right">
-      <button class="icon-btn" id="themeBtn3" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
-      <button class="icon-btn" id="logoutBtn2" style="font-size:.8rem">Salir</button>
+      <button class="icon-btn" id="themeBtn3" title="Cambiar tema" aria-label="Cambiar tema" data-i18n-attr="aria-label:aria.tema">🌙</button>
+      <button class="icon-btn" id="logoutBtn2" style="font-size:.8rem" data-i18n="btn.salir">Salir</button>
     </div>
   </div>
 
   <div class="login-wrap">
     <div class="card">
-      <p class="card-title" id="altaTitulo">Vamos a empezar</p>
-      <p class="card-sub" id="altaSub">Sólo se pide una vez</p>
+      <p class="card-title" id="altaTitulo" data-i18n="alta.titulo">Vamos a empezar</p>
+      <p class="card-sub" id="altaSub" data-i18n="alta.sub">Sólo se pide una vez</p>
 
       <!-- Paso 1. El paso 2 vive más abajo, en HTML estático y oculto:
            engancharAlta() corre una sola vez al cargar y engancha por id,
@@ -198,27 +228,27 @@
       <div id="altaPaso1">
 
       <div class="field">
-        <label for="altaFamilia">Nombre de la familia</label>
-        <input type="text" id="altaFamilia" maxlength="60" placeholder="Familia García">
+        <label for="altaFamilia" data-i18n="alta.familia">Nombre de la familia</label>
+        <input type="text" id="altaFamilia" maxlength="60" placeholder="Familia García" data-i18n-attr="placeholder:ph.familia">
       </div>
 
       <div class="field">
-        <label for="altaNombre">Nombre del bebé</label>
-        <input type="text" id="altaNombre" maxlength="40" placeholder="Álex">
+        <label for="altaNombre" data-i18n="alta.bebe">Nombre del bebé</label>
+        <input type="text" id="altaNombre" maxlength="40" placeholder="Álex" data-i18n-attr="placeholder:ph.bebe">
       </div>
 
       <div class="field">
-        <label for="altaFecha">Fecha de nacimiento</label>
+        <label for="altaFecha" data-i18n="alta.nacimiento">Fecha de nacimiento</label>
         <input type="date" id="altaFecha">
       </div>
 
       <div class="field">
-        <label>Sexo</label>
+        <label data-i18n="alta.sexo">Sexo</label>
         <div class="toggle-row" id="rowAltaSexo">
-          <button type="button" class="toggle-opt sel" data-v="nino">Niño</button>
-          <button type="button" class="toggle-opt"     data-v="nina">Niña</button>
+          <button type="button" class="toggle-opt sel" data-v="nino" data-i18n="alta.nino">Niño</button>
+          <button type="button" class="toggle-opt"     data-v="nina" data-i18n="alta.nina">Niña</button>
         </div>
-        <p class="hint-txt" style="margin:8px 0 0">
+        <p class="hint-txt" style="margin:8px 0 0" data-i18n="alta.sexo.txt">
           Hace falta para el percentil de peso: la OMS tiene una curva distinta
           para cada sexo y usar la equivocada desplaza el resultado.
         </p>
@@ -232,29 +262,36 @@
       <div id="altaPaso2" style="display:none">
         <div id="altaModulos"></div>
 
-        <p class="hint-txt" style="margin:14px 0 0">
+        <!-- Gemelos: lleva tres <strong> dentro y data-i18n los borraría -->
+        <p class="hint-txt" style="margin:14px 0 0" lang="es">
           Empieza con lo justo. Las <strong>medicinas</strong>, la
           <strong>comida</strong> y la <strong>extracción</strong> se encienden
           en ⚙️ Ajustes el día que hagan falta, y no se pierde nada por
           tenerlas apagadas ahora.
         </p>
+        <p class="hint-txt" style="margin:14px 0 0" lang="en">
+          Start with just what you need. <strong>Medicines</strong>,
+          <strong>food</strong> and <strong>expressing</strong> switch on in
+          ⚙️ Settings the day they become useful, and you lose nothing by
+          leaving them off for now.
+        </p>
       </div>
 
       <p id="altaErr" class="error-txt" style="display:none"></p>
-      <button class="btn btn-primary" id="altaBtn">Siguiente</button>
+      <button class="btn btn-primary" id="altaBtn" data-i18n="btn.siguiente">Siguiente</button>
       <button class="btn btn-secundario" id="altaAtrasBtn"
-              style="margin-top:8px;display:none">&larr; Atrás</button>
+              style="margin-top:8px;display:none" data-i18n="btn.atras">&larr; Atrás</button>
     </div>
 
     <div class="card" id="altaInvitacion">
-      <p class="card-title">¿Te han invitado?</p>
-      <p class="card-sub">Si tu pareja ya creó la familia, pega aquí su código</p>
+      <p class="card-title" data-i18n="alta.invitado">¿Te han invitado?</p>
+      <p class="card-sub" data-i18n="alta.pegaCodigo">Si tu pareja ya creó la familia, pega aquí su código</p>
       <div class="field">
-        <input type="text" id="altaCodigo" maxlength="12" placeholder="Código de invitación"
+        <input type="text" id="altaCodigo" maxlength="12" placeholder="Código de invitación" data-i18n-attr="placeholder:ph.codigo"
                style="text-transform:uppercase">
       </div>
       <p id="unirErr" class="error-txt" style="display:none"></p>
-      <button class="btn btn-secundario" id="unirBtn">Unirme a la familia</button>
+      <button class="btn btn-secundario" id="unirBtn" data-i18n="alta.unirme">Unirme a la familia</button>
     </div>
   </div>
 </div>
@@ -298,9 +335,9 @@
       <span id="cabeceraHijo"></span>
     </span>
     <div class="header-right">
-      <button class="icon-btn" id="ajustesBtn" title="Ajustes" aria-label="Ajustes">⚙️</button>
-      <button class="icon-btn" id="themeBtn2" title="Cambiar tema" aria-label="Cambiar tema">🌙</button>
-      <button class="icon-btn" id="logoutBtn" style="font-size:.8rem">Salir</button>
+      <button class="icon-btn" id="ajustesBtn" title="Ajustes" aria-label="Ajustes" data-i18n-attr="aria-label:aria.ajustes">⚙️</button>
+      <button class="icon-btn" id="themeBtn2" title="Cambiar tema" aria-label="Cambiar tema" data-i18n-attr="aria-label:aria.tema">🌙</button>
+      <button class="icon-btn" id="logoutBtn" style="font-size:.8rem" data-i18n="btn.salir">Salir</button>
     </div>
   </div>
 
@@ -331,86 +368,86 @@
            listeners de registros.js y los ids de resetFechas() se enganchan
            una sola vez al cargar la pagina. -->
       <div class="chip-row" id="selectorRegistro">
-        <button type="button" class="chip sel" data-reg="pipi"       aria-pressed="true"  data-modulo="panales">💧 Pipí</button>
-        <button type="button" class="chip"     data-reg="caca"       aria-pressed="false" data-modulo="panales">💩 Caca</button>
-        <button type="button" class="chip"     data-reg="peso"       aria-pressed="false" data-modulo="peso">⚖️ Peso</button>
-        <button type="button" class="chip"     data-reg="extraccion" aria-pressed="false" data-modulo="extraccion">🍼 Leche</button>
+        <button type="button" class="chip sel" data-reg="pipi"       aria-pressed="true"  data-modulo="panales" data-i18n="reg.pipi">💧 Pipí</button>
+        <button type="button" class="chip"     data-reg="caca"       aria-pressed="false" data-modulo="panales" data-i18n="reg.caca">💩 Caca</button>
+        <button type="button" class="chip"     data-reg="peso"       aria-pressed="false" data-modulo="peso" data-i18n="reg.peso">⚖️ Peso</button>
+        <button type="button" class="chip"     data-reg="extraccion" aria-pressed="false" data-modulo="extraccion" data-i18n="reg.leche">🍼 Leche</button>
       </div>
 
-      <p id="registrarVacio" class="hint-txt" style="display:none">
+      <p id="registrarVacio" class="hint-txt" style="display:none" data-i18n="reg.todoOculto">
         Están todos los módulos ocultos. Se encienden en ⚙️ Ajustes.
       </p>
 
       <!-- Pipí -->
       <div class="card" data-modulo="panales" data-reg="pipi">
-        <p class="card-title">💧 Pipí</p>
-        <p class="card-sub">Cantidad y aspecto</p>
+        <p class="card-title" data-i18n="reg.pipi">💧 Pipí</p>
+        <p class="card-sub" data-i18n="reg.pipi.sub">Cantidad y aspecto</p>
 
         <div class="field">
-          <label>Cantidad (0 = nada · 10 = muchísimo)</label>
+          <label data-i18n="reg.cantidad.m">Cantidad (0 = nada · 10 = muchísimo)</label>
           <div class="qty-row" id="rowPipiQty"></div>
         </div>
 
         <div class="field">
-          <label>Aspecto</label>
+          <label data-i18n="reg.aspecto">Aspecto</label>
           <div class="toggle-row" id="rowPipiTrans">
-            <button type="button" class="toggle-opt sel" data-v="si" aria-pressed="true">Transparente</button>
-            <button type="button" class="toggle-opt"     data-v="no" aria-pressed="false">No transparente</button>
+            <button type="button" class="toggle-opt sel" data-v="si" aria-pressed="true" data-i18n="reg.transp">Transparente</button>
+            <button type="button" class="toggle-opt"     data-v="no" aria-pressed="false" data-i18n="reg.noTransp">No transparente</button>
           </div>
         </div>
 
         <details class="mas">
-          <summary>Nota o cambiar la hora <span class="eco-fecha" id="pipiFechaEco"></span></summary>
+          <summary><span data-i18n="reg.notaHora">Nota o cambiar la hora</span> <span class="eco-fecha" id="pipiFechaEco"></span></summary>
           <div class="field">
-            <label for="pipiNota">Nota (opcional)</label>
-            <input type="text" id="pipiNota" placeholder="Color raro, olor, manchitas…" maxlength="200">
+            <label for="pipiNota" data-i18n="reg.nota">Nota (opcional)</label>
+            <input type="text" id="pipiNota" placeholder="Color raro, olor, manchitas…" data-i18n-attr="placeholder:ph.notaPipi" maxlength="200">
           </div>
           <div class="field" style="margin-bottom:0">
-            <label for="pipiFecha">Fecha y hora</label>
+            <label for="pipiFecha" data-i18n="reg.fechaHora">Fecha y hora</label>
             <input type="datetime-local" id="pipiFecha">
           </div>
         </details>
 
-        <button class="btn btn-primary" id="btnPipi">Guardar pipí</button>
+        <button class="btn btn-primary" id="btnPipi" data-i18n="reg.guardaPipi">Guardar pipí</button>
       </div>
       <!-- Caca -->
       <div class="card" data-modulo="panales" data-reg="caca">
-        <p class="card-title">💩 Caca</p>
-        <p class="card-sub">Cantidad y color</p>
+        <p class="card-title" data-i18n="reg.caca">💩 Caca</p>
+        <p class="card-sub" data-i18n="reg.caca.sub">Cantidad y color</p>
 
         <div class="field">
-          <label>Cantidad (0 = nada · 10 = muchísima)</label>
+          <label data-i18n="reg.cantidad.f">Cantidad (0 = nada · 10 = muchísima)</label>
           <div class="qty-row" id="rowCacaQty"></div>
         </div>
 
         <div class="field">
-          <label>Color</label>
+          <label data-i18n="reg.color">Color</label>
           <div class="color-row" id="rowCacaColor"></div>
         </div>
-        <p class="hint-txt">Blanquecina o con sangre ⚠️: coméntalo con el pediatra.</p>
+        <p class="hint-txt" data-i18n="reg.caca.aviso">Blanquecina o con sangre ⚠️: coméntalo con el pediatra.</p>
 
         <details class="mas">
-          <summary>Nota o cambiar la hora <span class="eco-fecha" id="cacaFechaEco"></span></summary>
+          <summary><span data-i18n="reg.notaHora">Nota o cambiar la hora</span> <span class="eco-fecha" id="cacaFechaEco"></span></summary>
           <div class="field">
-            <label for="cacaNota">Nota (opcional)</label>
-            <input type="text" id="cacaNota" placeholder="Textura, olor, si le costó…" maxlength="200">
+            <label for="cacaNota" data-i18n="reg.nota">Nota (opcional)</label>
+            <input type="text" id="cacaNota" placeholder="Textura, olor, si le costó…" data-i18n-attr="placeholder:ph.nota" maxlength="200">
           </div>
           <div class="field" style="margin-bottom:0">
-            <label for="cacaFecha">Fecha y hora</label>
+            <label for="cacaFecha" data-i18n="reg.fechaHora">Fecha y hora</label>
             <input type="datetime-local" id="cacaFecha">
           </div>
         </details>
 
-        <button class="btn btn-primary" id="btnCaca">Guardar caca</button>
+        <button class="btn btn-primary" id="btnCaca" data-i18n="reg.guardaCaca">Guardar caca</button>
       </div>
 
       <!-- Peso -->
       <div class="card" data-modulo="peso" data-reg="peso">
-        <p class="card-title">⚖️ Peso del bebé</p>
-        <p class="card-sub">En gramos</p>
+        <p class="card-title" data-i18n="reg.peso.tit">⚖️ Peso del bebé</p>
+        <p class="card-sub" data-i18n="reg.peso.sub">En gramos</p>
 
         <div class="field">
-          <label for="pesoG">Peso (gramos)</label>
+          <label for="pesoG" data-i18n="reg.peso.lbl">Peso (gramos)</label>
           <input type="number" id="pesoG" placeholder="3000"
                  min="500" max="10000" inputmode="numeric">
         </div>
@@ -420,37 +457,37 @@
           <input type="datetime-local" id="pesoFecha">
         </div>
 
-        <button class="btn btn-primary" id="btnPeso">Guardar peso</button>
+        <button class="btn btn-primary" id="btnPeso" data-i18n="reg.guardaPeso">Guardar peso</button>
       </div>
 
       <!-- Extracción -->
       <div class="card" data-modulo="extraccion" data-reg="extraccion">
-        <p class="card-title">🍼 Extracción de leche</p>
-        <p class="card-sub">Registra el pecho y los ml extraídos</p>
+        <p class="card-title" data-i18n="reg.ext.tit">🍼 Extracción de leche</p>
+        <p class="card-sub" data-i18n="reg.ext.sub">Registra el pecho y los ml extraídos</p>
 
         <div class="field">
-          <label>Pecho</label>
+          <label data-i18n="reg.pecho">Pecho</label>
           <div class="toggle-row" id="rowPecho">
-            <button type="button" class="toggle-opt sel" data-v="izquierdo" aria-pressed="true">Izquierdo</button>
-            <button type="button" class="toggle-opt"     data-v="derecho"   aria-pressed="false">Derecho</button>
+            <button type="button" class="toggle-opt sel" data-v="izquierdo" aria-pressed="true" data-i18n="reg.izq">Izquierdo</button>
+            <button type="button" class="toggle-opt"     data-v="derecho"   aria-pressed="false" data-i18n="reg.der">Derecho</button>
           </div>
         </div>
 
         <div class="field">
-          <label for="extMl">Cantidad (ml)</label>
+          <label for="extMl" data-i18n="reg.ml">Cantidad (ml)</label>
           <input type="number" id="extMl" placeholder="0"
                  min="0" max="500" inputmode="decimal" step="0.5">
         </div>
 
         <details class="mas">
-          <summary>Cambiar la hora <span class="eco-fecha" id="extFechaEco"></span></summary>
+          <summary><span data-i18n="reg.cambiarHora">Cambiar la hora</span> <span class="eco-fecha" id="extFechaEco"></span></summary>
           <div class="field" style="margin-bottom:0">
-            <label for="extFecha">Fecha y hora</label>
+            <label for="extFecha" data-i18n="reg.fechaHora">Fecha y hora</label>
             <input type="datetime-local" id="extFecha">
           </div>
         </details>
 
-        <button class="btn btn-primary" id="btnExt">Guardar extracción</button>
+        <button class="btn btn-primary" id="btnExt" data-i18n="reg.guardaExt">Guardar extracción</button>
       </div>
 
 
@@ -466,11 +503,11 @@
         <summary>📋 <span data-i18n="tab.historial">Historial de registros</span></summary>
         <div style="padding:12px 12px 14px">
       <div class="chip-row" id="filtroRow">
-        <button type="button" class="chip sel" data-f="todo"       aria-pressed="true">Todo</button>
-        <button type="button" class="chip"     data-f="extraccion" aria-pressed="false" data-modulo="extraccion">🍼 Leche</button>
-        <button type="button" class="chip"     data-f="peso"       aria-pressed="false" data-modulo="peso">⚖️ Peso</button>
-        <button type="button" class="chip"     data-f="caca"       aria-pressed="false" data-modulo="panales">💩 Caca</button>
-        <button type="button" class="chip"     data-f="pipi"       aria-pressed="false" data-modulo="panales">💧 Pipí</button>
+        <button type="button" class="chip sel" data-f="todo"       aria-pressed="true" data-i18n="hist.todo">Todo</button>
+        <button type="button" class="chip"     data-f="extraccion" aria-pressed="false" data-modulo="extraccion" data-i18n="reg.leche">🍼 Leche</button>
+        <button type="button" class="chip"     data-f="peso"       aria-pressed="false" data-modulo="peso" data-i18n="reg.peso">⚖️ Peso</button>
+        <button type="button" class="chip"     data-f="caca"       aria-pressed="false" data-modulo="panales" data-i18n="reg.caca">💩 Caca</button>
+        <button type="button" class="chip"     data-f="pipi"       aria-pressed="false" data-modulo="panales" data-i18n="reg.pipi">💧 Pipí</button>
       </div>
 
       <div class="card card-no-pad">
@@ -478,10 +515,10 @@
           <table>
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>Tipo</th>
-                <th>Detalle</th>
-                <th id="thAcc">Acc.</th>
+                <th data-i18n="hist.fecha">Fecha</th>
+                <th data-i18n="hist.tipo">Tipo</th>
+                <th data-i18n="hist.detalle">Detalle</th>
+                <th id="thAcc" data-i18n="hist.acc">Acc.</th>
               </tr>
             </thead>
             <tbody id="histBody">
@@ -518,20 +555,20 @@
       </div>
 
       <div class="card" data-modulo="peso" data-captura="Peso">
-        <p class="card-title">Peso</p>
+        <p class="card-title" data-i18n="graf.peso">Peso</p>
         <div class="legend">
           <div class="legend-item">
             <div class="legend-dot" style="background:var(--weight)"></div>
-            <span>Pesadas</span>
+            <span data-i18n="leg.pesadas">Pesadas</span>
           </div>
           <div class="legend-item">
             <div class="legend-dash"
                  style="background:repeating-linear-gradient(90deg,var(--weight) 0 5px,transparent 5px 9px)"></div>
-            <span>Tendencia</span>
+            <span data-i18n="leg.tendencia">Tendencia</span>
           </div>
           <div class="legend-item">
             <div class="legend-band"></div>
-            <span>Percentiles OMS (niños)</span>
+            <span id="leyendaPercentiles">Percentiles OMS</span>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="chartPeso"></canvas></div>
@@ -540,7 +577,7 @@
       </div>
 
       <div class="card" data-modulo="panales" data-captura="Pipís y cacas en 24 h">
-        <p class="card-title">Pipís y cacas en 24 h</p>
+        <p class="card-title" data-i18n="graf.panales">Pipís y cacas en 24 h</p>
         <!-- La leyenda la pinta graficas.js: depende de qué colores de caca
              existan de verdad en los datos. -->
         <div class="legend" id="leyendaPanal"></div>
@@ -549,15 +586,15 @@
       </div>
 
       <div class="card" data-modulo="extraccion" data-captura="Extracciones de leche">
-        <p class="card-title">Extracciones de leche</p>
+        <p class="card-title" data-i18n="graf.ext">Extracciones de leche</p>
         <div class="legend">
           <div class="legend-item">
             <div class="legend-dot" style="background:var(--left)"></div>
-            <span>Izquierdo</span>
+            <span data-i18n="reg.izq">Izquierdo</span>
           </div>
           <div class="legend-item">
             <div class="legend-dot" style="background:var(--right)"></div>
-            <span>Derecho</span>
+            <span data-i18n="reg.der">Derecho</span>
           </div>
         </div>
         <div class="chart-wrap"><canvas id="chartExt"></canvas></div>
@@ -580,33 +617,56 @@
 
       <!-- Información fija: qué mirar y qué no confundir -->
       <div class="card">
-        <p class="card-title">🚨 Si algo va mal</p>
-        <p class="card-sub">Merece la pena leerlo antes de empezar, no durante</p>
+        <p class="card-title" data-i18n="seg.titulo">🚨 Si algo va mal</p>
+        <p class="card-sub" data-i18n="seg.sub">Merece la pena leerlo antes de empezar, no durante</p>
 
         <div class="field">
-          <label>Arcada y atragantamiento no son lo mismo</label>
-          <p class="ficha-txt">
+          <label data-i18n="seg.arcada">Arcada y atragantamiento no son lo mismo</label>
+          <!-- Gemelos por el marcado, y además es el texto más delicado de
+               la aplicación: la distinción ruidoso/silencioso es justo lo
+               que hay que entender, así que en inglés se traduce el
+               contraste, no las palabras. -->
+          <p class="ficha-txt" lang="es">
             La <strong>arcada</strong> es ruidosa: tose, se pone rojo, hace aspavientos.
             Es normal y frecuente al principio, es el cuerpo protegiéndose. No hay que
             hacer nada salvo mantener la calma y no meterle los dedos en la boca.<br><br>
             El <strong>atragantamiento</strong> es silencioso: no sale aire, no tose, se
             queda callado y cambia de color. Ahí sí hay que actuar de inmediato.
           </p>
+          <p class="ficha-txt" lang="en">
+            <strong>Gagging</strong> is noisy: coughing, red in the face, arms
+            flapping. It is normal and it happens a lot at the start — it is the
+            body protecting itself. There is nothing to do except stay calm and
+            keep your fingers out of their mouth.<br><br>
+            <strong>Choking</strong> is silent: no air, no cough, quiet, and the
+            colour changes. That one needs acting on straight away.
+          </p>
         </div>
 
         <div class="field">
-          <label>Señales de reacción alérgica grave</label>
-          <p class="ficha-txt">
+          <label data-i18n="seg.alergia">Señales de reacción alérgica grave</label>
+          <p class="ficha-txt" data-i18n="seg.alergia.txt">
             Dificultad para respirar, pitidos, hinchazón de labios, lengua o cara,
             vómitos repetidos, palidez o decaimiento súbito, ronchas por todo el cuerpo.
           </p>
         </div>
 
-        <div class="aviso aviso-stop">
+        <!-- Bloques gemelos y no data-i18n: lleva un <strong> dentro, y
+             data-i18n asigna textContent, que se lo llevaría por delante.
+
+             Y el número cambia, que es lo que de verdad obliga a separar
+             los dos textos: el 112 es correcto en toda la UE y falso
+             fuera. En inglés se pide el número local y se menciona el 112
+             para quien esté en Europa. -->
+        <div class="aviso aviso-stop" lang="es">
           Ante cualquiera de esas señales: <strong>112</strong>.
         </div>
+        <div class="aviso aviso-stop" lang="en">
+          If you see any of those: <strong>call your emergency number</strong>
+          — 112 across the EU, 999 in the UK, 911 in the US.
+        </div>
 
-        <p class="hint-txt" style="margin-top:12px">
+        <p class="hint-txt" style="margin-top:12px" data-i18n="seg.rcp">
           Un curso de RCP para bebés dura un par de horas y se olvida mucho menos que
           un texto. Esta app es un registro: no sustituye a la pediatra.
         </p>
@@ -630,7 +690,7 @@
       <div class="modal-btns" id="comidaModalBtns"></div>
       <div class="modal-btns">
         <button class="btn" onclick="cerrarComidaModal()"
-                style="background:var(--surface2);color:var(--text)">Cerrar</button>
+                style="background:var(--surface2);color:var(--text)" data-i18n="btn.cerrar">Cerrar</button>
       </div>
     </div>
   </div>
@@ -638,12 +698,12 @@
   <!-- ── MODAL DE EDICIÓN ───────────────────── -->
   <div id="editModal" class="modal-overlay" style="display:none">
     <div class="modal-box">
-      <p class="modal-title">✏️ Editar registro</p>
+      <p class="modal-title" data-i18n="edit.titulo">✏️ Editar registro</p>
       <div id="editForm"></div>
       <div class="modal-btns">
-        <button class="btn btn-primary" id="btnSaveEdit">Guardar cambios</button>
+        <button class="btn btn-primary" id="btnSaveEdit" data-i18n="btn.guardar2">Guardar cambios</button>
         <button class="btn" id="btnCancelEdit"
-                style="background:var(--surface2);color:var(--text)">Cancelar</button>
+                style="background:var(--surface2);color:var(--text)" data-i18n="btn.cancelar">Cancelar</button>
       </div>
     </div>
   </div>

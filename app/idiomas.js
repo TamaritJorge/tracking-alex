@@ -96,6 +96,26 @@ function plural(n, una, varias, clave) {
 }
 
 /* ─────────────────────────────────────────────────────────────
+   NÚMEROS
+
+   Había siete toFixed() repartidos, y toFixed devuelve SIEMPRE con
+   punto: «3.5». En español eso está mal desde el primer día —se
+   escribe «3,5»— y en inglés está bien por casualidad. Intl sabe
+   cuál toca en cada idioma.
+
+   Sólo para los decimales: los enteros (gramos, mililitros, pipís)
+   se imprimen tal cual a propósito, porque un separador de millares
+   en «4768 g» no aporta nada y rompería la comparación con lo que
+   pone la báscula.
+   ───────────────────────────────────────────────────────────── */
+function numero(n, decimales = 0) {
+  return new Intl.NumberFormat(localeActivo(), {
+    minimumFractionDigits: decimales,
+    maximumFractionDigits: decimales
+  }).format(n);
+}
+
+/* ─────────────────────────────────────────────────────────────
    FECHAS
 
    Sustituyen a los siete toLocaleDateString('es-ES') que había
@@ -128,6 +148,16 @@ function separadorCSV() { return IDIOMAS[idioma].csv; }
    ───────────────────────────────────────────────────────────── */
 function aplicarIdioma() {
   document.documentElement.lang = idioma;
+
+  /* Y data-lang, que es lo que mira el CSS.
+
+     Hay textos que no se pueden traducir con data-i18n: los que llevan
+     <strong> o un enlace dentro, porque esto asigna textContent y se
+     llevaría el marcado por delante. Ésos van como dos elementos
+     hermanos, uno lang="es" y otro lang="en", y el CSS esconde el que no
+     toca — el mismo mecanismo que usa el landing, que no carga este
+     fichero. Una sola bandera para los dos sitios. */
+  document.documentElement.setAttribute('data-lang', idioma);
 
   // Se guarda el texto original ANTES de pisarlo. Sin esto, al pasar a
   // inglés se perdía el español que venía en el HTML y volver al español
@@ -173,20 +203,35 @@ window.cambiarIdioma = function(cual) {
     if (typeof renderResumen  === 'function') renderResumen();
     if (typeof renderTabla    === 'function') renderTabla();
     if (typeof avisarSuscripcion === 'function') avisarSuscripcion();
-    if (typeof tabActual !== 'undefined' && tabActual === 'graficas'
+    if (typeof renderMedicacion === 'function') renderMedicacion();
+    if (typeof pintarBannerMed  === 'function') pintarBannerMed();
+
+    /* La lista de primeros pasos está traducida entera y antes no se
+       repintaba nunca: se quedaba en el idioma anterior hasta recargar. */
+    if (typeof renderPrimerosPasos === 'function') renderPrimerosPasos();
+
+    /* Las gráficas, SIEMPRE que haya alguna dibujada, no sólo si estás
+       mirándolas. Chart.js fija las etiquetas al construirse, así que si
+       sólo se repintaran estando en la pestaña, al volver a ella más tarde
+       seguirían los ejes y la leyenda en el idioma viejo. */
+    if (typeof charts !== 'undefined' && charts && Object.keys(charts).length
         && typeof renderCharts === 'function') renderCharts();
+
     if (typeof moduloActivo === 'function' && moduloActivo('comida')
         && typeof renderComida === 'function') renderComida();
-  if (typeof renderMedicacion === 'function') renderMedicacion();
-  if (typeof pintarBannerMed  === 'function') pintarBannerMed();
   }
 
-  // Si el modal de ajustes está abierto, se repinta para verse traducido
+  /* Si hay un modal abierto, se repinta para verse traducido.
+
+     Antes esto se decidía olfateando un emoji —si el título empezaba por
+     '⚙'—, lo que ataba el idioma del texto a la lógica: traducir ese
+     título rompía el repintado, en silencio. Ahora cada pantalla que se
+     pinta en el modal deja dicho quién la pintó, en un data-, y aquí se
+     la vuelve a llamar por su nombre. */
   const modal = document.getElementById('comidaModal');
-  if (modal && modal.style.display !== 'none'
-      && typeof abrirAjustes === 'function'
-      && document.getElementById('comidaModalTitulo').textContent.indexOf('⚙') === 0) {
-    abrirAjustes();
+  if (modal && modal.style.display !== 'none') {
+    const quien = modal.dataset.repintar;
+    if (quien && typeof window[quien] === 'function') window[quien]();
   }
 };
 
@@ -200,5 +245,7 @@ function htmlSelectorIdioma() {
   </select>`;
 }
 
-// El atributo lang debe estar bien desde el primer pintado, no después
+// Los dos atributos deben estar bien desde el primer pintado, no después:
+// si no, se vería un instante el idioma que no es.
 document.documentElement.lang = idioma;
+document.documentElement.setAttribute('data-lang', idioma);

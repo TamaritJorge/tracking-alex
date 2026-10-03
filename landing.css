@@ -455,3 +455,67 @@ a { color: var(--marca); }
 }
 
 .historia p { color: var(--tinta2); font-size: 0.95rem; }
+
+
+/* ═══════════════════════════════════════════════════════════════
+   LOS DOS IDIOMAS
+
+   Las dos versiones de cada texto viajan en el HTML y aquí se
+   esconde la que no toca. Importa que sea así y no al revés —un
+   solo idioma servido y el otro inyectado con JavaScript—: lo
+   servido lo lee Google, lo inyectado al abrir no.
+
+   El selector lo marca el script en línea del <head>, que pone
+   data-lang en el <html> antes del primer pintado.
+
+   Sin JavaScript no hay data-lang y ninguna de las dos reglas
+   casaría. De eso se encarga un <noscript> en el <head> de cada
+   página, que esconde el inglés y deja el español — que es el
+   idioma del documento que se sirve.
+   ═══════════════════════════════════════════════════════════════ */
+
+[data-lang="es"] [lang="en"],
+[data-lang="en"] [lang="es"] { display: none; }
+
+/* El <html> lleva su propio lang y es antecesor, no descendiente,
+   así que las reglas de arriba no lo tocan. */
+
+.sel-idioma {
+  display: inline-flex;
+  border: 1px solid var(--linea);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sel-idioma button {
+  background: transparent;
+  border: none;
+  color: var(--tinta2);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 7px 10px;
+  cursor: pointer;
+}
+
+.sel-idioma button + button { border-left: 1px solid var(--linea); }
+.sel-idioma button:hover    { color: var(--marca); }
+
+/* El idioma activo. aria-current lo pone el script, así que lo que
+   se ve y lo que lee un lector de pantalla no se separan. */
+.sel-idioma button[aria-current="true"] {
+  background: var(--marca);
+  color: #fff;
+}
+
+.cab-dcha {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* En un móvil estrecho el selector se queda y el botón encoge */
+@media (max-width: 420px) {
+  .cab-dcha .btn { padding: 9px 12px; }
+}

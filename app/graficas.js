@@ -302,23 +302,37 @@ function renderCharts() {
 
     avisoMes.style.display = flojo ? '' : 'none';
     if (flojo) {
-      avisoMes.innerHTML =
-        '⚠️ <strong>Está ganando ' + Math.round(tend.gPorDia) + ' g/día.</strong> '
-        + 'En el primer mes se suelen esperar al menos ' + OBJETIVO_G_DIA + ' g/día. '
-        + 'Con pocas pesadas esta cifra baila mucho, así que mira primero si hay '
-        + 'suficientes; si se mantiene así, coméntalo con tu pediatra.';
+      /* Con t2() y no concatenando: en inglés el número y la unidad no
+         caen en el mismo sitio de la frase. */
+      avisoMes.innerHTML = t2('graf.pocoPeso',
+        '⚠️ <strong>Está ganando {g} g/día.</strong> En el primer mes se suelen '
+        + 'esperar al menos {o} g/día. Con pocas pesadas esta cifra baila mucho, '
+        + 'así que mira primero si hay suficientes; si se mantiene así, '
+        + 'coméntalo con tu pediatra.',
+        { g: Math.round(tend.gPorDia), o: OBJETIVO_G_DIA });
     }
   }
 
   // Texto explicativo bajo la gráfica
+  /* La leyenda decía «(niños)» a fuego, fuera niño o niña, mientras la
+     gráfica sí dibujaba la curva correcta. Se pinta aquí, que es donde
+     se sabe de qué sexo es la curva que se acaba de trazar. */
+  const leyPct = document.getElementById('leyendaPercentiles');
+  if (leyPct) {
+    leyPct.textContent = t2('leg.percentilesSexo', 'Percentiles OMS ({s})',
+      { s: sexoHijo() === 'nina' ? t('alta.ninas', 'niñas') : t('alta.ninos', 'niños') });
+  }
+
   const nota = document.getElementById('notaTendencia');
   if (nota) {
     nota.textContent = tend
-      ? `Estimación a partir de ${tend.n} pesadas de los últimos `
-        + `${tend.dias.toFixed(1)} días (${Math.round(tend.gPorDia)} g/día). `
-        + 'Es una simple recta de tendencia, no una predicción: con pocas '
-        + 'pesadas cambia mucho de un día para otro.'
-      : 'Hacen falta al menos dos pesadas separadas entre sí para estimar la tendencia.';
+      ? t2('graf.tendencia',
+          'Estimación a partir de {n} pesadas de los últimos {d} días '
+          + '({g} g/día). Es una simple recta de tendencia, no una predicción: '
+          + 'con pocas pesadas cambia mucho de un día para otro.',
+          { n: tend.n, d: numero(tend.dias, 1), g: Math.round(tend.gPorDia) })
+      : t('graf.sinTendencia',
+          'Hacen falta al menos dos pesadas separadas entre sí para estimar la tendencia.');
   }
 
   /* ── Pipís y cacas en 24 h ────────────────────────────────────
@@ -417,7 +431,7 @@ function renderCharts() {
               if (ctx.dataset.tipo === 'pipi') {
                 l.push(`${n} ${plural(n, 'pipí', 'pipís', 'pipi')} en 24 h`);
                 l.push(`Éste: cantidad ${m.cantidad} · `
-                     + (m.transparente ? 'transparente' : 'no transparente'));
+                     + (m.transparente ? 'transparente' : t('hist.noTransp', 'no transparente')));
               } else {
                 l.push(`${n} ${plural(n, 'caca', 'cacas', 'caca')} en 24 h`);
                 l.push(`Ésta: cantidad ${m.cantidad} · ${infoColor(m.color).label}`);
@@ -430,7 +444,7 @@ function renderCharts() {
       },
       scales: {
         x: ejeX(),
-        y: ejeY('pañales en 24 h', {
+        y: ejeY(t('graf.panales24', 'pañales en 24 h'), {
           beginAtZero: true,
           ticks: { color: c.tick, precision: 0, stepSize: 1 }
         })
@@ -441,10 +455,11 @@ function renderCharts() {
   const notaPanal = document.getElementById('notaPanal');
   if (notaPanal) {
     notaPanal.textContent = (serieP.length || serieC.length)
-      ? 'Cada punto es un pañal y su altura son los de las 24 h anteriores, '
-        + 'él incluido. El primer día siempre sube desde 1 porque la ventana '
-        + 'todavía no está llena: esa subida no significa nada.'
-      : 'Todavía no hay pañales registrados.';
+      ? t('graf.notaPanal',
+          'Cada punto es un pañal y su altura son los de las 24 h anteriores, '
+          + 'él incluido. El primer día siempre sube desde 1 porque la ventana '
+          + 'todavía no está llena: esa subida no significa nada.')
+      : t('graf.sinPanales', 'Todavía no hay pañales registrados.');
   }
 }
 
@@ -535,14 +550,14 @@ function pintarLeyendaPanal(serieC, halo) {
      </div>`;
 
   cont.innerHTML =
-    `<div class="legend-item"><span class="legend-nota">▲ Pipís:</span></div>` +
-    marca(COLOR_PIPI,    'transparente') +
-    marca(COLOR_PIPI_NO, 'no transparente') +
+    `<div class="legend-item"><span class="legend-nota">▲ ${esc(t('leg.pipis', 'Pipís:'))}</span></div>` +
+    marca(COLOR_PIPI,    esc(t('hist.transp', 'transparente'))) +
+    marca(COLOR_PIPI_NO, esc(t('hist.noTransp', 'no transparente'))) +
     '<div class="legend-sep"></div>' +
-    `<div class="legend-item"><span class="legend-nota">● Cacas:</span></div>` +
+    `<div class="legend-item"><span class="legend-nota">● ${esc(t('leg.cacas', 'Cacas:'))}</span></div>` +
     (vistos.length
       ? vistos.map(k => marca(infoColor(k).hex, esc(infoColor(k).label))).join('')
-      : `<div class="legend-item"><span class="legend-nota">ninguna todavía</span></div>`) +
+      : `<div class="legend-item"><span class="legend-nota">${esc(t('leg.ninguna', 'ninguna todavía'))}</span></div>`) +
     '<div class="legend-sep"></div>' +
-    `<div class="legend-item"><span class="legend-nota">El tamaño del punto es la cantidad</span></div>`;
+    `<div class="legend-item"><span class="legend-nota">${esc(t('leg.tamano', 'El tamaño del punto es la cantidad'))}</span></div>`;
 }

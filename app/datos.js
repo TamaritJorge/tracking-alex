@@ -55,8 +55,8 @@ async function reunirDatos() {
         aplicacion:   'Tracking Álex',
         exportado_en: new Date().toISOString(),
         formato:      1,
-        nota: 'Exportación completa de los datos de la familia. '
-            + 'Las fechas van en ISO 8601 y en UTC.',
+        nota: t('dat.nota', 'Exportación completa de los datos de la familia. '
+              + 'Las fechas van en ISO 8601 y en UTC.'),
         familia:         familia,
         adultos:         miembros,
         hijos:           hijos,
@@ -89,7 +89,7 @@ async function reunirDatos() {
     };
   } catch (e) {
     console.error(e);
-    return { error: e.message || 'No se pudieron leer los datos.' };
+    return { error: e.message || t('dat.noLeidos', 'No se pudieron leer los datos.') };
   }
 }
 
@@ -133,7 +133,7 @@ window.exportarMedicacionCSV = async function() {
   const pautas = r.paquete.medicacion || [];
   const tomas  = r.paquete.medicacion_tomas || [];
 
-  if (!pautas.length) { toast('No hay ning\u00fan tratamiento que exportar.', 3500); return; }
+  if (!pautas.length) { toast(t('dat.sinMed', 'No hay ning\u00fan tratamiento que exportar.'), 3500); return; }
 
   const nombreDe = {};
   r.paquete.hijos.forEach(h => { nombreDe[h.id] = h.nombre; });
@@ -258,7 +258,7 @@ window.abrirBorradoCuenta = async function() {
   const { count, error } = await sb.from('familia_miembros')
     .select('*', { count: 'exact', head: true }).eq('familia_id', familia.id);
 
-  if (error) { toast('❌ No se pudo comprobar la familia: ' + error.message, 4000); return; }
+  if (error) { toast(t('dat.noFamilia', '❌ No se pudo comprobar la familia: ') + error.message, 4000); return; }
 
   const solo = (count || 1) <= 1;
   let registros = 0;
@@ -286,26 +286,35 @@ window.abrirBorradoCuenta = async function() {
     </p>
 
     <div class="field">
-      <label for="confCuenta">Escribe <strong>BORRAR</strong> para confirmar</label>
-      <input type="text" id="confCuenta" autocomplete="off" placeholder="BORRAR">
+      <label for="confCuenta">${t2('dat.escribe', 'Escribe {p} para confirmar',
+        { p: '<strong>' + esc(palabraBorrar()) + '</strong>' })}</label>
+      <input type="text" id="confCuenta" autocomplete="off"
+             placeholder="${esc(palabraBorrar())}">
     </div>
     <p id="borrarCuentaErr" class="error-txt" style="display:none"></p>`;
 
   document.getElementById('comidaModalBtns').innerHTML = `
     <button class="btn" id="btnBorrarCuenta" onclick="confirmarBorradoCuenta()"
-            style="background:var(--danger);color:#fff">Borrar mi cuenta</button>
+            style="background:var(--danger);color:#fff">${t('aj.borrarBtn', 'Borrar mi cuenta')}</button>
     <button class="btn" onclick="abrirAjustes()"
-            style="background:var(--surface2);color:var(--text)">Cancelar</button>`;
+            style="background:var(--surface2);color:var(--text)">${t('btn.cancelar', 'Cancelar')}</button>`;
 
-  document.getElementById('comidaModal').style.display = '';
+  abrirModal();
 };
+
+/* La palabra que hay que teclear para borrar la cuenta.
+
+   En mayúsculas y sin acentos a propósito: se compara con toUpperCase()
+   y tiene que poder escribirse en cualquier teclado. */
+function palabraBorrar() { return t('dat.palabra', 'BORRAR'); }
 
 window.confirmarBorradoCuenta = async function() {
   const err   = document.getElementById('borrarCuentaErr');
   const campo = document.getElementById('confCuenta');
 
-  if (!campo || campo.value.trim().toUpperCase() !== 'BORRAR') {
-    err.textContent = 'Escribe BORRAR para confirmar.';
+  if (!campo || campo.value.trim().toUpperCase() !== palabraBorrar()) {
+    err.textContent = t2('dat.escribePunto', 'Escribe {p} para confirmar.',
+                         { p: palabraBorrar() });
     err.style.display = '';
     return;
   }

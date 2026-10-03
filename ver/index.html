@@ -103,7 +103,7 @@
 
   <!-- Mientras se pide el enlace, y donde se explica si algo falla -->
   <div class="card" id="visorEstado">
-    <p class="card-title">Abriendo…</p>
+    <p class="card-title" data-i18n="enl.abriendo">Abriendo…</p>
   </div>
 
 
@@ -139,11 +139,11 @@
     <p id="avisoPipi" data-modulo="panales" style="display:none"></p>
 
     <div class="card" data-modulo="peso">
-      <p class="card-title">⚖️ Peso</p>
+      <p class="card-title" data-i18n="graf.peso">⚖️ Peso</p>
       <div class="legend">
-        <span class="legend-item"><span class="legend-dot" style="background:var(--ok)"></span>Pesadas</span>
-        <span class="legend-item"><span class="legend-line legend-dash"></span>Tendencia</span>
-        <span class="legend-item"><span class="legend-line"></span>Percentiles OMS</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--ok)"></span><span data-i18n="leg.pesadas">Pesadas</span></span>
+        <span class="legend-item"><span class="legend-line legend-dash"></span><span data-i18n="leg.tendencia">Tendencia</span></span>
+        <span class="legend-item"><span class="legend-line"></span><span data-i18n="leg.percentiles">Percentiles OMS</span></span>
       </div>
       <div class="chart-wrap"><canvas id="chartPeso"></canvas></div>
       <p class="hint-txt" id="avisoPesoMes"></p>
@@ -151,17 +151,17 @@
     </div>
 
     <div class="card" data-modulo="panales">
-      <p class="card-title">💧 Pañales</p>
+      <p class="card-title" data-i18n="mod.panales.nombre">💧 Pañales</p>
       <div class="legend" id="leyendaPanal"></div>
       <div class="chart-wrap"><canvas id="chartPanal"></canvas></div>
       <p class="hint-txt" id="notaPanal"></p>
     </div>
 
     <div class="card" data-modulo="extraccion">
-      <p class="card-title">🍼 Extracción de leche</p>
+      <p class="card-title" data-i18n="mod.extraccion.nombre">🍼 Extracción de leche</p>
       <div class="legend">
-        <span class="legend-item"><span class="legend-dot" style="background:var(--info)"></span>Izquierdo</span>
-        <span class="legend-item"><span class="legend-dot" style="background:var(--danger)"></span>Derecho</span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--info)"></span><span data-i18n="reg.izq">Izquierdo</span></span>
+        <span class="legend-item"><span class="legend-dot" style="background:var(--danger)"></span><span data-i18n="reg.der">Derecho</span></span>
       </div>
       <div class="chart-wrap"><canvas id="chartExt"></canvas></div>
     </div>
@@ -171,7 +171,7 @@
          percentiles; una página que puede acabar leyendo un pediatra no
          puede ir sin nada. -->
     <div class="card">
-      <p class="hint-txt" style="margin:0">
+      <p class="hint-txt" style="margin:0" lang="es">
         Esto es una libreta, no un informe médico ni una herramienta de
         diagnóstico. Los percentiles salen de los patrones de crecimiento de
         la <strong>Organización Mundial de la Salud</strong> y son una
@@ -179,15 +179,22 @@
         no son por sí solos un problema. Ante cualquier duda sobre la salud
         del niño, la respuesta está en su pediatra.
       </p>
+      <p class="hint-txt" style="margin:0" lang="en">
+        This is a notebook, not a medical report or a diagnostic tool. The
+        percentiles come from the <strong>World Health Organization</strong>
+        growth standards and are a statistical reference: a low percentile, or
+        a change of percentile, is not on its own a problem. For any concern
+        about the child&rsquo;s health, the answer is with their doctor.
+      </p>
     </div>
 
   </div>
 
   <!-- Mismo pie que el de Ajustes, con las mismas clases -->
   <p class="hint-txt" style="margin-top:14px;text-align:center">
-    <a href="/privacidad" rel="noopener noreferrer">Privacidad</a> ·
-    <a href="/terminos" rel="noopener noreferrer">Condiciones</a> ·
-    <a href="/" rel="noopener noreferrer">Qué es Tracking Álex</a>
+    <a href="/privacidad" rel="noopener noreferrer" data-i18n="pie.privacidad">Privacidad</a> ·
+    <a href="/terminos" rel="noopener noreferrer" data-i18n="pie.terminos">Condiciones</a> ·
+    <a href="/" rel="noopener noreferrer" data-i18n="pie.queEs">Qué es Tracking Álex</a>
   </p>
 
 </main>

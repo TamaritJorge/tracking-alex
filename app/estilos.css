@@ -1364,3 +1364,22 @@
     }
 
     .enlace-sutil:hover { color: var(--primary-txt); border-bottom-color: var(--primary-txt); }
+
+
+    /* ═══════════════════════════════════════════════════════════
+       LOS DOS IDIOMAS, PARA LO QUE data-i18n NO PUEDE
+
+       Casi todo se traduce con t() y data-i18n. Pero data-i18n
+       asigna textContent, así que un párrafo con <strong> o un
+       enlace dentro perdería el marcado. Esos van como dos
+       hermanos, lang="es" y lang="en", y aquí se esconde el que
+       no toca.
+
+       data-lang lo pone idiomas.js, en el arranque y en cada
+       cambio de idioma. Es la misma regla que usa el landing,
+       que no carga idiomas.js: una sola forma de hacerlo en las
+       dos mitades del sitio.
+       ═══════════════════════════════════════════════════════════ */
+
+    [data-lang="es"] [lang="en"],
+    [data-lang="en"] [lang="es"] { display: none; }

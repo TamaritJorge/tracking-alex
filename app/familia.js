@@ -39,7 +39,7 @@ const CLAVE_ULTIMO_HIJO = 'ultimoHijo';
    importa: lmsEn() ya devuelve null con edad negativa (no se dibujan
    percentiles inventados) y el aviso de pipís no se enciende. */
 const DIAS_FUTURO_MAX = 365;
-const TXT_FECHA_LEJOS = 'Esa fecha está demasiado lejos. ¿El año es correcto?';
+const TXT_FECHA_LEJOS = t('aj.fechaLejos', 'Esa fecha está demasiado lejos. ¿El año es correcto?');
 
 function fechaDisparatada(iso) {
   const tope = new Date();
@@ -179,7 +179,7 @@ function pintarCabecera() {
   }
 
   cont.innerHTML = `
-    <select id="selectorHijo" class="hijo-select" aria-label="Cambiar de hijo">
+    <select id="selectorHijo" class="hijo-select" aria-label="${esc(t('aria.hijo', 'Cambiar de hijo'))}">
       ${hijos.map(n => `<option value="${n.id}"${n.id === ninoActivo.id ? ' selected' : ''}>
         ${esc(n.nombre)}</option>`).join('')}
     </select>`;
@@ -246,9 +246,9 @@ async function crearInvitacion() {
 /* Traduce los errores de la base de datos a algo legible */
 function mensajeFamilia(error) {
   const m = (error && error.message) || '';
-  if (/mas de 2 adultos/i.test(m))            return 'Una familia sólo puede tener dos adultos.';
+  if (/mas de 2 adultos/i.test(m))            return t('aj.dosAdultos', 'Una familia sólo puede tener dos adultos.');
   if (/familia_miembros_user_unico/i.test(m)) return 'Esa cuenta ya pertenece a otra familia.';
-  if (/row-level security/i.test(m))          return 'No tienes permiso. ¿Se ha cerrado la sesión?';
+  if (/row-level security/i.test(m))          return t('aj.sinPermiso', 'No tienes permiso. ¿Se ha cerrado la sesión?');
   return m || 'Error desconocido';
 }
 
@@ -292,9 +292,9 @@ function engancharAlta() {
     if (atras) atras.style.display = dos ? '' : 'none';
 
     document.getElementById('altaTitulo').textContent =
-      dos ? '¿Qué quieres llevar ahora?' : 'Vamos a empezar';
+      dos ? t('alta.queLlevar', '¿Qué quieres llevar ahora?') : 'Vamos a empezar';
     document.getElementById('altaSub').textContent =
-      dos ? 'Se cambia cuando quieras en ⚙️ Ajustes' : 'Sólo se pide una vez';
+      dos ? 'Se cambia cuando quieras en ⚙️ Ajustes' : t('alta.sub', 'Sólo se pide una vez');
     btn.textContent = dos ? 'Crear' : 'Siguiente';
     window.scrollTo(0, 0);
   }
@@ -308,9 +308,9 @@ function engancharAlta() {
     const sexo    = valorSel('rowAltaSexo', 'nino');
 
     const fallo =
-      !nombreF ? 'Ponle nombre a la familia.' :
-      !nombreH ? 'Ponle nombre al bebé.' :
-      !fecha   ? 'Falta la fecha de nacimiento.' :
+      !nombreF ? t('aj.faltaFamilia', 'Ponle nombre a la familia.') :
+      !nombreH ? t('aj.faltaBebe', 'Ponle nombre al bebé.') :
+      !fecha   ? t('aj.faltaFecha', 'Falta la fecha de nacimiento.') :
       fechaDisparatada(fecha) ? TXT_FECHA_LEJOS :
       null;
 
@@ -348,7 +348,7 @@ function engancharAlta() {
     // Con las cinco apagadas se entraría a «Están todos los módulos
     // ocultos», es decir, a una aplicación vacía el primer día.
     if (!Object.keys(elegidos).some(k => elegidos[k])) {
-      err.textContent = 'Elige al menos una cosa. Lo demás se enciende luego en Ajustes.';
+      err.textContent = t('alta.eligeUna', 'Elige al menos una cosa. Lo demás se enciende luego en Ajustes.');
       err.style.display = '';
       return;
     }
@@ -370,7 +370,7 @@ function engancharAlta() {
     if (g && g.error) {
       // La familia ya existe: bloquear aquí sería peor que seguir. La
       // elección vale para esta sesión y se recupera desde Ajustes.
-      toast('⚠️ No se pudo guardar qué quieres llevar. Se ajusta en ⚙️ Ajustes.', 6000);
+      toast(t('alta.noModulos', '⚠️ No se pudo guardar qué quieres llevar. Se ajusta en ⚙️ Ajustes.'), 6000);
     }
 
     encenderPrimerosPasos();
@@ -380,7 +380,7 @@ function engancharAlta() {
   document.getElementById('unirBtn').addEventListener('click', async () => {
     const err = document.getElementById('unirErr');
     const cod = document.getElementById('altaCodigo').value.trim().toUpperCase();
-    if (!cod) { err.textContent = 'Pega el código que te han pasado.'; err.style.display = ''; return; }
+    if (!cod) { err.textContent = t('alta.pegaCod', 'Pega el código que te han pasado.'); err.style.display = ''; return; }
 
     const r = await unirseAFamilia(cod);
     if (r.error) { err.textContent = r.error; err.style.display = ''; return; }
@@ -450,7 +450,7 @@ window.abrirAjustes = function() {
         ${hijos.map(n => `
           <div class="ali-fila" style="cursor:default">
             <span class="ali-nom">${esc(n.nombre)}</span>
-            <span class="tag tag-pronto">${n.sexo === 'nina' ? 'niña' : 'niño'}</span>
+            <span class="tag tag-pronto">${n.sexo === 'nina' ? t('alta.nina', 'niña') : t('alta.nino', 'niño')}</span>
             <span class="ali-veces">${esc(new Date(n.fecha_nacimiento + 'T12:00:00')
               .toLocaleDateString(localeActivo()))}</span>
             <button class="btn-edit-sm" onclick="editarHijo('${n.id}')"
@@ -461,32 +461,32 @@ window.abrirAjustes = function() {
       <details class="mas">
         <summary>➕ ${t('ajustes.anadirHijo', 'Añadir otro hijo')}</summary>
         <div class="field">
-          <label for="nuevoHijoNombre">Nombre</label>
+          <label for="nuevoHijoNombre">${t('aj.nombre', 'Nombre')}</label>
           <input type="text" id="nuevoHijoNombre" maxlength="40">
         </div>
         <div class="field">
-          <label for="nuevoHijoFecha">Fecha de nacimiento</label>
+          <label for="nuevoHijoFecha">${t('alta.nacimiento', 'Fecha de nacimiento')}</label>
           <input type="date" id="nuevoHijoFecha">
         </div>
         <div class="field">
-          <label>Sexo</label>
+          <label>${t('alta.sexo', 'Sexo')}</label>
           <div class="toggle-row" id="rowNuevoHijoSexo">
-            <button type="button" class="toggle-opt sel" data-v="nino">Niño</button>
-            <button type="button" class="toggle-opt"     data-v="nina">Niña</button>
+            <button type="button" class="toggle-opt sel" data-v="nino">${t('alta.nino', 'Niño')}</button>
+            <button type="button" class="toggle-opt"     data-v="nina">${t('alta.nina', 'Niña')}</button>
           </div>
         </div>
         <div class="field" style="margin-bottom:0">
-          <button class="btn btn-secundario" onclick="guardarNuevoHijo()">Añadir</button>
+          <button class="btn btn-secundario" onclick="guardarNuevoHijo()">${t('aj.anadir', 'Añadir')}</button>
         </div>
       </details>
 
       <div class="field" style="margin-bottom:0">
         <label>${t('ajustes.segundoAdulto', 'Segundo adulto')}</label>
         <p class="ficha-txt" id="estadoInvitacion">
-          Genera un código y pásaselo. Una familia admite dos adultos como máximo.
+          ${t('aj.invita', 'Genera un código y pásaselo. Una familia admite dos adultos como máximo.')}
         </p>
         <button class="btn btn-secundario" style="margin-top:8px"
-                onclick="generarInvitacion()">Generar código de invitación</button>
+                onclick="generarInvitacion()">${t('aj.generarCodigo', 'Generar código de invitación')}</button>
       </div>
     </details>
 
@@ -502,7 +502,7 @@ window.abrirAjustes = function() {
       <div class="field">
         <label>${t('ajustes.primerosPasos', 'Primeros pasos')}</label>
         <p class="hint-txt" style="margin:0 0 10px">
-          La lista corta de cosas por hacer al empezar.
+          ${t('aj.pasosTxt', 'La lista corta de cosas por hacer al empezar.')}
         </p>
         <button class="btn btn-secundario" onclick="verPrimerosPasos()"
           >${t('ajustes.verPasos', 'Ver los primeros pasos otra vez')}</button>
@@ -510,10 +510,15 @@ window.abrirAjustes = function() {
 
       <div class="field" style="margin-bottom:0">
         <label>${t('ajustes.modulos', 'Qué quieres llevar')}</label>
-        <p class="hint-txt" style="margin:0 0 10px">
+        <p class="hint-txt" style="margin:0 0 10px" lang="es">
           Lo que apagues desaparece de Registrar, Gráficas e Historial.
           <strong>No se borra nada</strong>: si lo vuelves a encender,
           todo lo guardado sigue ahí.
+        </p>
+        <p class="hint-txt" style="margin:0 0 10px" lang="en">
+          Whatever you switch off disappears from Log, Charts and History.
+          <strong>Nothing is deleted</strong>: switch it back on and
+          everything you saved is still there.
         </p>
         ${htmlModulos()}
       </div>
@@ -524,12 +529,20 @@ window.abrirAjustes = function() {
       <summary>☕ ${t('ajustes.apoyar', 'Apoyar la app')}</summary>
 
       <div class="field" style="margin-bottom:0">
-        <p class="hint-txt" style="margin:0 0 12px">
+        <p class="hint-txt" style="margin:0 0 12px" lang="es">
           Tracking Álex es gratis y lo va a seguir siendo. No hay publicidad ni
           se venden datos, y no los va a haber. La mantiene una familia, y el
           servidor y el dominio los pagamos nosotros.
           <strong>Si te está sirviendo y te apetece echar una mano, se
           agradece.</strong> Y si no, no pasa nada: la app es exactamente la misma.
+        </p>
+        <p class="hint-txt" style="margin:0 0 12px" lang="en">
+          Tracking Álex is free and it is going to stay that way. There are no
+          ads and no data is sold, and there never will be. One family keeps it
+          running, and we pay for the server and the domain ourselves.
+          <strong>If it is useful to you and you feel like chipping in, it is
+          appreciated.</strong> And if not, no problem at all: the app is exactly
+          the same either way.
         </p>
         <a class="btn btn-secundario" href="${KOFI_URL}"
            target="_blank" rel="noopener noreferrer"
@@ -543,28 +556,35 @@ window.abrirAjustes = function() {
 
       <div class="field">
         <p class="hint-txt" style="margin:0 0 10px">
-          Llévatelo todo cuando quieras, sin pedir permiso a nadie. El JSON es la
-          copia completa; el CSV se abre en una hoja de cálculo.
+          ${t('aj.exportTxt', 'Llévatelo todo cuando quieras, sin pedir permiso a nadie. '
+            + 'El JSON es la copia completa; el CSV se abre en una hoja de cálculo.')}
         </p>
         <button class="btn btn-secundario" id="btnExportJSON"
-                onclick="exportarJSON()">⬇️ Descargar todo (JSON)</button>
+                onclick="exportarJSON()">⬇️ ${t('aj.expJSON', 'Descargar todo (JSON)')}</button>
         <button class="btn btn-secundario" id="btnExportCSV" style="margin-top:8px"
-                onclick="exportarCSV()">⬇️ Registros (CSV)</button>
+                onclick="exportarCSV()">⬇️ ${t('aj.expCSV', 'Registros (CSV)')}</button>
         ${moduloActivo('medicacion') ? `
         <button class="btn btn-secundario" id="btnExportMed" style="margin-top:8px"
-                onclick="exportarMedicacionCSV()">⬇️ Medicinas (CSV)</button>` : ''}
+                onclick="exportarMedicacionCSV()">⬇️ ${t('aj.expMed', 'Medicinas (CSV)')}</button>` : ''}
       </div>
 
       <div class="field">
         <label>${t('ajustes.compartir', 'Compartir las gráficas')}</label>
-        <p class="hint-txt" style="margin:0 0 10px">
+        <p class="hint-txt" style="margin:0 0 10px" lang="es">
           Un enlace para que los abuelos, la matrona o el pediatra vean las
           gráficas de ${esc(nombreHijo())} sin tener cuenta. <strong>Sólo
           mirar:</strong> no pueden apuntar nada, ni ven el historial, ni la
           comida, ni las medicinas, ni nada tuyo.
         </p>
+        <p class="hint-txt" style="margin:0 0 10px" lang="en">
+          A link so grandparents, your midwife or your doctor can see
+          ${esc(nombreHijo())}&rsquo;s charts without an account.
+          <strong>Looking only:</strong> they cannot write anything down, and
+          they do not see the history, the food, the medicines, or anything
+          of yours.
+        </p>
         <div id="listaEnlaces">
-          <p class="hint-txt" style="margin:0">Cargando…</p>
+          <p class="hint-txt" style="margin:0">${t('aj.cargando', 'Cargando…')}</p>
         </div>
         <button class="btn btn-secundario" style="margin-top:8px"
                 id="btnNuevoEnlace" onclick="abrirNuevoEnlace()"
@@ -574,24 +594,25 @@ window.abrirAjustes = function() {
       <div class="field" style="margin-bottom:0">
         <label>${t('ajustes.borrarCuenta', 'Borrar la cuenta')}</label>
         <p class="hint-txt" style="margin:0 0 10px">
-          Borra tu cuenta y, si eres el único adulto de la familia, todo lo que
-          hay dentro. No se puede deshacer y nosotros tampoco podremos recuperarlo.
+          ${t('aj.borrarTxt', 'Borra tu cuenta y, si eres el único adulto de la familia, '
+            + 'todo lo que hay dentro. No se puede deshacer y nosotros tampoco '
+            + 'podremos recuperarlo.')}
         </p>
         <button class="btn btn-secundario"
                 style="color:var(--danger);border-color:var(--danger)"
-                onclick="abrirBorradoCuenta()">🗑️ Borrar mi cuenta</button>
+                onclick="abrirBorradoCuenta()">🗑️ ${t('aj.borrarBtn', 'Borrar mi cuenta')}</button>
       </div>
     </details>
 
     <p class="hint-txt" style="margin-top:14px;text-align:center">
-      <a href="../privacidad" target="_blank" rel="noopener">Privacidad</a> ·
-      <a href="../terminos" target="_blank" rel="noopener">Condiciones</a> ·
-      <a href="../aviso-legal" target="_blank" rel="noopener">Aviso legal</a>
+      <a href="../privacidad" target="_blank" rel="noopener">${t('pie.privacidad', 'Privacidad')}</a> ·
+      <a href="../terminos" target="_blank" rel="noopener">${t('pie.terminos', 'Condiciones')}</a> ·
+      <a href="../aviso-legal" target="_blank" rel="noopener">${t('pie.legal', 'Aviso legal')}</a>
     </p>
 
     <p id="ajustesErr" class="error-txt" style="display:none"></p>`;
   document.getElementById('comidaModalBtns').innerHTML = '';
-  document.getElementById('comidaModal').style.display = '';
+  abrirModal('abrirAjustes');
 
   // La lista de enlaces compartidos es una consulta, y abrirAjustes() no
   // es asíncrona: se pinta aparte, sobre el hueco que acaba de quedar.
@@ -606,10 +627,10 @@ window.abrirAjustes = function() {
    nadie había elegido nombre todavía. Ahora se puede cambiar.
    ───────────────────────────────────────────────────────────── */
 window.editarFamilia = function() {
-  document.getElementById('comidaModalTitulo').textContent = '✏️ Nombre de la familia';
+  document.getElementById('comidaModalTitulo').textContent = t('aj.nombreFamilia', '✏️ Nombre de la familia');
   document.getElementById('comidaModalCuerpo').innerHTML = `
     <div class="field">
-      <label for="famNombre">Nombre</label>
+      <label for="famNombre">${t('aj.nombre', 'Nombre')}</label>
       <input type="text" id="famNombre" maxlength="60" value="${esc(familia.nombre)}">
       <p class="hint-txt" style="margin:8px 0 0">
         Es sólo una etiqueta vuestra: no sale en las capturas ni la ve nadie de fuera.
@@ -626,7 +647,7 @@ window.editarFamilia = function() {
 window.guardarFamilia = async function() {
   const err    = document.getElementById('ajustesErr');
   const nombre = document.getElementById('famNombre').value.trim();
-  if (!nombre) { err.textContent = 'El nombre no puede quedar vacío.'; err.style.display = ''; return; }
+  if (!nombre) { err.textContent = t('aj.nombreVacio', 'El nombre no puede quedar vacío.'); err.style.display = ''; return; }
 
   // .select() para detectar el caso de 0 filas afectadas: si RLS bloqueara el
   // UPDATE, Supabase no devuelve error, devuelve una lista vacía.
@@ -634,13 +655,13 @@ window.guardarFamilia = async function() {
     .update({ nombre }).eq('id', familia.id).select();
 
   if (error || !data || !data.length) {
-    err.textContent = error ? mensajeFamilia(error) : 'No se pudo guardar (sin permiso).';
+    err.textContent = error ? mensajeFamilia(error) : t('aj.noGuardadoPerm', 'No se pudo guardar (sin permiso).');
     err.style.display = '';
     return;
   }
 
   familia.nombre = nombre;
-  toast('✅ Nombre actualizado');
+  toast(t('aj.okNombre', '✅ Nombre actualizado'));
   abrirAjustes();
 };
 
@@ -661,20 +682,20 @@ window.editarHijo = function(id) {
   document.getElementById('comidaModalTitulo').textContent = '✏️ ' + n.nombre;
   document.getElementById('comidaModalCuerpo').innerHTML = `
     <div class="field">
-      <label for="edHijoNombre">Nombre</label>
+      <label for="edHijoNombre">${t('aj.nombre', 'Nombre')}</label>
       <input type="text" id="edHijoNombre" maxlength="40" value="${esc(n.nombre)}">
     </div>
 
     <div class="field">
-      <label for="edHijoFecha">Fecha de nacimiento</label>
+      <label for="edHijoFecha">${t('alta.nacimiento', 'Fecha de nacimiento')}</label>
       <input type="date" id="edHijoFecha" value="${esc(n.fecha_nacimiento)}">
     </div>
 
     <div class="field">
-      <label>Sexo</label>
+      <label>${t('alta.sexo', 'Sexo')}</label>
       <div class="toggle-row" id="rowEdHijoSexo">
-        <button type="button" class="toggle-opt${n.sexo !== 'nina' ? ' sel' : ''}" data-v="nino">Niño</button>
-        <button type="button" class="toggle-opt${n.sexo === 'nina' ? ' sel' : ''}" data-v="nina">Niña</button>
+        <button type="button" class="toggle-opt${n.sexo !== 'nina' ? ' sel' : ''}" data-v="nino">${t('alta.nino', 'Niño')}</button>
+        <button type="button" class="toggle-opt${n.sexo === 'nina' ? ' sel' : ''}" data-v="nina">${t('alta.nina', 'Niña')}</button>
       </div>
       <p class="hint-txt" style="margin:8px 0 0">
         La fecha y el sexo cambian el percentil: la OMS tiene una curva
@@ -704,18 +725,22 @@ window.editarHijo = function(id) {
     if (!aviso || !btn) return;              // se cerró el modal mientras tanto
 
     if (esUnico) {
-      aviso.innerHTML = 'Es el único hijo de la familia. Si lo borras, la app se '
-        + 'queda sin nada que mostrar y no hay pantalla para volver a empezar. '
-        + 'Para corregir un nombre o una fecha, edítalo aquí arriba.';
+      aviso.innerHTML = esc(t('aj.unicoHijo',
+        'Es el único hijo de la familia. Si lo borras, la app se queda sin nada '
+        + 'que mostrar y no hay pantalla para volver a empezar. Para corregir un '
+        + 'nombre o una fecha, edítalo aquí arriba.'));
       return;
     }
     btn.disabled = false;
     aviso.innerHTML =
-        total < 0 ? 'No se ha podido comprobar cuántos registros tiene. '
-                  + 'Borrarlo se llevaría todo su historial.'
-      : total > 0 ? `Tiene <strong>${total}</strong> ${plural(total, 'registro', 'registros', 'registro')}. `
-                  + 'Borrarlo los borra todos, y eso no se puede deshacer.'
-      : 'No tiene ningún registro todavía.';
+        total < 0 ? esc(t('aj.noCuenta',
+                      'No se ha podido comprobar cuántos registros tiene. '
+                      + 'Borrarlo se llevaría todo su historial.'))
+      : total > 0 ? t2('aj.tieneRegs', 'Tiene {n} {p}. Borrarlo los borra todos, '
+                      + 'y eso no se puede deshacer.',
+                      { n: '<strong>' + total + '</strong>',
+                        p: plural(total, 'registro', 'registros', 'registro') })
+      : esc(t('aj.sinRegistros', 'No tiene ningún registro todavía.'));
   });
 };
 
@@ -739,7 +764,7 @@ window.guardarHijo = async function(id) {
   const sexo   = valorSel('rowEdHijoSexo', 'nino');
 
   const fallo = !nombre ? 'Ponle nombre.'
-              : !fecha  ? 'Falta la fecha de nacimiento.'
+              : !fecha  ? t('aj.faltaFecha', 'Falta la fecha de nacimiento.')
               : fechaDisparatada(fecha) ? TXT_FECHA_LEJOS : null;
   if (fallo) { err.textContent = fallo; err.style.display = ''; return; }
 
@@ -747,7 +772,7 @@ window.guardarHijo = async function(id) {
     .update({ nombre, fecha_nacimiento: fecha, sexo }).eq('id', id).select();
 
   if (error || !data || !data.length) {
-    err.textContent = error ? mensajeFamilia(error) : 'No se pudo guardar (sin permiso).';
+    err.textContent = error ? mensajeFamilia(error) : t('aj.noGuardadoPerm', 'No se pudo guardar (sin permiso).');
     err.style.display = '';
     return;
   }
@@ -758,7 +783,7 @@ window.guardarHijo = async function(id) {
   renderTabla();
   if (tabActual === 'graficas') renderCharts();
 
-  toast('✅ Datos actualizados');
+  toast(t('aj.okDatos', '✅ Datos actualizados'));
   abrirAjustes();
 };
 
@@ -783,13 +808,20 @@ window.pedirBorradoHijo = async function(id) {
   document.getElementById('comidaModalCuerpo').innerHTML = `
     <div class="aviso aviso-stop" style="margin-bottom:14px">
       ${total < 0
-        ? `No se ha podido comprobar cuántos registros tiene ${esc(n.nombre)}. Se borrará todo lo suyo. No se puede deshacer.`
+        ? t2('aj.borrarHijoND', 'No se ha podido comprobar cuántos registros tiene '
+            + '{h}. Se borrará todo lo suyo. No se puede deshacer.',
+            { h: esc(n.nombre) })
         : total > 0
-        ? `Se borrarán <strong>${total}</strong> ${plural(total, 'registro', 'registros', 'registro')} de ${esc(n.nombre)}. No se puede deshacer.`
-        : `Se borrará a ${esc(n.nombre)}. Segun la base de datos no tiene ningún registro.`}
+        ? t2('aj.borrarHijoN', 'Se borrarán {n} {p} de {h}. No se puede deshacer.',
+            { n: '<strong>' + total + '</strong>',
+              p: plural(total, 'registro', 'registros', 'registro'),
+              h: esc(n.nombre) })
+        : t2('aj.borrarHijo0', 'Se borrará a {h}. Según la base de datos no tiene '
+            + 'ningún registro.', { h: esc(n.nombre) })}
     </div>
     <div class="field">
-      <label for="confBorrado">Escribe <strong>${esc(n.nombre)}</strong> para confirmar</label>
+      <label for="confBorrado">${t2('dat.escribe', 'Escribe {p} para confirmar',
+        { p: '<strong>' + esc(n.nombre) + '</strong>' })}</label>
       <input type="text" id="confBorrado" autocomplete="off" placeholder="${esc(n.nombre)}">
     </div>
     <p id="ajustesErr" class="error-txt" style="display:none"></p>`;
@@ -812,7 +844,7 @@ window.borrarHijo = async function(id) {
   // cero para saltarse la confirmacion era la peor forma posible de fallar.
   const campo = document.getElementById('confBorrado');
   if (!campo || campo.value.trim() !== n.nombre) {
-    err.textContent = 'El nombre no coincide.';
+    err.textContent = t('aj.noCoincide', 'El nombre no coincide.');
     err.style.display = '';
     return;
   }
@@ -824,7 +856,7 @@ window.borrarHijo = async function(id) {
                    'alim_registros', 'alim_ajustes', 'registros']) {
     const { error } = await sb.from(t).delete().eq('nino_id', id);
     if (error) {
-      err.textContent = 'No se pudo borrar de ' + t + ': ' + (error.message || '');
+      err.textContent = t('aj.noBorradoDe', 'No se pudo borrar de ') + t + ': ' + (error.message || '');
       err.style.display = '';
       return;
     }
@@ -864,14 +896,14 @@ window.guardarNuevoHijo = async function() {
   const sexo   = valorSel('rowNuevoHijoSexo', 'nino');
 
   const fallo = !nombre ? 'Ponle nombre.'
-              : !fecha  ? 'Falta la fecha de nacimiento.'
+              : !fecha  ? t('aj.faltaFecha', 'Falta la fecha de nacimiento.')
               : fechaDisparatada(fecha) ? TXT_FECHA_LEJOS : null;
   if (fallo) { err.textContent = fallo; err.style.display = ''; return; }
 
   const r = await anadirHijo(nombre, fecha, sexo);
   if (r.error) { err.textContent = r.error; err.style.display = ''; return; }
 
-  toast('✅ Hijo añadido');
+  toast(t('aj.okHijo', '✅ Hijo añadido'));
   cerrarComidaModal();
   pintarCabecera();
 };
