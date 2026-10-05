@@ -209,6 +209,11 @@ window.cambiarIdioma = function(cual) {
     if (typeof renderTabla    === 'function') renderTabla();
     if (typeof avisarSuscripcion === 'function') avisarSuscripcion();
     if (typeof renderMedicacion === 'function') renderMedicacion();
+
+    /* Los nombres de las prendas se pintan a mano y no llevan data-i18n.
+       Se repinta conservando lo que estuviera marcado: cambiar de idioma
+       a media pesada no puede desmarcar la ropa. */
+    if (typeof pintarRopaPeso === 'function') pintarRopaPeso(true);
     if (typeof pintarBannerMed  === 'function') pintarBannerMed();
 
     /* La lista de primeros pasos está traducida entera y antes no se

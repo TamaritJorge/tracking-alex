@@ -202,8 +202,13 @@ window.exportarCSV = async function() {
   const nombreDe = {};
   r.paquete.hijos.forEach(h => { nombreDe[h.id] = h.nombre; });
 
+  // `gramos` es el peso SIN ropa, que es el que usan la gráfica y el
+  // percentil. Las tres columnas siguientes dicen de dónde sale: lo que
+  // marcaba la báscula, lo que se descontó y qué llevaba puesto. En un
+  // registro sin ropa marcada las tres van vacías.
   const cols = ['hijo', 'fecha_hora', 'tipo', 'cantidad', 'color',
-                'transparente', 'gramos', 'pecho', 'ml', 'nota'];
+                'transparente', 'gramos', 'bruto_g', 'ropa_g', 'ropa',
+                'pecho', 'ml', 'nota'];
 
   // Las comillas dobles se escapan duplicándolas: es lo que espera el
   // formato, y sin esto una nota con comillas parte la fila en dos.
@@ -229,6 +234,9 @@ window.exportarCSV = async function() {
         d.color ? infoColor(d.color).label : '',
         d.transparente === undefined ? '' : (d.transparente ? 'si' : 'no'),
         d.gramos,
+        d.bruto,
+        d.ropa ? d.ropa.g : '',
+        d.ropa && d.ropa.prendas ? d.ropa.prendas.map(nombrePrenda).join(' + ') : '',
         d.pecho,
         d.ml,
         d.nota

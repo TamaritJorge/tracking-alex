@@ -93,22 +93,69 @@ document.getElementById('btnExt').addEventListener('click', () => {
     });
 });
 
-/* ── Peso ──────────────────────────────────────────────────── */
-document.getElementById('btnPeso').addEventListener('click', () => {
-  const gramos = parseInt(document.getElementById('pesoG').value, 10);
-  const fecha  = leerFechaISO('pesoFecha');
+/* ── Peso ────────────────────────────────────────────────────
 
-  if (!fecha || isNaN(gramos) || gramos < 500) {
-    toast(t('reg.faltaPesoFecha', '⚠️ Indica el peso (mínimo 500 g) y la fecha.'));
-    return;
+   Lo que se escribe en `gramos` es el peso SIN ropa, porque es lo que
+   leen la gráfica, el percentil de la OMS, la tendencia, el historial,
+   el CSV y el enlace que ve la abuela — siete sitios, uno de ellos en
+   SQL dentro de Supabase. Guardando ya el neto, los siete son
+   correctos sin tocar ninguno; restando al leer, el que se olvidara
+   mentiría en silencio.
+
+   `bruto` guarda lo que marcaba la báscula y `ropa` el desglose, para
+   que una tabla mejor dentro de un año se pueda aplicar sin haber
+   perdido el dato de partida.
+
+   Sin ropa marcada, `datos` es exactamente `{ gramos }` como siempre:
+   nada que migrar y nada que distinga un registro antiguo de uno
+   nuevo sin ropa.
+   ──────────────────────────────────────────────────────────── */
+function construirDatosPeso(idBruto, idTalla, idFila) {
+  const bruto = parseInt(document.getElementById(idBruto).value, 10);
+  if (isNaN(bruto) || bruto < 500) {
+    toast(t('reg.faltaPeso', '⚠️ Indica el peso (mínimo 500 g).'));
+    return null;
   }
 
-  guardarRegistro('btnPeso', t('reg.guardaPeso', 'Guardar peso'), 'peso', fecha, { gramos },
+  const talla   = parseInt((document.getElementById(idTalla) || {}).value, 10);
+  const prendas = prendasSel(idFila);
+  if (!prendas.length) return { gramos: bruto };
+
+  const g      = pesoRopa(prendas, talla);
+  const gramos = bruto - g;
+
+  if (gramos < 500) {
+    toast(t('reg.ropaDemasiado',
+      '⚠️ La ropa marcada pesa casi tanto como el bebé. Revísala.'), 4500);
+    return null;
+  }
+
+  return { gramos, bruto, ropa: { talla, g, prendas, v: ROPA_V } };
+}
+
+document.getElementById('btnPeso').addEventListener('click', () => {
+  const fecha = leerFechaISO('pesoFecha');
+  if (!fecha) { toast(t('reg.faltaPesoFecha', '⚠️ Indica el peso (mínimo 500 g) y la fecha.')); return; }
+
+  const datos = construirDatosPeso('pesoG', 'pesoTalla', 'rowPesoRopa');
+  if (!datos) return;
+
+  guardarRegistro('btnPeso', t('reg.guardaPeso', 'Guardar peso'), 'peso', fecha, datos,
     () => {
       toast(t('reg.okPeso', '✅ Peso guardado'));
-      document.getElementById('pesoG').value     = '';
+      document.getElementById('pesoG').value = '';
+      // La ropa y la talla NO se limpian: la de la semana que viene es
+      // casi la misma, y volver a marcar cinco botones cada vez es
+      // justo donde la gente deja de usar una cosa así.
+      refrescarEcoPeso();
       reiniciarFecha('pesoFecha');
     });
+});
+
+// El eco se actualiza también al teclear el peso. #pesoG es estático,
+// así que esto se engancha una sola vez.
+document.getElementById('pesoG').addEventListener('input', () => {
+  if (typeof refrescarEcoPeso === 'function') refrescarEcoPeso();
 });
 
 /* ── Caca ──────────────────────────────────────────────────── */
@@ -192,12 +239,18 @@ window.editar = function(id) {
       </div>${campoFecha}`;
 
   } else if (r.tipo === 'peso') {
+    /* El campo enseña el BRUTO, que es lo que la persona vio en la
+       báscula y lo único que puede reconocer. Un registro anterior a
+       esto no tiene `bruto`: su `gramos` es lo que marcaba, así que
+       sirve igual. */
     html = `
       <div class="field">
-        <label for="editGramos">Peso (gramos)</label>
-        <input type="number" id="editGramos" value="${esc(d.gramos)}"
+        <label for="editGramos">${esc(t('reg.peso.lbl', 'Peso en la báscula (gramos)'))}</label>
+        <input type="number" id="editGramos" value="${esc(d.bruto !== undefined ? d.bruto : d.gramos)}"
                min="500" max="10000" inputmode="numeric">
-      </div>${campoFecha}`;
+        <p class="hint-txt" id="editEco" style="margin:8px 0 0"></p>
+      </div>
+      ${htmlBloqueRopa('edit', d.ropa)}${campoFecha}`;
 
   } else if (r.tipo === 'caca') {
     html = `
@@ -239,7 +292,16 @@ window.editar = function(id) {
 
   document.getElementById('editForm').innerHTML = html;
   document.getElementById('editModal').style.display = '';
-  // Los selectores del modal los gestiona el listener delegado global
+  // Los selectores del modal los gestiona el listener delegado global.
+  // El eco de la ropa no: necesita engancharse a estos dos campos, que
+  // acaban de nacer con el innerHTML de arriba.
+  if (r.tipo === 'peso') {
+    const g = document.getElementById('editGramos');
+    const s = document.getElementById('editTalla');
+    if (g) g.addEventListener('input',  refrescarEcoEdit);
+    if (s) s.addEventListener('change', refrescarEcoEdit);
+    refrescarEcoEdit();
+  }
 };
 
 function cerrarModal() {
@@ -268,9 +330,11 @@ document.getElementById('btnSaveEdit').addEventListener('click', async () => {
     datos = { pecho: valorSel('rowEditPecho', 'izquierdo'), ml };
 
   } else if (editandoTipo === 'peso') {
-    const gramos = parseInt(document.getElementById('editGramos').value, 10);
-    if (isNaN(gramos) || gramos < 500) { toast(t('reg.faltaPeso', '⚠️ Indica el peso (mínimo 500 g).')); return; }
-    datos = { gramos };
+    // Se reconstruye entero porque el UPDATE de abajo REEMPLAZA `datos`,
+    // no lo fusiona: si la ropa no se volviera a construir aquí, se
+    // perdería al corregir sólo la hora de un registro.
+    datos = construirDatosPeso('editGramos', 'editTalla', 'rowEditRopa');
+    if (!datos) return;
 
   } else if (editandoTipo === 'caca' || editandoTipo === 'pipi') {
     const cantidad = cantidadSel('rowEditQty');

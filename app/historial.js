@@ -20,7 +20,14 @@ function describir(r) {
     };
   }
   if (r.tipo === 'peso') {
-    return { tipo: t('hist.pesoTipo', '⚖️ Peso'), detalle: `${esc(d.gramos)} g` };
+    // Si se descontó ropa se dice de dónde sale el número. Sin esto, un
+    // peso que baja 300 g respecto al anterior parece un problema de
+    // salud en vez de un jersey menos.
+    const ropa = d.ropa
+      ? ` <span class="hint-txt">(${esc(numero(d.bruto))} − ${esc(numero(d.ropa.g))} `
+        + `${esc(t('hist.deRopa', 'g de ropa'))})</span>`
+      : '';
+    return { tipo: t('hist.pesoTipo', '⚖️ Peso'), detalle: `${esc(d.gramos)} g${ropa}` };
   }
   if (r.tipo === 'caca') {
     const c = infoColor(d.color);

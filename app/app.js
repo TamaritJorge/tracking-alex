@@ -332,6 +332,19 @@ function cantidadSel(rowId) {
 // acotado siempre a la fila del propio botón: así el toggle de
 // pipí no desmarca el de pecho (y viceversa).
 document.addEventListener('click', e => {
+  /* La ropa va primero y sale por su cuenta: es el único selector de
+     selección MÚLTIPLE de la aplicación —se lleva un body y un pantalón
+     y un pañal a la vez— y lo de abajo vacía la fila entera antes de
+     marcar. Si cayera ahí, marcar el pantalón desmarcaría el body. */
+  const prenda = e.target.closest('.ropa-opt');
+  if (prenda) {
+    const puesta = prenda.classList.toggle('sel');
+    prenda.setAttribute('aria-pressed', String(puesta));
+    if (typeof refrescarEcoPeso === 'function' && prenda.closest('#rowPesoRopa')) refrescarEcoPeso();
+    if (typeof refrescarEcoEdit === 'function' && prenda.closest('#rowEditRopa')) refrescarEcoEdit();
+    return;
+  }
+
   const btn = e.target.closest('.qty-btn, .color-btn, .toggle-opt, .chip');
   if (!btn) return;
 
@@ -929,6 +942,9 @@ async function cargarDatos() {
 
   registros = data || [];
   registrosCargados = true;
+  // La talla por defecto sale del último peso que la lleve, así que el
+  // bloque de ropa no se puede pintar hasta aquí
+  if (typeof pintarRopaPeso === 'function') pintarRopaPeso();
   renderResumen();
   renderTabla();
   if (tabActual === 'graficas') renderCharts();

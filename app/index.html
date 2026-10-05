@@ -447,10 +447,19 @@
         <p class="card-sub" data-i18n="reg.peso.sub">En gramos</p>
 
         <div class="field">
-          <label for="pesoG" data-i18n="reg.peso.lbl">Peso (gramos)</label>
+          <label for="pesoG" data-i18n="reg.peso.lbl">Peso en la báscula (gramos)</label>
           <input type="number" id="pesoG" placeholder="3000"
                  min="500" max="10000" inputmode="numeric">
+          <!-- «5.800 g − 128 g de ropa = 5.672 g». Lo rellena
+               refrescarEcoPeso() en ropa.js; vacío si no hay ropa marcada. -->
+          <p class="hint-txt" id="pesoEco" style="margin:8px 0 0"></p>
         </div>
+
+        <!-- La ropa. El bloque es el mismo que el del modal de edición y
+             sale de htmlBloqueRopa(); aquí se pinta al montar la app
+             porque la talla por defecto depende de los registros, que
+             todavía no están cargados cuando se sirve este HTML. -->
+        <div id="pesoRopa"></div>
 
         <div class="field">
           <label for="pesoFecha">Fecha y hora <span class="eco-fecha" id="pesoFechaEco"></span></label>
@@ -748,6 +757,7 @@
 <script src="familia.js"></script>
 <script src="modulos.js"></script>
 <script src="oms.js"></script>
+<script src="ropa.js"></script>
 <script src="alimentos.js"></script>
 <script src="graficas.js"></script>
 <script src="historial.js"></script>

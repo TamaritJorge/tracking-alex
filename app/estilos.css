@@ -364,6 +364,48 @@
     }
 
     /* ═══════════════════════════════════════════
+       LA ROPA QUE LLEVABA PUESTA
+
+       Selección MÚLTIPLE, al contrario que .toggle-row: se lleva un
+       body Y un pantalón Y un pañal. Por eso es una clase aparte y no
+       un .toggle-row con otro nombre — el listener delegado de app.js
+       distingue las dos por la clase del botón, y confundirlas haría
+       que marcar el pantalón desmarcara el body.
+
+       Rejilla de dos columnas y no flex-wrap: son dieciséis prendas de
+       nombres muy desiguales —«Gorro» y «Camiseta manga corta»— y
+       envolviéndolas quedaban casi todas solas en su línea. Dieciséis
+       filas en un móvil son media tarjeta de desplazamiento; en dos
+       columnas son ocho.
+       ═══════════════════════════════════════════ */
+    .ropa-row {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .ropa-opt {
+      padding: 10px 8px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface2);
+      color: var(--text2);
+      font-size: 0.85rem;
+      font-weight: 500;
+      font-family: inherit;
+      line-height: 1.25;
+      cursor: pointer;
+      text-align: center;
+      transition: all .2s;
+    }
+
+    .ropa-opt.sel {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #fff;
+    }
+
+    /* ═══════════════════════════════════════════
        SELECTOR DE CANTIDAD 0-10
        11 botones en lugar de un input numérico: en el móvil
        se registra de un toque y sin abrir el teclado.

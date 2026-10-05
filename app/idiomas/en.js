@@ -275,7 +275,7 @@ TEXTOS.en = {
   'reg.notaHora':          'Note, or change the time',
   'reg.pecho':             'Breast',
   'reg.peso':              '⚖️ Weight',
-  'reg.peso.lbl':          'Weight (grams)',
+  'reg.peso.lbl':          'Weight on the scale (grams)',
   'reg.peso.sub':          'In grams',
   'reg.peso.tit':          '⚖️ Baby’s weight',
   'reg.pipi':              '💧 Wee',
@@ -326,6 +326,38 @@ TEXTOS.en = {
   'reg.faltaMl':        '⚠️ Enter the ml.',
   'reg.faltaPesoFecha': '⚠️ Enter the weight (500 g minimum) and the date.',
   'reg.faltaPeso':      '⚠️ Enter the weight (500 g minimum).',
+
+  /* ── La ropa que llevaba puesta ───────────────────────────────
+     Las tallas van en centímetros (europeas) y no se convierten: es
+     lo que lleva la etiqueta de la ropa que tienes en casa, y una
+     talla «0-3 months» no diría cuánto pesa la prenda. */
+  'reg.ropa.tit':       'What they were wearing',
+  'reg.ropa.talla':     'Clothing size (cm)',
+  'reg.ropa.prendas':   'Tick everything they had on',
+  'reg.ropa.eco':       '{b} g − {r} g of clothing = {n} g',
+  'reg.ropa.aviso':     'These are estimates, not measurements: expect about 50 g '
+                      + 'either way. And the nappy counts as dry — a wet one weighs '
+                      + 'two or three times as much, so change it before weighing, '
+                      + 'or leave it unticked.',
+  'reg.ropaDemasiado':  '⚠️ The clothing you ticked weighs nearly as much as the baby. Have another look.',
+  'hist.deRopa':        'g of clothing',
+
+  'ropa.panal':         'Dry nappy',
+  'ropa.bodyMC':        'Short-sleeve bodysuit',
+  'ropa.bodyML':        'Long-sleeve bodysuit',
+  'ropa.camisetaMC':    'Short-sleeve top',
+  'ropa.camisetaML':    'Long-sleeve top',
+  'ropa.pantalon':      'Trousers or leggings',
+  'ropa.pelele':        'Sleepsuit or pyjamas',
+  'ropa.vestido':       'Dress',
+  'ropa.jersey':        'Jumper or sweatshirt',
+  'ropa.chaqueta':      'Knitted cardigan',
+  'ropa.polar':         'Fleece or light coat',
+  'ropa.calcetines':    'Socks',
+  'ropa.patucos':       'Booties or shoes',
+  'ropa.babero':        'Bib',
+  'ropa.gorro':         'Hat',
+  'ropa.manoplas':      'Mittens',
   'reg.faltaCant':      '⚠️ Enter the amount.',
   'reg.faltaCantFecha': '⚠️ Enter the amount and the date.',
   'reg.fechaMala':      '⚠️ That date is not valid.',
