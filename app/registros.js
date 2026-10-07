@@ -143,6 +143,9 @@ document.getElementById('btnPeso').addEventListener('click', () => {
   guardarRegistro('btnPeso', t('reg.guardaPeso', 'Guardar peso'), 'peso', fecha, datos,
     () => {
       toast(t('reg.okPeso', '✅ Peso guardado'));
+      // Si la talla propuesta era la de la edad y se dio por buena sin
+      // tocar el desplegable, aquí queda confirmada. Es no-op si ya es ésa.
+      if (datos.ropa) guardarTallaActual(datos.ropa.talla);
       document.getElementById('pesoG').value = '';
       // La ropa y la talla NO se limpian: la de la semana que viene es
       // casi la misma, y volver a marcar cinco botones cada vez es

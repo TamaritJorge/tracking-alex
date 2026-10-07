@@ -703,6 +703,17 @@ window.editarHijo = function(id) {
       </p>
     </div>
 
+    <div class="field">
+      <label for="edHijoTalla">${t('aj.talla', 'Talla de ropa (cm)')}</label>
+      <select id="edHijoTalla" class="hijo-select">
+        <option value=""${n.talla ? '' : ' selected'}>${t('aj.tallaSin', 'Sin decidir')}</option>
+        ${htmlTallas(n.talla)}
+      </select>
+      <p class="hint-txt" style="margin:8px 0 0">${t('aj.talla.txt',
+        'Sólo se usa para estimar lo que pesa la ropa al registrar un peso. '
+        + 'También se puede cambiar desde ahí, y se guarda aquí.')}</p>
+    </div>
+
     <p id="ajustesErr" class="error-txt" style="display:none"></p>
 
     <div class="field" style="margin-top:20px">
@@ -762,6 +773,9 @@ window.guardarHijo = async function(id) {
   const nombre = document.getElementById('edHijoNombre').value.trim();
   const fecha  = document.getElementById('edHijoFecha').value;
   const sexo   = valorSel('rowEdHijoSexo', 'nino');
+  // Vacío = «sin decidir», que en la base es NULL y no 0: son cosas
+  // distintas y la columna lo distingue a propósito.
+  const talla  = parseInt(document.getElementById('edHijoTalla').value, 10) || null;
 
   const fallo = !nombre ? 'Ponle nombre.'
               : !fecha  ? t('aj.faltaFecha', 'Falta la fecha de nacimiento.')
@@ -769,7 +783,7 @@ window.guardarHijo = async function(id) {
   if (fallo) { err.textContent = fallo; err.style.display = ''; return; }
 
   const { data, error } = await sb.from('ninos')
-    .update({ nombre, fecha_nacimiento: fecha, sexo }).eq('id', id).select();
+    .update({ nombre, fecha_nacimiento: fecha, sexo, talla }).eq('id', id).select();
 
   if (error || !data || !data.length) {
     err.textContent = error ? mensajeFamilia(error) : t('aj.noGuardadoPerm', 'No se pudo guardar (sin permiso).');
@@ -782,6 +796,17 @@ window.guardarHijo = async function(id) {
   renderResumen();
   renderTabla();
   if (tabActual === 'graficas') renderCharts();
+
+  /* La talla puede haber cambiado, y el desplegable de Registrar se pinta
+     una sola vez. Se vacía para que vuelva a nacer leyendo el niño nuevo:
+     repintarlo «conservando lo de antes» traería justo la talla vieja que
+     se acaba de corregir. Se pierden las prendas marcadas, y da igual —
+     quien entra en Ajustes a cambiar la talla no está pesando al bebé. */
+  const caja = document.getElementById('pesoRopa');
+  if (caja && typeof pintarRopaPeso === 'function') {
+    caja.innerHTML = '';
+    pintarRopaPeso();
+  }
 
   toast(t('aj.okDatos', '✅ Datos actualizados'));
   abrirAjustes();

@@ -335,6 +335,13 @@ TEXTOS.en = {
   'reg.ropa.talla':     'Clothing size (cm)',
   'reg.ropa.prendas':   'Tick everything they had on',
   'reg.ropa.eco':       '{b} g − {r} g of clothing = {n} g',
+  'reg.ropa.adivinada': 'We worked this one out from their age, and it is often wrong: '
+                      + 'sizes go by body size, not by months. Check the label and '
+                      + 'correct it — it gets saved.',
+  'aj.talla':           'Clothing size (cm)',
+  'aj.tallaSin':        'Not set',
+  'aj.talla.txt':       'Only used to estimate what the clothes weigh when you record '
+                      + 'a weight. You can also change it from there, and it is saved here.',
   'reg.ropa.aviso':     'These are estimates, not measurements: expect about 50 g '
                       + 'either way. And the nappy counts as dry — a wet one weighs '
                       + 'two or three times as much, so change it before weighing, '

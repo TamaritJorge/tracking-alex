@@ -133,16 +133,23 @@ function pesoRopa(prendas, talla) {
 /* ─────────────────────────────────────────────────────────────
    QUÉ TALLA PROPONER
 
-   La buena es la de la última vez: la ropa se cambia cada dos meses,
-   no cada pesada. Se lee del último registro de peso que la lleve, así
-   que no hace falta ni una columna nueva en la base ni que cada móvil
-   recuerde la suya — y lo que elige uno de los dos padres lo ve el
-   otro sin hacer nada.
+   La talla vive en `ninos.talla`, junto a la fecha de nacimiento y el
+   sexo, porque es una propiedad del bebé y no de una pesada concreta.
 
-   Sólo la primerísima vez, cuando no hay ningún peso con ropa, se cae
-   a la edad. Es una aproximación mala a propósito: las tallas van por
-   tamaño y no por edad, y un bebé en percentil alto lleva una o dos
-   de diferencia. Está para que el desplegable no salga vacío.
+   Antes se leía del último registro de peso que la llevara. Parecía
+   más barato —cero esquema— y falló de dos maneras en cuanto se usó:
+
+     · ropa-retroactiva.sql estampó talla 50 en las diecisiete pesadas
+       anteriores, la más reciente incluida, así que el formulario
+       proponía un 50 que nadie había elegido.
+     · Al guardar un peso SIN marcar prendas, `datos` es sólo
+       `{ gramos }` y la talla no se guardaba en ninguna parte.
+
+   El orden de abajo es de más fiable a menos: lo que dijo una persona,
+   luego lo que se dedujo de la última pesada vestida, y sólo si no hay
+   nada de eso, la edad — que es mala a propósito, porque las tallas
+   van por tamaño y un bebé en percentil alto lleva una o dos de
+   diferencia. Está para que el desplegable no salga vacío.
    ───────────────────────────────────────────────────────────── */
 function tallaPorEdad(dias) {
   if (!(dias >= 0)) return 62;
@@ -157,6 +164,11 @@ function tallaPorEdad(dias) {
 }
 
 function tallaPorDefecto() {
+  // 1. La que dijo una persona
+  if (typeof ninoActivo !== 'undefined' && ninoActivo && ninoActivo.talla)
+    return ninoActivo.talla;
+
+  // 2. La de la última pesada vestida
   if (typeof registros !== 'undefined' && registros) {
     for (let i = registros.length - 1; i >= 0; i--) {
       const r = registros[i];
@@ -164,7 +176,37 @@ function tallaPorDefecto() {
         return r.datos.ropa.talla;
     }
   }
+
+  // 3. La edad, que es una conjetura y se avisa de ello en la pantalla
   return tallaPorEdad(typeof diaDeVida === 'function' ? diaDeVida() : -1);
+}
+
+/* Cambiar la talla en el formulario la guarda en el niño. Es un ajuste
+   que se toca una vez cada dos meses, así que pedir un botón aparte
+   sería pedir que se olvide: la prueba es que el fallo que esto arregla
+   consistía exactamente en que la talla no se quedaba guardada.
+
+   Silenciosa si falla: la pesada que estás a punto de guardar se hace
+   igual con la talla elegida —va dentro de `datos.ropa`— y lo único que
+   se pierde es que la proponga la próxima vez. No merece un toast rojo
+   encima de lo que estabas haciendo.
+
+   Sólo lo llama el formulario de Registrar. El modal de EDICIÓN no:
+   ahí estás corrigiendo lo que llevaba puesto en una pesada de hace
+   tres semanas, y eso no dice nada de la talla que usa hoy. */
+async function guardarTallaActual(talla) {
+  if (typeof ninoActivo === 'undefined' || !ninoActivo) return;
+  if (!(talla >= 40 && talla <= 110))      return;   // el mismo CHECK que la base
+  if (ninoActivo.talla === talla)          return;   // nada que escribir
+
+  const anterior = ninoActivo.talla;
+  ninoActivo.talla = talla;                          // que la pantalla no espere a la red
+
+  const { error } = await sb.from('ninos').update({ talla }).eq('id', ninoActivo.id);
+  if (error) {
+    console.error('talla:', error);
+    ninoActivo.talla = anterior;
+  }
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -271,7 +313,10 @@ function pintarRopaPeso(forzar) {
 
   // El <select> es nuevo en cada repintado, así que esto no duplica nada
   const sel = document.getElementById('pesoTalla');
-  if (sel) sel.addEventListener('change', refrescarEcoPeso);
+  if (sel) sel.addEventListener('change', () => {
+    guardarTallaActual(parseInt(sel.value, 10));
+    refrescarEcoPeso();
+  });
 
   refrescarEcoPeso();
 }
@@ -281,6 +326,17 @@ function htmlBloqueRopa(pre, ropa) {
   const marcadas = (ropa && ropa.prendas) ? ropa.prendas : [];
   const g        = pesoRopa(marcadas, talla);
 
+  /* Si la talla no la ha dicho nadie —ni el niño ni una pesada vestida—
+     es la de la edad, y hay que decirlo. Una conjetura presentada como
+     un dato es peor que no tener dato: nadie corrige lo que parece ya
+     correcto, y aquí lo que está en juego son gramos de un historial de
+     peso. Sólo en Registrar: en el modal de edición la talla viene del
+     propio registro y no hay nada que adivinar. */
+  const sinDecidir = pre === 'peso' && !ropa
+                  && !(typeof ninoActivo !== 'undefined' && ninoActivo && ninoActivo.talla);
+  const adivinada  = sinDecidir && !(typeof registros !== 'undefined' && registros
+                  && registros.some(r => r.tipo === 'peso' && r.datos && r.datos.ropa && r.datos.ropa.talla));
+
   return `
     <details class="mas"${marcadas.length ? ' open' : ''}>
       <summary><span>${esc(t('reg.ropa.tit', 'Ropa que llevaba puesta'))}</span>
@@ -289,6 +345,9 @@ function htmlBloqueRopa(pre, ropa) {
       <div class="field">
         <label for="${pre}Talla">${esc(t('reg.ropa.talla', 'Talla de la ropa (cm)'))}</label>
         <select id="${pre}Talla" class="hijo-select">${htmlTallas(talla)}</select>
+        ${adivinada ? `<p class="hint-txt" style="margin:8px 0 0">${esc(t('reg.ropa.adivinada',
+          'Ésta la hemos deducido de la edad y suele fallar: las tallas van por '
+          + 'tamaño, no por meses. Mira la etiqueta y corrígela — se queda guardada.'))}</p>` : ''}
       </div>
 
       <div class="field">
