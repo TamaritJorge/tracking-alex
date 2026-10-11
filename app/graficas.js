@@ -404,28 +404,22 @@ function renderCharts() {
         + 'recuperado el peso de nacimiento. Con menos, cualquier cifra sería '
         + 'ruido de la báscula.');
     } else {
-      let txt = t2('graf.tendencia', 'Ajustada a {n} pesadas de {d} días.',
+      /* Aquí hubo un aviso de «el descuento de ropa ha cambiado X g, así
+         que parte de esta cifra no es del bebé». Se ha quitado, y el
+         motivo merece quedar escrito porque es tentador volver a ponerlo:
+
+         es cierto, pero se cumple CASI SIEMPRE. Al entrar el frío se le
+         añade un jersey, en primavera se le quita, y cada cambio de
+         estación mueve el descuento muchísimo más de 40 g. Un aviso que
+         está encendido todo el año no se lee: se ignora, y de paso
+         enseña a ignorar los de al lado, que sí importan.
+
+         La incertidumbre de la ropa no desaparece por no decirla, pero
+         ya está dicha donde toca — en el formulario de peso, al marcar
+         las prendas, que es el único sitio donde se puede hacer algo al
+         respecto (pesarlo desnudo, o cambiarle el pañal antes). */
+      nota.textContent = t2('graf.tendencia', 'Ajustada a {n} pesadas de {d} días.',
         { n: tend.n, d: numero(tend.dias, 0) });
-
-      /* El aviso del artefacto sí se queda a la vista: si el descuento
-         de ropa ha cambiado, parte del movimiento es de la estimación y
-         no del bebé. Pasó de verdad —de 50 a 105 g— y se comió la mitad
-         de la ganancia aparente de esos días. Eso no puede vivir en un
-         title que en el móvil no existe.
-
-         El signo importa, y por eso son dos claves: descontar más en
-         las últimas hace que la ganancia parezca menor, y al revés. */
-      if (Math.abs(tend.ropaCambio) > 40) {
-        txt += ' ' + t2(tend.ropaCambio > 0 ? 'graf.ropaMas' : 'graf.ropaMenos',
-          tend.ropaCambio > 0
-            ? 'Ojo: ahora se descuentan {r} g más de ropa que antes, así que gana '
-              + 'algo más de lo que marca.'
-            : 'Ojo: ahora se descuentan {r} g menos de ropa que antes, así que gana '
-              + 'algo menos de lo que marca.',
-          { r: Math.abs(Math.round(tend.ropaCambio)) });
-      }
-
-      nota.textContent = txt;
       nota.title = t('graf.tendenciaTit',
         'Es la curva de percentil de la OMS que mejor encaja con sus pesadas, '
         + 'prolongada una semana para ver hacia dónde va. No es una predicción: '

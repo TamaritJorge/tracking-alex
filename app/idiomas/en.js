@@ -313,8 +313,6 @@ TEXTOS.en = {
   'graf.tendenciaTit':    'The WHO percentile curve that best fits their weigh-ins, carried a week ahead to show which way things are going. It is not a prediction: the further out, the less it is worth.',
   'graf.sinTendenciaTit': 'It takes at least three weigh-ins spread over ten days or more, once birth weight has been regained. With fewer, any figure would just be scale noise.',
   'graf.sinTendencia':    'Not enough weigh-ins to estimate a trend.',
-  'graf.ropaMas':         'Worth knowing: {r} g more clothing is being deducted than before, so they are gaining a little more than it shows.',
-  'graf.ropaMenos':       'Worth knowing: {r} g less clothing is being deducted than before, so they are gaining a little less than it shows.',
 
   /* Los primeros días. El 10 % y el día 14 son las referencias al uso,
      y no cambian de un país a otro: no se adaptan al traducir. */

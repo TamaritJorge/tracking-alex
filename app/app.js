@@ -300,11 +300,7 @@ const Z_CAIDA_AVISO = 0.67;
 function pesadasParaAjuste() {
   const pts = registros
     .filter(r => r.tipo === 'peso')
-    .map(r => ({
-      t: +new Date(r.fecha_hora),
-      g: Number(r.datos.gramos),
-      ropa: (r.datos.ropa && Number(r.datos.ropa.g)) || 0
-    }))
+    .map(r => ({ t: +new Date(r.fecha_hora), g: Number(r.datos.gramos) }))
     .filter(p => !isNaN(p.t) && !isNaN(p.g))
     .sort((a, b) => a.t - b.t);
 
@@ -392,28 +388,6 @@ function ajustePeso() {
     if (e !== null) ssg += Math.pow(p.g - e, 2);
   });
 
-  /* ¿Puede la ropa estar disfrazándose de tendencia?
-
-     No vale medir la dispersión de los descuentos: una sola pesada
-     desnuda en medio daría un salto enorme sin distorsionar nada. Lo
-     que de verdad tuerce la pendiente es que las ÚLTIMAS pesadas
-     descuenten más que las anteriores — entonces la ganancia reciente
-     parece menor de lo que es.
-
-     Se compara el descuento de la última con la MEDIANA de las demás:
-     la mediana aguanta una pesada desnuda suelta sin inmutarse, que es
-     justo lo que hace falta aquí.
-
-     Pasó de verdad: el 7 de octubre el descuento subió de 50 a 105 g y
-     se comió la mitad de la ganancia aparente de esos días. */
-  const previas = usados.slice(0, -1).map(p => p.ropa).sort((a, b) => a - b);
-  const mediana = previas.length
-    ? (previas.length % 2
-        ? previas[(previas.length - 1) / 2]
-        : (previas[previas.length / 2 - 1] + previas[previas.length / 2]) / 2)
-    : 0;
-  const ropaCambio = usados[usados.length - 1].ropa - mediana;
-
   return {
     z0, k, seK, n,
     d0, d1,                                   // edad en días, para el modelo
@@ -428,7 +402,6 @@ function ajustePeso() {
     residuo: Math.sqrt(ssg / usados.length),
     // ¿Es la deriva distinguible del ruido? Si no lo es, no se cuenta.
     derivaReal: isFinite(seK) && Math.abs(k) > 1.96 * seK,
-    ropaCambio,
     ultimo: usados[usados.length - 1]
   };
 }
