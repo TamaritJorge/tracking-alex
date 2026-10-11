@@ -327,26 +327,31 @@ function renderCharts() {
     if (flojo) {
       /* Con t2() y no concatenando: en inglés el número y la unidad no
          caen en el mismo sitio de la frase. */
+      /* Corto, pero no tanto como las notas de abajo: esto sale sólo
+         cuando hay algo que decir, y si alguien va a hablarlo con su
+         pediatra tiene que poder leer por qué sin buscarlo en un
+         `title` que en el móvil no aparece. Lo que se ha ido es la
+         explicación de qué es una banda de percentiles. */
       avisoMes.innerHTML = t2('graf.bajandoPct',
-        '⚠️ <strong>Está bajando de percentil.</strong> Gana {g} g/día y para '
-        + 'quedarse en su línea harían falta {n}. A este ritmo cruzaría una banda '
-        + 'entera de percentiles en unas {s} semanas. No es, por sí solo, un '
-        + 'problema —muchos bebés se recolocan los primeros meses—, pero es de '
-        + 'las cosas que merece la pena comentar en la próxima revisión.',
-        { g: Math.round(tend.gPorDia),
-          n: Math.round(tend.necesario),
-          s: numero(semanas, 0) });
+        '⚠️ <strong>Está bajando de percentil:</strong> gana {g} g/día y para '
+        + 'quedarse en su línea harían falta {n}. Muchos bebés se recolocan los '
+        + 'primeros meses, así que no es por sí solo un problema — pero merece '
+        + 'una frase en la próxima revisión.',
+        { g: Math.round(tend.gPorDia), n: Math.round(tend.necesario) });
     }
   }
 
   /* ── Los primeros días ──────────────────────────────────────
-     La bajada de peso del principio asusta mucho y la aplicación no
-     decía nada de ella. Son dos datos concretos con dos referencias
-     conocidas al lado: hasta un 10 % de pérdida y recuperarlo antes del
-     día 14. Teniéndolos, uno sabe si lo que ve es lo normal.
+     La bajada de peso del principio asusta, y la aplicación no decía
+     nada de ella. Dos datos y sus dos referencias, en una línea.
 
-     Sólo el primer mes. Después deja de ser información y pasa a ser
-     una anécdota ocupando sitio. */
+     Las referencias entre paréntesis y no en una frase aparte: «bajó un
+     7,9 %» a secas es un número que no se sabe leer, y explicarlo en
+     dos oraciones más convertía la nota en un párrafo. El paréntesis
+     hace el mismo trabajo con cuatro palabras.
+
+     Sólo las primeras seis semanas. Después deja de ser información y
+     pasa a ser una anécdota ocupando sitio. */
   const notaRN = document.getElementById('notaRecienNacido');
   if (notaRN) {
     const dia = (typeof diaDeVida === 'function') ? diaDeVida() : null;
@@ -354,17 +359,15 @@ function renderCharts() {
 
     notaRN.style.display = pi ? '' : 'none';
     if (pi) {
-      notaRN.textContent = t2('graf.perdidaInicial',
-        'Primeros días: bajó {p} g desde los {n} g del nacimiento, un {pc} %. '
-        + 'Lo habitual es perder hasta un 10 %.',
-        { p: numero(pi.perdidos), n: numero(pi.nacimiento), pc: numero(pi.pct, 1) })
-        + ' ' + (pi.diaRecup !== null
-          ? t2('graf.recupero',
-              'Recuperó el peso de nacimiento el día {d}; lo habitual es antes del día 14.',
-              { d: Math.round(pi.diaRecup) })
-          : t('graf.sinRecuperar',
-              'Todavía no ha vuelto al peso de nacimiento; lo habitual es '
-              + 'conseguirlo antes del día 14.'));
+      notaRN.textContent = pi.diaRecup !== null
+        ? t2('graf.perdidaInicial',
+            'Primeros días: bajó un {pc} % (normal hasta un 10 %) y lo recuperó '
+            + 'el día {d} (normal antes del 14).',
+            { pc: numero(pi.pct, 1), d: Math.round(pi.diaRecup) })
+        : t2('graf.sinRecuperar',
+            'Primeros días: bajó un {pc} % (normal hasta un 10 %). Todavía no ha '
+            + 'vuelto al peso de nacimiento; lo normal es antes del día 14.',
+            { pc: numero(pi.pct, 1) });
     }
   }
 
@@ -378,43 +381,56 @@ function renderCharts() {
       { s: sexoHijo() === 'nina' ? t('alta.ninas', 'niñas') : t('alta.ninos', 'niños') });
   }
 
+  /* ── La nota de debajo ──────────────────────────────────────
+     Era un párrafo de tres frases explicando qué es una curva ajustada
+     y que no es una predicción. Dos problemas: lo lee todo el mundo
+     cada vez, aunque ya se lo sepa, y repetía los g/día que ya están
+     en la casilla del panel, dos dedos más arriba.
+
+     Ahora es una línea que dice sólo de cuántos datos sale, que es lo
+     único que no se puede deducir mirando la gráfica. Lo demás —qué es
+     y hasta dónde fiarse— se queda en el `title`, para quien lo busque.
+
+     El `title` no se ve en el móvil, y está bien: lo que importa cabe
+     en la línea. Si hiciera falta de verdad para entenderla, no sería
+     un `title`. */
   const nota = document.getElementById('notaTendencia');
   if (nota) {
-    let txt;
     if (!tend) {
-      txt = t('graf.sinTendencia',
-        'Para estimar la tendencia hacen falta al menos tres pesadas repartidas '
-        + 'en diez días o más, ya recuperado el peso de nacimiento. Con menos, '
-        + 'cualquier cifra sería ruido de la báscula.');
+      nota.textContent = t('graf.sinTendencia',
+        'Faltan pesadas para estimar la tendencia.');
+      nota.title = t('graf.sinTendenciaTit',
+        'Hacen falta al menos tres pesadas repartidas en diez días o más, ya '
+        + 'recuperado el peso de nacimiento. Con menos, cualquier cifra sería '
+        + 'ruido de la báscula.');
     } else {
-      txt = t2('graf.tendencia',
-        'Curva de la OMS ajustada a {n} pesadas de {d} días: gana {g} g/día. No es '
-        + 'una predicción — se prolonga una semana para ver hacia dónde va, y '
-        + 'cuanto más lejos, menos vale.',
-        { n: tend.n, d: numero(tend.dias, 0), g: Math.round(tend.gPorDia) });
+      let txt = t2('graf.tendencia', 'Ajustada a {n} pesadas de {d} días.',
+        { n: tend.n, d: numero(tend.dias, 0) });
 
-      /* Y el aviso del artefacto, que es el que más me importa dejar
-         dicho: si el descuento de ropa ha cambiado dentro de la ventana,
-         parte del movimiento es mío y no del bebé. Pasó de verdad —de 50
-         a 105 g el 7 de octubre— y se comió la mitad de la ganancia
-         aparente de esos días. Un cambio de costumbre al vestirlo no
-         puede disfrazarse de señal de crecimiento. */
+      /* El aviso del artefacto sí se queda a la vista: si el descuento
+         de ropa ha cambiado, parte del movimiento es de la estimación y
+         no del bebé. Pasó de verdad —de 50 a 105 g— y se comió la mitad
+         de la ganancia aparente de esos días. Eso no puede vivir en un
+         title que en el móvil no existe.
+
+         El signo importa, y por eso son dos claves: descontar más en
+         las últimas hace que la ganancia parezca menor, y al revés. */
       if (Math.abs(tend.ropaCambio) > 40) {
-        // El signo importa: descontar más en las últimas pesadas hace que
-        // la ganancia parezca menor, y al revés. Decir cuál de las dos es
-        // lo que convierte el aviso en algo con lo que se puede hacer algo.
         txt += ' ' + t2(tend.ropaCambio > 0 ? 'graf.ropaMas' : 'graf.ropaMenos',
           tend.ropaCambio > 0
-            ? 'Ojo: en las últimas pesadas se está descontando {r} g más de ropa '
-              + 'que antes, así que parte de esta cifra es de la estimación de la '
-              + 'ropa y no del bebé — la ganancia real es algo mayor.'
-            : 'Ojo: en las últimas pesadas se está descontando {r} g menos de ropa '
-              + 'que antes, así que parte de esta cifra es de la estimación de la '
-              + 'ropa y no del bebé — la ganancia real es algo menor.',
+            ? 'Ojo: ahora se descuentan {r} g más de ropa que antes, así que gana '
+              + 'algo más de lo que marca.'
+            : 'Ojo: ahora se descuentan {r} g menos de ropa que antes, así que gana '
+              + 'algo menos de lo que marca.',
           { r: Math.abs(Math.round(tend.ropaCambio)) });
       }
+
+      nota.textContent = txt;
+      nota.title = t('graf.tendenciaTit',
+        'Es la curva de percentil de la OMS que mejor encaja con sus pesadas, '
+        + 'prolongada una semana para ver hacia dónde va. No es una predicción: '
+        + 'cuanto más lejos, menos vale.');
     }
-    nota.textContent = txt;
   }
 
   /* ── Pipís y cacas en 24 h ────────────────────────────────────
