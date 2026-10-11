@@ -212,28 +212,233 @@ function enVentana(iso, desde) {
 }
 
 
-/* ─────────────────────────────────────────────────────────────
-   TENDENCIA DE PESO
+/* ═════════════════════════════════════════════════════════════
+   LA TENDENCIA DE PESO
 
-   Recta de mínimos cuadrados sobre las pesadas recientes.
+   Antes esto era una recta de mínimos cuadrados sobre los últimos
+   siete días. Las dos cosas estaban mal, y se notó en cuanto hubo
+   datos de verdad.
 
-   Sólo se usan los últimos DIAS_TENDENCIA días a propósito: los
-   primeros días el bebé PIERDE peso y luego lo recupera,
-   y meter esa bajada en el ajuste aplanaría la pendiente y daría
-   una estimación falsamente mala.
-   ───────────────────────────────────────────────────────────── */
+   ── LA VENTANA ERA DEMASIADO CORTA ──
+   Con cuatro pesadas en seis días y una báscula que varía ±25 g, el
+   margen del 95 % sobre la pendiente era de ±8 g/día. El panel decía
+   «22 g/día» cuando lo honesto era «entre 13 y 29», y el bebé estaba
+   ganando 33. No es que la cifra cambiara: es que nunca tuvo precisión
+   para distinguir las dos cosas, y se enseñaba sin margen, como un dato.
+
+   Alargar la ventana lo arregla casi todo: a 14 días el margen baja a
+   ±4,5 y a 21 días a ±3.
+
+   ── Y UNA RECTA NO ERA EL MODELO ──
+   Un bebé no crece en línea recta. Prolongando la recta ajustada hoy,
+   Álex pesaría 6,7 kg a los cuatro meses; la curva de la OMS dice 5,4.
+   Y la pendiente que hace falta para no bajar de percentil pasa de 39
+   g/día al mes a 12 a los seis meses, así que un único número lineal no
+   puede significar lo mismo en los dos sitios.
+
+   ── EL MODELO ──
+   «Este bebé crece a lo largo de una curva de la OMS cuyo percentil se
+   desliza despacio»:
+
+       z(t) = z0 + k·t      →      peso(t) = pesoDeZ(lmsEn(t), z(t))
+
+   Dos parámetros, los mismos que una recta, pero en el sistema
+   correcto. El ajuste se hace SOBRE z y no sobre gramos: así una pesada
+   de la semana 1 y otra de la semana 20 pesan lo mismo en el ajuste, que
+   en gramos no ocurriría.
+
+   De ese único ajuste salen las tres cosas que se enseñan —lo que gana,
+   lo que necesitaría, y hacia dónde va su percentil— en vez de las tres
+   piezas sueltas de antes, que se calculaban sobre ventanas distintas y
+   podían contradecirse.
+   ═════════════════════════════════════════════════════════════ */
+
 /* Los 20 g/día que indicó la pediatra valen para el PRIMER MES y nada
    más. Un bebé de seis meses gana la mitad de eso y está perfectamente:
-   mantenerlo como suelo para siempre convertiía un dato normal en una
-   alarma permanente. Después del primer mes, la única referencia es su
-   propia curva de la OMS. */
+   mantenerlo como suelo para siempre convertiría un dato normal en una
+   alarma permanente. Ya no decide nada —para eso está la curva de la
+   OMS, que sabe la edad y el percentil—; se queda como referencia en el
+   texto del primer mes. */
 const OBJETIVO_G_DIA   = 20;
 const DIAS_PRIMER_MES  = 30;
-const DIAS_TENDENCIA  = 7;    // ventana de pesadas que entra en el ajuste
-const DIAS_PROYECCION = 7;    // hasta dónde se prolonga la recta
-const MIN_HORAS_SPAN  = 18;   // por debajo de esto la pendiente se dispara
 
-function tendenciaPeso() {
+/* Hasta cuándo se enseña la nota de los primeros días. Seis semanas y
+   no cuatro: con treinta días justos desaparece el día que el bebé
+   cumple un mes, que es exactamente cuando uno mira atrás y se pregunta
+   si aquella bajada del principio fue normal. Además explica por qué el
+   ajuste de la tendencia empieza donde empieza. */
+const DIAS_RECIEN_NACIDO = 42;
+
+const DIAS_VENTANA    = 56;   // cuánto historial entra como mucho en el ajuste
+const DIAS_PROYECCION = 7;    // hasta dónde se prolonga la curva
+const MIN_PESADAS     = 3;    // por debajo de esto no se da ningún número
+const MIN_DIAS_SPAN   = 10;   // ni por debajo de este recorrido
+
+/* El umbral que se mira de verdad para hablar de crecimiento que
+   flojea: 0,67 z es el ancho de una banda de percentiles de la cartilla
+   (P3-P15-P50-P85-P97), y cruzar una entera de forma sostenida es lo que
+   hace que un pediatra mire con atención. Es una referencia conocida y
+   no un número que me haya inventado, y por eso es el que dispara el
+   aviso. */
+const Z_CAIDA_AVISO = 0.67;
+
+/* ── Pesadas que entran en el ajuste ───────────────────────────
+   Dos filtros, los dos explícitos:
+
+   1. Fuera la pérdida fisiológica. Los primeros días el bebé PIERDE
+      peso —hasta un 10 % es normal— y lo recupera antes del día 14. Eso
+      es otro fenómeno, y meterlo en el mismo ajuste que el crecimiento
+      posterior deja un residuo de 87 g. Se descarta todo hasta la última
+      pesada que esté por debajo del peso de nacimiento.
+
+      Antes esto lo hacía de refilón la ventana de siete días. Ahora es
+      una línea que se puede leer y discutir.
+
+   2. Ventana máxima de DIAS_VENTANA días, para que a los seis meses el
+      ajuste no siga arrastrando el primer mes, cuando se ganaba el
+      triple. */
+function pesadasParaAjuste() {
+  const pts = registros
+    .filter(r => r.tipo === 'peso')
+    .map(r => ({
+      t: +new Date(r.fecha_hora),
+      g: Number(r.datos.gramos),
+      ropa: (r.datos.ropa && Number(r.datos.ropa.g)) || 0
+    }))
+    .filter(p => !isNaN(p.t) && !isNaN(p.g))
+    .sort((a, b) => a.t - b.t);
+
+  if (!pts.length) return [];
+
+  // El peso de nacimiento es la primera pesada; si la primera es de días
+  // después, no hay bajada que quitar y el índice se queda en -1.
+  const nacimiento = pts[0].g;
+  let ultimaBaja = -1;
+  pts.forEach((p, i) => { if (p.g < nacimiento) ultimaBaja = i; });
+
+  const tFin = pts[pts.length - 1].t;
+  return pts.slice(ultimaBaja + 1)
+            .filter(p => p.t >= tFin - DIAS_VENTANA * 864e5);
+}
+
+function ajustePeso() {
+  const usados = pesadasParaAjuste();
+  if (usados.length < MIN_PESADAS) return null;
+
+  const d0 = edadEnDias(usados[0].t);
+  const d1 = edadEnDias(usados[usados.length - 1].t);
+  if (!(d1 - d0 >= MIN_DIAS_SPAN)) return null;
+
+  // A z cada punto. Si la edad se sale de las tablas, fuera.
+  const zs = [];
+  for (const p of usados) {
+    const dias = edadEnDias(p.t);
+    const lms  = lmsEn(dias);
+    if (lms && p.g > 0) zs.push({ d: dias, z: zDePeso(lms, p.g / 1000) });
+  }
+  if (zs.length < MIN_PESADAS) return null;
+
+  // Mínimos cuadrados de z contra la edad en días
+  const n = zs.length;
+  let sx = 0, sy = 0, sxy = 0, sxx = 0;
+  for (const p of zs) { sx += p.d; sy += p.z; sxy += p.d * p.z; sxx += p.d * p.d; }
+  const den = n * sxx - sx * sx;
+  if (!den) return null;
+
+  const k  = (n * sxy - sx * sy) / den;      // z por día
+  const z0 = (sy - k * sx) / n;
+
+  /* El margen. Es la mitad del arreglo: sin él volvemos a enseñar una
+     cifra que no sabe lo imprecisa que es. Con n-2 grados de libertad
+     porque el modelo tiene dos parámetros.
+
+     Y con un SUELO, que es lo que evita el peor fallo posible aquí: con
+     tres pesadas casi alineadas el residuo tiende a cero, el margen con
+     él, y entonces la deriva más insignificante pasa el test y la
+     aplicación anuncia que el bebé baja de percentil. Tres puntos se
+     alinean por casualidad constantemente.
+
+     El suelo no es un número mágico: sabemos que la báscula varía unos
+     25 g y que la ropa se estima con ese mismo orden de error, así que
+     el residuo no PUEDE ser menor que eso por mucho que los puntos se
+     alineen. Se pasa a unidades z dividiendo por M·S, que es lo que
+     mide un z cerca de la mediana — y así el suelo se ajusta solo con
+     la edad, porque un bebé de seis meses tiene otra escala. */
+  let ss = 0;
+  zs.forEach(p => ss += Math.pow(p.z - (z0 + k * p.d), 2));
+
+  const lmsFin   = lmsEn(d1);
+  const sigmaMin = lmsFin ? 0.025 / (lmsFin.M * lmsFin.S) : 0.05;
+  const sigma    = Math.max(n > 2 ? Math.sqrt(ss / (n - 2)) : Infinity, sigmaMin);
+  const seK      = sigma * Math.sqrt(n / den);
+
+  const curva = dias => {
+    const lms = lmsEn(dias);
+    return lms ? pesoDeZ(lms, z0 + k * dias) * 1000 : null;
+  };
+
+  // Lo que gana AHORA: la pendiente de la curva ajustada en la última
+  // pesada. Y lo que necesitaría: la misma pendiente con k = 0, o sea,
+  // la de la línea de percentil que pasa por ahí.
+  const zFin = z0 + k * d1;
+  const a = curva(d1 - 0.5), b = curva(d1 + 0.5);
+  const gPorDia = (a !== null && b !== null) ? b - a : null;
+  if (gPorDia === null) return null;
+
+  // Residuo en gramos, para poder comprobar que el ajuste es sano
+  let ssg = 0;
+  usados.forEach(p => {
+    const e = curva(edadEnDias(p.t));
+    if (e !== null) ssg += Math.pow(p.g - e, 2);
+  });
+
+  /* ¿Puede la ropa estar disfrazándose de tendencia?
+
+     No vale medir la dispersión de los descuentos: una sola pesada
+     desnuda en medio daría un salto enorme sin distorsionar nada. Lo
+     que de verdad tuerce la pendiente es que las ÚLTIMAS pesadas
+     descuenten más que las anteriores — entonces la ganancia reciente
+     parece menor de lo que es.
+
+     Se compara el descuento de la última con la MEDIANA de las demás:
+     la mediana aguanta una pesada desnuda suelta sin inmutarse, que es
+     justo lo que hace falta aquí.
+
+     Pasó de verdad: el 7 de octubre el descuento subió de 50 a 105 g y
+     se comió la mitad de la ganancia aparente de esos días. */
+  const previas = usados.slice(0, -1).map(p => p.ropa).sort((a, b) => a - b);
+  const mediana = previas.length
+    ? (previas.length % 2
+        ? previas[(previas.length - 1) / 2]
+        : (previas[previas.length / 2 - 1] + previas[previas.length / 2]) / 2)
+    : 0;
+  const ropaCambio = usados[usados.length - 1].ropa - mediana;
+
+  return {
+    z0, k, seK, n,
+    d0, d1,                                   // edad en días, para el modelo
+    t0: usados[0].t, t1: usados[usados.length - 1].t,   // instantes, para la gráfica
+    dias:  d1 - d0,
+    curva,
+    gPorDia,
+    necesario: pendienteEn(d1, zFin),
+    zFin,
+    pctFin: normalCDF(zFin) * 100,
+    pctIni: normalCDF(z0 + k * d0) * 100,
+    residuo: Math.sqrt(ssg / usados.length),
+    // ¿Es la deriva distinguible del ruido? Si no lo es, no se cuenta.
+    derivaReal: isFinite(seK) && Math.abs(k) > 1.96 * seK,
+    ropaCambio,
+    ultimo: usados[usados.length - 1]
+  };
+}
+
+/* ── Los primeros días ─────────────────────────────────────────
+   La bajada fisiológica y cuándo recuperó el peso de nacimiento. Son
+   los dos datos que de verdad preocupan la primera semana, y hasta
+   ahora la aplicación no decía ninguno. Sale casi gratis: para excluir
+   esos días del ajuste hay que encontrarlos igualmente. */
+function perdidaInicial() {
   const pts = registros
     .filter(r => r.tipo === 'peso')
     .map(r => ({ t: +new Date(r.fecha_hora), g: Number(r.datos.gramos) }))
@@ -242,41 +447,30 @@ function tendenciaPeso() {
 
   if (pts.length < 2) return null;
 
-  const ultimo = pts[pts.length - 1];
-  let usados = pts.filter(p => p.t >= ultimo.t - DIAS_TENDENCIA * 864e5);
-  if (usados.length < 2) usados = pts.slice(-2);   // pesadas muy espaciadas
+  // Sólo vale si la primera pesada es del día de nacimiento o el siguiente:
+  // si la familia empezó a apuntar en la semana 3, el "peso de nacimiento"
+  // sería inventado y el porcentaje, mentira.
+  const d0 = edadEnDias(pts[0].t);
+  if (!(d0 >= 0 && d0 < 2)) return null;
 
-  const span = usados[usados.length - 1].t - usados[0].t;
-  if (span < MIN_HORAS_SPAN * 3600e3) return null;
+  const nacimiento = pts[0].g;
+  let minimo = pts[0], recupero = null;
 
-  // Mínimos cuadrados con el tiempo en días desde la primera pesada usada
-  const t0 = usados[0].t;
-  const x  = usados.map(p => (p.t - t0) / 864e5);
-  const n  = usados.length;
-  const mx = x.reduce((a, b) => a + b, 0) / n;
-  const my = usados.reduce((a, p) => a + p.g, 0) / n;
+  for (const p of pts) {
+    if (p.g < minimo.g) minimo = p;
+    if (recupero === null && p !== pts[0] && p.g >= nacimiento) recupero = p;
+  }
 
-  let num = 0, den = 0;
-  x.forEach((xi, i) => {
-    num += (xi - mx) * (usados[i].g - my);
-    den += (xi - mx) ** 2;
-  });
-  if (!den) return null;
+  if (minimo === pts[0]) return null;      // no llegó a bajar
 
-  const gPorDia = num / den;
   return {
-    gPorDia,
-    inter: my - gPorDia * mx,          // gramos estimados en t0
-    t0,
-    n,
-    dias: span / 864e5,
-    ultimo
+    nacimiento,
+    minimo:   minimo.g,
+    perdidos: nacimiento - minimo.g,
+    pct:      (nacimiento - minimo.g) / nacimiento * 100,
+    diaMin:   edadEnDias(minimo.t),
+    diaRecup: recupero ? edadEnDias(recupero.t) : null
   };
-}
-
-// Gramos estimados por la recta en un instante dado
-function pesoEstimado(tend, t) {
-  return tend.inter + tend.gPorDia * (t - tend.t0) / 864e5;
 }
 
 /* ─────────────────────────────────────────────────────────────
@@ -1033,13 +1227,15 @@ function renderResumen() {
      Pasado el primer mes no hay «bajo»: no existe un suelo universal de
      gramos al día, y pintar de rojo a un bebé de cinco meses que gana 15
      g/día sería asustar sin motivo. */
-  const tend = tendenciaPeso();
+  const tend = ajustePeso();
   const dia  = diaDeVida();
   const primerMes = dia !== null && dia <= DIAS_PRIMER_MES;
   let trend;
   if (!tend) {
-    // Distinguir "aún no hay datos" de "las hay, pero demasiado juntas":
-    // si no, con dos pesadas seguidas el aviso despista.
+    /* Sin ajuste NO se enseña ningún número, y eso es deliberado. Antes,
+       con dos pesadas de días seguidos, salía una cifra con ±8 g/día de
+       margen presentada como un dato. Un número así es peor que no tener
+       número: nadie desconfía de lo que ya parece una respuesta. */
     trend = pesos.length >= 2
       ? `<div class="sum-trend nd">${esc(t('sum.juntas', 'g/día: pesadas muy juntas'))}</div>`
       : `<div class="sum-trend nd">${esc(t('sum.faltan', 'g/día: faltan pesadas'))}</div>`;
@@ -1048,7 +1244,7 @@ function renderResumen() {
     const signo = g > 0 ? '+' : '';
 
     let clase, porque;
-    if (necesario !== null && g >= Math.round(necesario)) {
+    if (tend.necesario !== null && g >= Math.round(tend.necesario)) {
       clase  = 'ok';
       porque = t('sum.mantiene', 'Mantiene su percentil');
     } else if (primerMes && g < OBJETIVO_G_DIA) {
@@ -1064,14 +1260,41 @@ function renderResumen() {
     }
 
     const ajuste = t2('sum.ajuste',
-      'Ajuste sobre {n} pesadas de los últimos {d} días',
-      { n: tend.n, d: numero(tend.dias, 1) });
+      'Curva de la OMS ajustada a {n} pesadas de {d} días. Residuo: {r} g',
+      { n: tend.n, d: numero(tend.dias, 0), r: numero(tend.residuo, 0) });
     trend = `<div class="sum-trend ${clase}" title="${esc(porque)}. ${esc(ajuste)}">`
           + `${signo}${g} ${esc(t('u.gdia', 'g/día'))}</div>`;
   }
 
   // Percentil OMS de la última pesada (peso para la edad)
   const pct = ultimo ? percentilPeso(ultimo.fecha_hora, ultimo.datos.gramos) : null;
+
+  /* Hacia dónde va el percentil.
+
+     Es la pregunta que de verdad importa y que la aplicación no
+     contestaba: un bebé sano se queda más o menos en su línea, y lo que
+     un pediatra mira no es la velocidad en gramos —que depende de la
+     edad y es ruidosa— sino si está cruzando líneas.
+
+     SÓLO se dice si la deriva es distinguible del ruido (derivaReal).
+     Si no lo es, no se dice nada. Inventar una tendencia a partir de
+     tres pesadas es exactamente cómo se fabrica una preocupación a las
+     tres de la mañana. */
+  let derivaTxt = '';
+  if (tend && tend.derivaReal) {
+    const zSem = tend.k * 7;
+    const sube = zSem > 0;
+    // 0,67 z es el ancho de una banda de la cartilla; a este ritmo,
+    // cuántas semanas tardaría en cruzarla entera.
+    const semanas = Math.abs(Z_CAIDA_AVISO / zSem);
+    derivaTxt = `<div class="sum-pct ${sube ? '' : 'nd'}" title="${esc(t2('sum.derivaTit',
+        'Ajustado sobre {n} pesadas: {z} z por semana. A este ritmo tardaría unas '
+        + '{s} semanas en cruzar una banda entera de percentiles, que es lo que se '
+        + 'suele mirar. Moverse de percentil no es, por sí solo, un problema.',
+        { n: tend.n, z: numero(zSem, 2), s: numero(semanas, 0) }))}">`
+      + `${esc(sube ? t('sum.subiendo', '↗ subiendo de percentil')
+                    : t('sum.bajando',  '↘ bajando de percentil'))}</div>`;
+  }
 
   let pctTxt = '';
   if (ultimo) {
@@ -1094,7 +1317,11 @@ function renderResumen() {
     + 'ganar para seguir por la misma línea. Cambia con la edad —sube hasta las '
     + '3 semanas y luego baja— y bajar de percentil no es, por sí solo, un problema.');
 
-  const needTxt = (tend && necesario !== null)
+  /* Sin la guarda `tend &&` que tenía antes: esta línea sólo necesita
+     `necesario`, que sale de la última pesada y no del ajuste. Con la
+     guarda desaparecía justo cuando faltaban pesadas, que es cuando más
+     falta hace saber a qué ritmo debería ir. */
+  const needTxt = (necesario !== null)
     ? `<div class="sum-need" title="${esc(needTit)}">`
       + `${esc(pct
           ? t2('sum.need',   '{g} g/día para mantener {p}',
@@ -1129,6 +1356,7 @@ function renderResumen() {
       ${trend}
       ${needTxt}
       ${pctTxt}
+      ${derivaTxt}
       <div class="sum-lbl">${esc(t('sum.ultimoPeso', 'Último peso'))}</div>
       <div class="sum-extra">${ultimo ? esc(fmtFechaHora(ultimo.fecha_hora))
                                       : esc(t('sum.sinDatos', 'sin datos'))}</div>

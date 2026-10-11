@@ -304,9 +304,21 @@ TEXTOS.en = {
   'auth.generico':      'That did not go through.',
   'btn.guardando':      'Saving…',
   'aria.editar':        'Edit',
-  'graf.pocoPeso':      '⚠️ <strong>Gaining {g} g a day.</strong> In the first month at least {o} g a day is the usual expectation. With only a few weigh-ins this number jumps around a lot, so check there are enough first; if it stays like this, mention it to your doctor.',
-  'graf.tendencia':     'Estimated from {n} weigh-ins over the last {d} days ({g} g a day). It is a plain trend line, not a prediction: with few weigh-ins it changes a lot from one day to the next.',
-  'graf.sinTendencia':  'At least two weigh-ins, spaced apart, are needed to estimate a trend.',
+  /* ── La tendencia del peso ───────────────────────────────────
+     graf.pocoPeso ya no existe: el aviso saltaba por «menos de 20 g/día»,
+     una cifra de recién nacido medida sobre siete días de datos. Ahora el
+     disparador es cruzar una banda de percentiles, y el texto es otro. */
+  'graf.bajandoPct':    '⚠️ <strong>Dropping through the percentiles.</strong> Gaining {g} g a day, and staying on their own line would take {n}. At this rate they would cross a whole percentile band in about {s} weeks. It is not, on its own, a problem — plenty of babies settle onto a different line in the first months — but it is worth raising at the next check-up.',
+  'graf.tendencia':     'A WHO curve fitted to {n} weigh-ins across {d} days: gaining {g} g a day. It is not a prediction — it runs a week ahead to show which way things are going, and the further out, the less it is worth.',
+  'graf.sinTendencia':  'Estimating a trend needs at least three weigh-ins spread over ten days or more, once birth weight has been regained. With fewer, any figure would just be scale noise.',
+  'graf.ropaMas':       'Worth knowing: the last few weigh-ins are deducting {r} g more clothing than the earlier ones, so part of this figure comes from the clothing estimate rather than the baby — the real gain is a little higher.',
+  'graf.ropaMenos':     'Worth knowing: the last few weigh-ins are deducting {r} g less clothing than the earlier ones, so part of this figure comes from the clothing estimate rather than the baby — the real gain is a little lower.',
+
+  /* Los primeros días. El 10 % y el día 14 son las referencias al uso,
+     y no cambian de un país a otro: no se adaptan al traducir. */
+  'graf.perdidaInicial': 'First few days: down {p} g from the {n} g at birth, which is {pc} %. Losing up to 10 % is the usual range.',
+  'graf.recupero':      'Back to birth weight on day {d}; usually that happens before day 14.',
+  'graf.sinRecuperar':  'Not back to birth weight yet; usually that happens before day 14.',
   'hist.izq':           '🍼 Left',
   'hist.der':           '🍼 Right',
   'hist.pesoTipo':      '⚖️ Weight',
@@ -390,7 +402,10 @@ TEXTOS.en = {
   'sum.mantiene':       'Holding their percentile',
   'sum.primerMes':      'In the first month at least {o} g a day is the usual expectation',
   'sum.pordebajo':      'Below what it would take to stay on the same percentile. Dropping a percentile is not, on its own, a problem',
-  'sum.ajuste':         'Fitted over {n} weigh-ins from the last {d} days',
+  'sum.ajuste':         'WHO curve fitted to {n} weigh-ins across {d} days. Residual: {r} g',
+  'sum.subiendo':       '↗ moving up the percentiles',
+  'sum.bajando':        '↘ moving down the percentiles',
+  'sum.derivaTit':      'Fitted over {n} weigh-ins: {z} z per week. At this rate it would take about {s} weeks to cross a whole percentile band, which is the thing usually watched. Moving between percentiles is not, on its own, a problem.',
   'sum.pctTit':         'Weight for age (WHO). {d} days old, z = {z}',
   'sum.pctNd':          'percentile n/a',
   'sum.deTotal':        'of {n} · all time',

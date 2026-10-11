@@ -124,7 +124,7 @@ function renderCharts() {
   // dibujarlo hasta el año convertía una referencia de recién nacido en
   // una línea que un bebé sano «no alcanza» durante meses. Ahora es un
   // aviso que sale sólo cuando toca, justo debajo.
-  const tend = tendenciaPeso();
+  const tend = ajustePeso();
 
   let ejeXPeso = ejeX();
   const tFinPeso = tend
@@ -195,21 +195,36 @@ function renderCharts() {
 
   if (tend) {
     const tFin = tFinPeso;
-    const iso  = t => new Date(t).toISOString();
 
-    // Tendencia: la recta ajustada, prolongada hacia adelante
+    /* La tendencia ya no es una recta de dos puntos, sino la curva de
+       la OMS ajustada a sus pesadas — con la misma forma que las líneas
+       grises del fondo, porque es una de ellas, la suya.
+
+       Hay que muestrearla: una recta se dibuja con dos puntos y una
+       curva no. 60 tramos sobran para que se vea lisa y no son nada de
+       trabajo al lado de los 81 de cada percentil.
+
+       Se prolonga los mismos 7 días que antes. A ese plazo la curva y
+       la recta difieren 11 g, así que no estira el eje Y; a 60 días
+       diferirían 674 g, que es justo la razón de haber cambiado. */
+    const pasos = 60;
+    const datos = [];
+    for (let i = 0; i <= pasos; i++) {
+      const tms = tend.t0 + (tFin - tend.t0) * i / pasos;
+      const y   = tend.curva(edadEnDias(tms));
+      if (y !== null) datos.push({ x: new Date(tms).toISOString(), y: Math.round(y) });
+    }
+
     dsPeso.push({
       label: 'Tendencia',
-      data: [
-        { x: iso(tend.t0), y: Math.round(pesoEstimado(tend, tend.t0)) },
-        { x: iso(tFin),    y: Math.round(pesoEstimado(tend, tFin))    }
-      ],
+      data: datos,
       borderColor: '#059669',
       backgroundColor: 'transparent',
       borderDash: [6, 4],
       borderWidth: 2,
       pointRadius: 0, pointHoverRadius: 0,
       showLine: true,
+      tension: 0,              // la curvatura la pone el modelo, no Bézier
       unidad: ' g (estimado)'
     });
 
@@ -288,28 +303,68 @@ function renderCharts() {
     plugins: [etiquetasPercentil]
   });
 
-  /* Aviso del primer mes.
+  /* Aviso de crecimiento que flojea.
 
-     Los 20 g/día son una referencia de recién nacido, no un suelo para
-     siempre. Aquí se dice cuando toca —y sólo cuando toca— en vez de
-     dejar una línea en la gráfica que a los cuatro meses parece un
-     suspenso permanente. */
+     Antes saltaba con «menos de 20 g/día», y eso tenía dos problemas:
+     los 20 g son una referencia de recién nacido —un bebé de seis meses
+     gana la mitad y está perfectamente—, y sobre todo la cifra que se
+     comparaba salía de siete días de datos, con un margen de ±8 g/día.
+     Es decir, podía saltar por puro ruido de la báscula.
+
+     Ahora el disparador es el que se mira de verdad: que el bebé esté
+     cruzando una banda entera de percentiles (0,67 z) de forma
+     sostenida, y que esa deriva sea distinguible del ruido. Con los
+     datos reales de Álex, hoy no salta. */
   const avisoMes = document.getElementById('avisoPesoMes');
   if (avisoMes) {
-    const dia = (typeof diaDeVida === 'function') ? diaDeVida() : null;
-    const flojo = tend && dia !== null && dia <= DIAS_PRIMER_MES
-               && tend.gPorDia < OBJETIVO_G_DIA;
+    const zSem    = tend ? tend.k * 7 : 0;
+    const semanas = tend && zSem < 0 ? Z_CAIDA_AVISO / -zSem : Infinity;
+    // Flojea si, al ritmo ajustado, cruzaría una banda entera en menos
+    // de ocho semanas — y si la deriva no es ruido.
+    const flojo = tend && tend.derivaReal && zSem < 0 && semanas <= 8;
 
     avisoMes.style.display = flojo ? '' : 'none';
     if (flojo) {
       /* Con t2() y no concatenando: en inglés el número y la unidad no
          caen en el mismo sitio de la frase. */
-      avisoMes.innerHTML = t2('graf.pocoPeso',
-        '⚠️ <strong>Está ganando {g} g/día.</strong> En el primer mes se suelen '
-        + 'esperar al menos {o} g/día. Con pocas pesadas esta cifra baila mucho, '
-        + 'así que mira primero si hay suficientes; si se mantiene así, '
-        + 'coméntalo con tu pediatra.',
-        { g: Math.round(tend.gPorDia), o: OBJETIVO_G_DIA });
+      avisoMes.innerHTML = t2('graf.bajandoPct',
+        '⚠️ <strong>Está bajando de percentil.</strong> Gana {g} g/día y para '
+        + 'quedarse en su línea harían falta {n}. A este ritmo cruzaría una banda '
+        + 'entera de percentiles en unas {s} semanas. No es, por sí solo, un '
+        + 'problema —muchos bebés se recolocan los primeros meses—, pero es de '
+        + 'las cosas que merece la pena comentar en la próxima revisión.',
+        { g: Math.round(tend.gPorDia),
+          n: Math.round(tend.necesario),
+          s: numero(semanas, 0) });
+    }
+  }
+
+  /* ── Los primeros días ──────────────────────────────────────
+     La bajada de peso del principio asusta mucho y la aplicación no
+     decía nada de ella. Son dos datos concretos con dos referencias
+     conocidas al lado: hasta un 10 % de pérdida y recuperarlo antes del
+     día 14. Teniéndolos, uno sabe si lo que ve es lo normal.
+
+     Sólo el primer mes. Después deja de ser información y pasa a ser
+     una anécdota ocupando sitio. */
+  const notaRN = document.getElementById('notaRecienNacido');
+  if (notaRN) {
+    const dia = (typeof diaDeVida === 'function') ? diaDeVida() : null;
+    const pi  = (dia !== null && dia <= DIAS_RECIEN_NACIDO) ? perdidaInicial() : null;
+
+    notaRN.style.display = pi ? '' : 'none';
+    if (pi) {
+      notaRN.textContent = t2('graf.perdidaInicial',
+        'Primeros días: bajó {p} g desde los {n} g del nacimiento, un {pc} %. '
+        + 'Lo habitual es perder hasta un 10 %.',
+        { p: numero(pi.perdidos), n: numero(pi.nacimiento), pc: numero(pi.pct, 1) })
+        + ' ' + (pi.diaRecup !== null
+          ? t2('graf.recupero',
+              'Recuperó el peso de nacimiento el día {d}; lo habitual es antes del día 14.',
+              { d: Math.round(pi.diaRecup) })
+          : t('graf.sinRecuperar',
+              'Todavía no ha vuelto al peso de nacimiento; lo habitual es '
+              + 'conseguirlo antes del día 14.'));
     }
   }
 
@@ -325,14 +380,41 @@ function renderCharts() {
 
   const nota = document.getElementById('notaTendencia');
   if (nota) {
-    nota.textContent = tend
-      ? t2('graf.tendencia',
-          'Estimación a partir de {n} pesadas de los últimos {d} días '
-          + '({g} g/día). Es una simple recta de tendencia, no una predicción: '
-          + 'con pocas pesadas cambia mucho de un día para otro.',
-          { n: tend.n, d: numero(tend.dias, 1), g: Math.round(tend.gPorDia) })
-      : t('graf.sinTendencia',
-          'Hacen falta al menos dos pesadas separadas entre sí para estimar la tendencia.');
+    let txt;
+    if (!tend) {
+      txt = t('graf.sinTendencia',
+        'Para estimar la tendencia hacen falta al menos tres pesadas repartidas '
+        + 'en diez días o más, ya recuperado el peso de nacimiento. Con menos, '
+        + 'cualquier cifra sería ruido de la báscula.');
+    } else {
+      txt = t2('graf.tendencia',
+        'Curva de la OMS ajustada a {n} pesadas de {d} días: gana {g} g/día. No es '
+        + 'una predicción — se prolonga una semana para ver hacia dónde va, y '
+        + 'cuanto más lejos, menos vale.',
+        { n: tend.n, d: numero(tend.dias, 0), g: Math.round(tend.gPorDia) });
+
+      /* Y el aviso del artefacto, que es el que más me importa dejar
+         dicho: si el descuento de ropa ha cambiado dentro de la ventana,
+         parte del movimiento es mío y no del bebé. Pasó de verdad —de 50
+         a 105 g el 7 de octubre— y se comió la mitad de la ganancia
+         aparente de esos días. Un cambio de costumbre al vestirlo no
+         puede disfrazarse de señal de crecimiento. */
+      if (Math.abs(tend.ropaCambio) > 40) {
+        // El signo importa: descontar más en las últimas pesadas hace que
+        // la ganancia parezca menor, y al revés. Decir cuál de las dos es
+        // lo que convierte el aviso en algo con lo que se puede hacer algo.
+        txt += ' ' + t2(tend.ropaCambio > 0 ? 'graf.ropaMas' : 'graf.ropaMenos',
+          tend.ropaCambio > 0
+            ? 'Ojo: en las últimas pesadas se está descontando {r} g más de ropa '
+              + 'que antes, así que parte de esta cifra es de la estimación de la '
+              + 'ropa y no del bebé — la ganancia real es algo mayor.'
+            : 'Ojo: en las últimas pesadas se está descontando {r} g menos de ropa '
+              + 'que antes, así que parte de esta cifra es de la estimación de la '
+              + 'ropa y no del bebé — la ganancia real es algo menor.',
+          { r: Math.abs(Math.round(tend.ropaCambio)) });
+      }
+    }
+    nota.textContent = txt;
   }
 
   /* ── Pipís y cacas en 24 h ────────────────────────────────────

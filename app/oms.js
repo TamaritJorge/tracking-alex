@@ -252,9 +252,27 @@ function gananciaParaMantener(fechaISO, gramos) {
   const lms  = lmsEn(dias);
   if (!lms || !(gramos > 0)) return null;
 
-  const z = zDePeso(lms, gramos / 1000);
+  return pendienteEn(dias, zDePeso(lms, gramos / 1000));
+}
 
-  // Derivada centrada en ±3 días, recortada a los bordes de la tabla
+/* ─────────────────────────────────────────────────────────────
+   PENDIENTE DE UNA CURVA DE LA OMS, EN GRAMOS AL DÍA
+
+   Cuánto gana al día quien va por la línea del percentil `z` a los
+   `dias` de vida. Sale aparte porque lo piden dos sitios: la ganancia
+   «para mantener el percentil» de aquí arriba, y el ajuste de la
+   tendencia en app.js, que lo usa para preguntarle a la curva ajustada
+   cuánto está ganando AHORA.
+
+   Derivada centrada en ±3 días y no analítica: la tabla LMS está
+   interpolada a trozos, así que su derivada exacta daría saltos en cada
+   nudo. Tres días a cada lado la suavizan sin desplazarla.
+
+   No es un número fijo: para un mismo percentil va de ~39 g/día al mes
+   a ~12 a los seis meses. Ésa es toda la razón de que exista esta
+   función en vez de una constante.
+   ───────────────────────────────────────────────────────────── */
+function pendienteEn(dias, z) {
   const a = Math.max(0, dias - 3);
   const b = Math.min(EDAD_MAX_DIAS, dias + 3);
   const lmsA = lmsEn(a), lmsB = lmsEn(b);
