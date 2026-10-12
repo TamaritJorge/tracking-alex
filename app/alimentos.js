@@ -95,6 +95,16 @@ const FUENTES = [
     titulo:'Arsenic in rice', anio:2024,
     url:'https://www.gov.uk/government/publications/arsenic-in-rice/arsenic-in-rice' },
 
+  { id:'aesanCaza', org:'AESAN',
+    titulo:'Recomendaciones para el autoconsumo de carne de caza silvestre por presencia '
+         + 'de metales (plomo)',
+    pub:'Población vulnerable: niños hasta 7 años y mujeres embarazadas, que planeen '
+      + 'estarlo o en lactancia',
+    anio:2021,
+    url:'https://www.aesan.gob.es/actualidad/publicaciones-seguridad-alimentaria/'
+      + 'recomendaciones-para-el-autoconsumo-de-carne-de-caza-silvestre-por-presencia-'
+      + 'de-metales-plomo' },
+
   { id:'aesanAlgas', org:'AESAN',
     titulo:'Recomendaciones de consumo de algas por presencia de yodo', anio:2021,
     nota:'La página original dejó de estar en línea al migrar la web de AESAN; se '
@@ -253,6 +263,35 @@ const RESTRICCIONES = {
           + 'se pueden dar desde los 6 meses, y así aportan lo mismo.',
     fuentes: ['aep2018', 'aepap2006']
   },
+  /* La edad es de AESAN y no redonda por capricho: dice «niños hasta 7
+     años», el mismo grupo que las embarazadas y las que amamantan. Y la
+     restricción no es de la carne de caza: es de la munición de plomo.
+     Una pieza abatida con munición alternativa no entra aquí, y por eso
+     el motivo lo dice en vez de prohibir el alimento entero. */
+  plomo: {
+    edadMeses: 84,
+    etiqueta: 'No antes de los 7 años si se cazó con plomo',
+    motivo: 'Plomo de la munición. Los fragmentos no se pueden quitar del todo, y AESAN '
+          + 'señala una sensibilidad especial a sus efectos neurotóxicos en el feto y en '
+          + 'los niños pequeños: hasta los 7 años, evitarla o limitarla a piezas que no '
+          + 'se hayan abatido con munición de plomo. Si se prepara en casa: quitar la '
+          + 'zona del impacto y la carne decolorada ANTES de lavarla —lavarla antes '
+          + 'extiende la contaminación al resto—, limpiar la picadora entre piezas, y no '
+          + 'cocinarla en escabeche, porque el vinagre hace pasar más plomo a la carne.',
+    fuentes: ['aesanCaza']
+  },
+
+  /* Nunca, a ninguna edad, y por eso 9999 en vez de una edad alta: no es
+     que «todavía no toque», es que no hay una edad a la que empiece. */
+  alcohol: {
+    edadMeses: 9999,
+    etiqueta: 'Nunca, a ninguna edad',
+    motivo: 'No hay una cantidad segura de alcohol en la infancia. Y no basta con '
+          + 'cocinarlo: al guisar se evapora una parte, no todo, así que un plato hecho '
+          + 'con vino, cerveza o licor sigue llevando algo. Para un bebé no compensa.',
+    fuentes: ['oms']
+  },
+
   yodo: {
     edadMeses: 216,
     etiqueta: 'Mejor evitarlas durante la infancia',
@@ -273,9 +312,14 @@ const RESTRICCIONES = {
   sinValorNutritivo: {
     edadMeses: 24,
     etiqueta: 'Mejor evitarlo',
+    /* Genérico a propósito: lo comparten las infusiones y los refrescos.
+       Lo que sólo le pasa a una de las dos —los taninos de la infusión,
+       la cafeína del refresco— va en la `nota` de cada ficha. Si se
+       vuelve a meter aquí, la ficha de refrescos acaba hablando de
+       taninos y la de infusiones, de cafeína. */
     motivo: 'Bebidas de escaso valor nutritivo: llenan sin alimentar y desplazan a la '
-          + 'leche y a la comida. Las infusiones además llevan taninos, que estorban '
-          + 'la absorción del hierro, y algunas plantas no son inocuas en lactantes.',
+          + 'leche y a la comida, que es lo que de verdad le hace falta. Antes del año, '
+          + 'sólo agua, leche materna o fórmula.',
     fuentes: ['aepap2009']
   },
   azucarAnadido: {
@@ -926,7 +970,17 @@ const ALIMENTOS = [
 
   { id:'infusiones', nombre:'Infusiones, té y café', cat:'otros', hierro:null,
     desdeMeses:24, restriccion:'sinValorNutritivo', orden:132,
-    blw:'—', cuchara:'—' },
+    blw:'—', cuchara:'—',
+    nota:'El té y las infusiones llevan taninos, que estorban la absorción del hierro '
+       + '—justo lo que más necesita a esta edad—, y algunas plantas no son inocuas en '
+       + 'lactantes. Las «infusiones para bebés» del supermercado son, en su mayoría, '
+       + 'azúcar.' },
+
+  { id:'refrescos', nombre:'Refrescos y bebidas azucaradas', cat:'otros', hierro:null,
+    desdeMeses:24, restriccion:'sinValorNutritivo', orden:132.5,
+    blw:'—', cuchara:'—',
+    nota:'Azúcar y, muchos, cafeína. Los «sin azúcar» tampoco valen: acostumbran igual '
+       + 'al sabor dulce, que es la mitad del problema.' },
 
   { id:'bebida-avena', nombre:'Bebida de avena', cat:'otros', hierro:null, alergeno:'gluten',
     desdeMeses:12, restriccion:'bebidaVegetal', orden:133,
@@ -989,6 +1043,18 @@ const ALIMENTOS = [
     atragantamiento:'Crudo tiene hebras duras que no puede masticar.',
     nota:'Es alérgeno oficial y pasa desapercibido: está en casi todos los caldos y '
        + 'sofritos. Si lo usáis para el caldo, cuenta como introducción.' },
+
+  { id:'caza', nombre:'Carne de caza (jabalí, ciervo, perdiz, liebre)', cat:'carne',
+    hierro:'alto', desdeMeses:84, restriccion:'plomo', orden:141.5,
+    blw:'Si la pieza no se abatió con plomo, igual que cualquier otra carne guisada.',
+    cuchara:'Lo mismo: triturada, y sólo si no hay munición de plomo de por medio.',
+    nota:'Tiene mucho hierro, pero eso no compensa el plomo. La de granja o la abatida '
+       + 'con munición sin plomo no tiene este problema — si no sabes con qué se cazó, '
+       + 'trátala como si fuera de plomo.' },
+
+  { id:'alcohol', nombre:'Alcohol (también en guisos y salsas)', cat:'otros', hierro:null,
+    desdeMeses:9999, restriccion:'alcohol', orden:141.6,
+    blw:'—', cuchara:'—' },
 
   { id:'mostaza', nombre:'Mostaza', cat:'otros', hierro:null, alergeno:'mostaza',
     desdeMeses:6, orden:141,
