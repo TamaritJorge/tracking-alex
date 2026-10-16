@@ -78,7 +78,16 @@ self.addEventListener('push', e => {
 
 /* Al pulsarla: si la aplicación ya está abierta en alguna pestaña, se
    trae esa a primer plano en vez de abrir otra. Abrir una segunda copia
-   de una aplicación que ya tienes abierta es desconcertante. */
+   de una aplicación que ya tienes abierta es desconcertante.
+
+   Ya abierta, se le MANDA UN MENSAJE en vez de navegar. Antes hacía
+   c.navigate(), que recarga la aplicación entera: a las tres de la
+   mañana son varios segundos de pantalla en blanco y una ronda de
+   consultas a Supabase para acabar en la misma pantalla que ya tenías.
+   Con el mensaje, la pestaña que ya está viva sólo cambia de pestaña.
+
+   Si no hay ninguna abierta, entonces sí: openWindow con ?tab=, que es
+   lo que lee app.js al arrancar. */
 self.addEventListener('notificationclick', e => {
   e.notification.close();
   const destino = (e.notification.data && e.notification.data.url) || './?tab=medicacion';
@@ -86,10 +95,11 @@ self.addEventListener('notificationclick', e => {
   e.waitUntil((async () => {
     const abiertas = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
     const url = new URL(destino, self.registration.scope).href;
+    const tab = new URL(url).searchParams.get('tab') || 'medicacion';
 
     for (const c of abiertas) {
       if (c.url.indexOf(self.registration.scope) === 0 && 'focus' in c) {
-        if ('navigate' in c) { try { await c.navigate(url); } catch (err) {} }
+        try { c.postMessage({ tipo: 'ir-a-tab', tab }); } catch (err) {}
         return c.focus();
       }
     }

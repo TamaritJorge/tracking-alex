@@ -119,15 +119,23 @@ const CLASE_AVISO = {
 /* ─────────────────────────────────────────────────────────────
    POSPONER
 
-   Vive en localStorage, NO en la base de datos, y es a propósito.
-   Posponer es un acto personal: «ahora no, lo tengo en brazos».
-   Si se guardara en la base, callaría también el banner de tu
-   pareja, que es exactamente lo contrario de lo que este módulo
-   existe para evitar.
+   Posponer es un acto personal: «ahora no, lo tengo en brazos». Por
+   eso va por partida doble, y las dos mitades son de UNA persona:
 
-   El límite de dos existe porque sin notificaciones posponer no
-   pospone: si pospones, cierras la app y no vuelves a abrirla,
-   nadie te avisa jamás. A la tercera hay que decidir.
+     · localStorage  calla el banner de DENTRO de la app, y sólo en
+                     este móvil. Si se guardara en la base callaría
+                     también el de tu pareja, que es exactamente lo
+                     contrario de lo que este módulo existe para evitar.
+     · med_posponer() apunta en el servidor cuándo hay que volver a
+                     avisar. La fila de med_avisos es del propio
+                     user_id, así que tampoco toca a nadie más.
+
+   La segunda mitad no estaba, y era el fallo: el toast prometía «te
+   lo recuerdo en 30 min» y no lo recordaba nadie. Ver sql/posponer.sql.
+
+   El límite de dos ya no es por eso —el aviso ahora vuelve de
+   verdad—, sino porque a la tercera la pregunta deja de ser cuándo
+   darla y pasa a ser si se le da o se salta.
    ───────────────────────────────────────────────────────────── */
 function leerPospuestos() {
   try { return JSON.parse(localStorage.getItem(CLAVE_POSPUESTOS) || '{}'); }
@@ -161,7 +169,7 @@ function vecesPospuesto(p) {
   return e ? (e.veces || 0) : 0;
 }
 
-window.posponerSlot = function(clave) {
+window.posponerSlot = async function(clave) {
   const o = leerPospuestos();
   const e = o[clave] || { veces: 0 };
   e.veces = (e.veces || 0) + 1;
@@ -169,6 +177,36 @@ window.posponerSlot = function(clave) {
   o[clave] = e;
   guardarPospuestos(o);
   pintarBannerMed();
+
+  /* Y, sobre todo, decírselo al SERVIDOR.
+
+     Hasta aquí esto sólo escribía en el localStorage de este móvil, con lo
+     que el toast de abajo —«Te lo recuerdo en 30 min»— era una promesa que
+     la aplicación no podía cumplir: en cuanto la cerrabas no quedaba nadie
+     para recordarlo. Y el aviso tampoco volvía por su cuenta, porque el
+     cron manda uno por ranura y nunca más.
+
+     med_posponer() apunta la hora en med_avisos.recordar_en, y la consulta
+     del cron tiene ahora una rama para las pospuestas que ya han vencido.
+     Sigue siendo personal: la fila es del propio user_id, así que no toca
+     el aviso de tu pareja. */
+  const [pauta, fecha, hora] = clave.split('|');
+  const { error } = await sb.rpc('med_posponer', {
+    p_pauta: pauta, p_fecha: fecha, p_hora: hora, p_minutos: POSPONER_MIN
+  });
+
+  /* Si falla, el banner de dentro de la app ya está pospuesto y eso no se
+     deshace — lo que no habrá es aviso en el móvil. Se dice, porque la
+     diferencia entre «te avisaré» y «no te avisaré» es justo el motivo de
+     existir de este botón. */
+  if (error) {
+    console.error('med_posponer:', error);
+    toast(t('med.pospuestoSinAviso',
+      '⏾ Sigue sin darse, pero no he podido programar el aviso: tendrás que '
+      + 'acordarte tú.'), 6000);
+    return;
+  }
+
   // «Sigue sin darse» a proposito: el boton de al lado es el de marcarla,
   // y confundirlos es confundir «luego» con «ya esta hecho».
   toast(t2('med.pospuesto', '⏾ Sigue sin darse. Te lo recuerdo en {n} min.',

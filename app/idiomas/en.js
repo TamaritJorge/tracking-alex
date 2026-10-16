@@ -93,6 +93,7 @@ TEXTOS.en = {
   'med.posponer':    'Snooze {n} min',
   'med.pospuesta':   'snoozed',
   'med.pospuesto':   '⏾ Still not given. I will remind you in {n} min.',
+  'med.pospuestoSinAviso': '⏾ Still not given, but I could not schedule the reminder: you will have to remember yourself.',
   'med.tu':          'you',
   'med.pareja':      'your partner',
   'med.historial':   'Dose history',

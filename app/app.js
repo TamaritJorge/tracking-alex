@@ -112,6 +112,63 @@ let filtroHist = 'todo';
 let canalRT    = null;
 let tabActual  = 'registrar';
 
+/* ─────────────────────────────────────────────────────────────
+   LA PESTAÑA QUE PIDE LA NOTIFICACIÓN
+
+   El aviso de medicación se manda con url './?tab=medicacion' desde
+   la Edge Function, y el service worker abre esa dirección. Pero
+   nadie leía el parámetro: la aplicación se abría SIEMPRE en
+   Registrar, así que pulsar la notificación parecía no llevar a
+   ninguna parte.
+
+   Se lee UNA vez al cargar y se guarda, porque mostrarApp() se
+   ejecuta después de ir a buscar la familia y la dirección puede
+   haberse limpiado ya para entonces.
+   ───────────────────────────────────────────────────────────── */
+const TABS_VALIDAS = ['registrar', 'graficas', 'medicacion', 'comida'];
+
+let tabPedida = (() => {
+  const p = new URLSearchParams(location.search).get('tab');
+  return TABS_VALIDAS.indexOf(p) >= 0 ? p : null;
+})();
+
+/* Ir a una pestaña que ha pedido alguien de fuera (la notificación).
+
+   Se comprueba que el botón esté a la vista: aplicarModulos() ya ha
+   escondido los de los módulos apagados, así que preguntarle al botón es
+   más fiable que repetir aquí qué módulo corresponde a cada pestaña — y
+   no hay dos sitios que se puedan contradecir el día que se añada una.
+   Mandar a Medicinas a una familia que lo tiene apagado sería dejarla
+   mirando una pestaña en blanco. */
+function irATab(tab) {
+  if (TABS_VALIDAS.indexOf(tab) < 0) return false;
+  const btn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+  if (!btn || btn.offsetParent === null) return false;
+  tabActual = tab;
+  return true;
+}
+
+/* El service worker manda esto cuando pulsas la notificación y la
+   aplicación YA estaba abierta. Antes recargaba la página entera; así
+   sólo cambia de pestaña.
+
+   El mensaje viene del propio service worker de este origen, no de la
+   red, pero se comprueba igual que la pestaña sea una de las cuatro:
+   irATab() no acepta otra cosa. */
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', ev => {
+    const d = ev.data || {};
+    if (d.tipo !== 'ir-a-tab') return;
+    // Si todavía no se ha montado la app, se guarda para mostrarApp()
+    const pantallaApp = document.getElementById('appScreen');
+    if (!pantallaApp || pantallaApp.style.display === 'none') {
+      tabPedida = TABS_VALIDAS.indexOf(d.tab) >= 0 ? d.tab : null;
+      return;
+    }
+    if (irATab(d.tab)) switchTab(d.tab);
+  });
+}
+
 // Si cargarDatos() ha terminado alguna vez. mostrarApp() lo llama SIN
 // await, así que hay un instante con registros = [] en el que pintar la
 // lista de primeros pasos haría que un paso ya hecho saliera sin tachar
@@ -667,6 +724,26 @@ function mostrarApp() {
   // que hace la aplicacion instalable en la pantalla de inicio, y eso no
   // puede depender de que una familia use las medicinas o no.
   if (typeof registrarSW === 'function') registrarSW();
+
+  /* Si se ha llegado pulsando la notificación, ahí es donde hay que
+     aterrizar. Se comprueba que el módulo esté encendido: mandar a
+     Medicinas a una familia que lo tiene apagado sería dejarla en una
+     pestaña en blanco.
+
+     Se consume y se olvida —y se limpia la dirección—, para que
+     recargar más tarde no te siga llevando a Medicinas. */
+  if (tabPedida) {
+    const tab = tabPedida;
+    tabPedida = null;
+    history.replaceState(null, '', location.pathname + location.hash);
+
+    // aplicarModulos() ya ha escondido las pestañas apagadas, así que
+    // preguntarle al botón es más fiable que repetir aquí qué módulo
+    // corresponde a cada pestaña — y no hay dos sitios que se puedan
+    // contradecir el día que se añada una.
+    irATab(tab);
+  }
+
   switchTab(tabActual);
 }
 
