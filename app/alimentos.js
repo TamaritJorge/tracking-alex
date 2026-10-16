@@ -128,6 +128,25 @@ const FUENTES = [
     pub:'Ann Allergy Asthma Immunol 2023;130(2):225-232', anio:2023,
     url:'https://pubmed.ncbi.nlm.nih.gov/36191849/' },
 
+  /* Las dos siguientes llegan de la revisión de Laia (médico nutricionista),
+     octubre de 2026. Se describen por lo que son y no por lo que se les
+     pide: la primera es una evaluación de carencias de micronutrientes, no
+     un estudio sobre el hígado. */
+  { id:'nutrRev2021', org:'White JM, et al.', corto:'Nutr Rev',
+    titulo:'Micronutrient gaps during the complementary feeding period in 6 countries '
+         + 'in Eastern and Southern Africa: a Comprehensive Nutrient Gap Assessment',
+    pub:'Nutr Rev 2021;79(Suppl 1):16-25', anio:2021,
+    url:'https://pubmed.ncbi.nlm.nih.gov/33693910/' },
+
+  /* `corto` es lo que se enseña en la ficha, y el nombre de esta revista no
+     cabe debajo de una nota sobre el atún. Se pone el autor y el año, que
+     identifica igual y se lee; la cita completa está en el listado. */
+  { id:'metales2022', org:'Ventre S, et al.', corto:'Ventre 2022',
+    titulo:'Toxic metal exposures from infant diets: Risk prevention strategies for '
+         + 'caregivers and health care professionals',
+    pub:'Curr Probl Pediatr Adolesc Health Care 2022;52(10):101276', anio:2022,
+    url:'https://pubmed.ncbi.nlm.nih.gov/36266220/' },
+
   { id:'oms', org:'OMS',
     titulo:'Alimentación del lactante y del niño pequeño', anio:2023,
     url:'https://www.who.int/es/news-room/fact-sheets/detail/infant-and-young-child-feeding' },
@@ -509,11 +528,20 @@ const ALIMENTOS = [
     cuchara:'Triturado con verdura.',
     atragantamiento:'Tiene huesos pequeños y astillables. Repásalo bien.' },
 
+  /* Revisión de Laia, oct-2026: decía «la fuente de hierro más potente que
+     hay» y «no más de una vez por semana». Lo primero lo hacía sonar
+     imprescindible, que no lo es; lo segundo era una cifra concreta que la
+     evidencia no sostiene. Lo que sí se mantiene es la cautela con la
+     vitamina A, que es el motivo real de no abusar — ahora como referencia
+     y no como norma. */
   { id:'higado', nombre:'Hígado', cat:'carne', hierro:'alto', desdeMeses:6, orden:24,
-    blw:'Cocido y chafado sobre una tostada.',
-    cuchara:'Una cucharadita mezclada en el puré de carne.',
-    nota:'Es la fuente de hierro más potente que hay, pero lleva muchísima '
-       + 'vitamina A: no más de una vez por semana.' },
+    refs:['nutrRev2021'],
+    blw:'Bien cocido y chafado sobre una tostada.',
+    cuchara:'Una cucharadita mezclada en el puré de carne, bien cocido.',
+    nota:'Siempre bien cocinado. Tiene mucho hierro, pero no es imprescindible: la '
+       + 'carne, el pescado y las legumbres hacen el mismo trabajo, y no hay evidencia '
+       + 'para fijarle una frecuencia ni una cantidad concretas. Lo que sí conviene es '
+       + 'no abusar, porque concentra mucha vitamina A.' },
 
   { id:'ternera-picada', nombre:'Carne picada', cat:'carne', hierro:'alto', desdeMeses:6, orden:25,
     blw:'En albóndiga alargada o hamburguesita blanda, no suelta.',
@@ -812,8 +840,11 @@ const ALIMENTOS = [
   { id:'bonito', nombre:'Bonito del norte', cat:'pescado', hierro:'medio', alergeno:'pescado', desdeMeses:6, orden:89,
     blw:'En lascas, bien cocinado.',
     cuchara:'Desmenuzado.',
-    nota:'El bonito y el atún claro no están en la lista de mercurio. El que hay '
-       + 'que evitar es el atún ROJO.' },
+    refs:['metales2022'],
+    nota:'El bonito y el atún claro no están en la lista de los que hay que evitar — ése '
+       + 'es el atún ROJO, prohibido hasta los 10 años. Aun así son atunes, peces '
+       + 'grandes, y algo de mercurio llevan: mejor alternarlos con otros pescados que '
+       + 'convertirlos en el pescado de siempre.' },
 
   { id:'gambas', nombre:'Gambas y langostinos', cat:'pescado', hierro:'medio', alergeno:'crustaceos', desdeMeses:6, orden:90,
     refs:['aesanCadmio'],
@@ -1003,15 +1034,21 @@ const ALIMENTOS = [
     blw:'Si lo dais pasado el año, en tiras finas, no en lonchas enteras.',
     cuchara:'Picado muy fino.',
     atragantamiento:'La loncha entera puede pegarse al paladar. Córtala en tiras.',
-    nota:'Si lo compráis, mirad la etiqueta: más del 90 % de carne, sal por debajo de '
-       + '1,2 g/100 g y sin azúcares añadidos. La mayoría del "jamón de york" del '
-       + 'supermercado no llega.' },
+    nota:'No como alimento habitual: es carne procesada y lleva sal añadida, y lo que '
+       + 'se recomienda a esta edad es justo lo contrario — comida fresca, variada y poco '
+       + 'procesada. Para un día suelto, busca el que ponga «jamón cocido EXTRA»: es la '
+       + 'categoría con más porcentaje de carne. Y mira la etiqueta igualmente: más del '
+       + '90 % de carne, sal por debajo de 1,2 g/100 g y sin azúcares añadidos. La '
+       + 'mayoría del «jamón de york» del supermercado no llega.' },
 
   { id:'jamon-serrano', nombre:'Jamón serrano y curados', cat:'carne', hierro:'medio',
     desdeMeses:12, restriccion:'embutidos', orden:137,
     blw:'—', cuchara:'—',
     atragantamiento:'Fibroso y difícil de masticar sin muelas.',
-    nota:'Muchísima sal. Conviene retrasarlo bastante más allá del año.' },
+    nota:'Evitarlo durante el primer año, y por un motivo concreto: la sal. A esta edad '
+       + 'no se añade sal a la comida, y una loncha de curado lleva más que un plato '
+       + 'entero. Pasado el año tampoco es alimento de diario: es carne procesada, y '
+       + 'conviene retrasarlo bastante más.' },
 
   /* ══ Dulces y ultraprocesados ═════════════════════════════ */
   { id:'fruta-desecada', nombre:'Fruta desecada (dátiles, pasas, orejones)', cat:'fruta',
@@ -1156,8 +1193,13 @@ const ALIMENTOS = [
     alergeno:'pescado', desdeMeses:6, orden:98,
     blw:'Sardinillas o atún claro al natural, escurridos y desmenuzados.',
     cuchara:'Desmenuzado en el puré.',
-    nota:'Al natural mejor que en aceite, y escurrido para quitar sal. El atún claro '
-       + 'y el bonito no tienen el problema de mercurio del atún rojo.' },
+    refs:['metales2022'],
+    nota:'Al natural mejor que en aceite, y escurrido para quitar sal. Con el atún, '
+       + 'elige SIEMPRE atún claro: el rojo está prohibido hasta los 10 años. Pero que '
+       + 'el claro no esté en esa lista no quiere decir que no lleve nada — el atún es '
+       + 'un pez grande y algo de mercurio acumula. Lo sensato es no hacerlo fijo: ir '
+       + 'alternándolo con sardinilla, caballa y pescado fresco en vez de repetir atún '
+       + 'cada semana.' },
 
   { id:'caldo-casero', nombre:'Caldo casero', cat:'otros', hierro:null, desdeMeses:6,
     orden:121,
