@@ -418,7 +418,12 @@ function renderCharts() {
          ya está dicha donde toca — en el formulario de peso, al marcar
          las prendas, que es el único sitio donde se puede hacer algo al
          respecto (pesarlo desnudo, o cambiarle el pañal antes). */
-      nota.textContent = t2('graf.tendencia', 'Ajustada a {n} pesadas de {d} días.',
+      /* La línea dibujada es la del tramo RECIENTE, no la de todo el
+         historial: así lo que se ve coincide con el número del panel.
+         Por eso la nota habla de ese tramo y no de las 14 pesadas que
+         sostienen el percentil. */
+      nota.textContent = t2('graf.tendencia',
+        'Ritmo de las últimas {n} pesadas ({d} días).',
         { n: tend.n, d: numero(tend.dias, 0) });
       nota.title = t('graf.tendenciaTit',
         'Es la curva de percentil de la OMS que mejor encaja con sus pesadas, '

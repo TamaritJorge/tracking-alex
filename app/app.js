@@ -374,8 +374,10 @@ function pesadasParaAjuste() {
             .filter(p => p.t >= tFin - DIAS_VENTANA * 864e5);
 }
 
-function ajustePeso() {
-  const usados = pesadasParaAjuste();
+/* ── Un ajuste sobre un conjunto de pesadas ────────────────────
+   Sale aparte porque se hace DOS veces, sobre dos tramos distintos.
+   Ver ajustePeso() justo debajo para el porqué. */
+function ajustarZ(usados) {
   if (usados.length < MIN_PESADAS) return null;
 
   const d0 = edadEnDias(usados[0].t);
@@ -438,6 +440,22 @@ function ajustePeso() {
   const gPorDia = (a !== null && b !== null) ? b - a : null;
   if (gPorDia === null) return null;
 
+  /* El margen de esa cifra, en gramos al día. Se inclina la recta de z
+     lo que permite su incertidumbre, PIVOTANDO sobre la última pesada:
+     lo que se está midiendo es el ritmo de ahora mismo, no dónde
+     empezó. Sin este número volveríamos a enseñar «30 g/día» sin decir
+     si eso significa «entre 28 y 32» o «entre 15 y 45». */
+  const gCon = kAlt => {
+    const f = d => {
+      const l = lmsEn(d);
+      return l ? pesoDeZ(l, zFin + kAlt * (d - d1)) * 1000 : null;
+    };
+    const x = f(d1 - 0.5), y = f(d1 + 0.5);
+    return (x !== null && y !== null) ? y - x : null;
+  };
+  const gAlto = gCon(k + 1.96 * seK), gBajo = gCon(k - 1.96 * seK);
+  const gMargen = (gAlto !== null && gBajo !== null) ? Math.abs(gAlto - gBajo) / 2 : null;
+
   // Residuo en gramos, para poder comprobar que el ajuste es sano
   let ssg = 0;
   usados.forEach(p => {
@@ -451,7 +469,7 @@ function ajustePeso() {
     t0: usados[0].t, t1: usados[usados.length - 1].t,   // instantes, para la gráfica
     dias:  d1 - d0,
     curva,
-    gPorDia,
+    gPorDia, gMargen,
     necesario: pendienteEn(d1, zFin),
     zFin,
     pctFin: normalCDF(zFin) * 100,
@@ -461,6 +479,94 @@ function ajustePeso() {
     derivaReal: isFinite(seK) && Math.abs(k) > 1.96 * seK,
     ultimo: usados[usados.length - 1]
   };
+}
+
+/* ── La ventana reciente ───────────────────────────────────────
+   «Gana 30 g/día» calculado sobre mes y medio contesta a «cómo ha ido
+   desde que nació», que no es lo que nadie quiere saber. Lo útil es
+   cómo va AHORA: si la semana pasada frenó, tiene que verse.
+
+   Medido sobre los datos reales de Álex, reescribiendo sólo los últimos
+   ocho días para simular distintos ritmos:
+
+       ritmo real   todo el tramo   ventana reciente
+        15 g/día        25 g/día         16 g/día
+        33 g/día        30 g/día         31 g/día
+        55 g/día        36 g/día         50 g/día
+
+   El ajuste largo aplasta todo entre 25 y 36. El reciente sigue al
+   bebé. Ésa es toda la diferencia.
+
+   ── POR QUÉ ADAPTATIVA Y NO «LOS ÚLTIMOS 14 DÍAS» ──
+   Porque la precisión no depende de los días, depende de cuántas veces
+   peses. Con cuatro pesadas en seis días el margen era de ±8 g/día —el
+   fallo que esto ya tuvo una vez, cuando la ventana era de 7 días fijos
+   y el panel decía 22 mientras el bebé ganaba 33—. Álex ahora se pesa
+   casi a diario, pero en septiembre no, y una familia que pese una vez
+   por semana tiene otro problema distinto.
+
+   Así que la ventana crece hacia atrás hasta reunir pruebas
+   suficientes: MIN_RECIENTES pesadas Y MIN_DIAS_SPAN días. Si pesas a
+   diario se queda en diez días y es muy reactiva; si pesas poco se
+   estira sola hasta encontrar datos, y si ni así los hay, no se enseña
+   número.
+
+   El tope de MAX_RECIENTE existe para que pesando muy de tarde en tarde
+   no acabe siendo otra vez «desde que nació».                        */
+const MIN_RECIENTES = 5;    // pesadas que se buscan en la ventana reciente
+const MAX_RECIENTE  = 28;   // y hasta dónde se estira buscándolas
+
+function ventanaReciente(usados) {
+  if (!usados.length) return usados;
+  const d1 = edadEnDias(usados[usados.length - 1].t);
+
+  for (let w = MIN_DIAS_SPAN; w <= MAX_RECIENTE; w++) {
+    const s = usados.filter(p => edadEnDias(p.t) >= d1 - w);
+    if (s.length >= MIN_RECIENTES && d1 - edadEnDias(s[0].t) >= MIN_DIAS_SPAN) return s;
+  }
+  // Sin suficientes: se devuelve el tope y que decidan los mínimos de
+  // ajustarZ(), que son los que impiden enseñar una cifra que es ruido.
+  return usados.filter(p => edadEnDias(p.t) >= d1 - MAX_RECIENTE);
+}
+
+/* ── Los dos relojes ───────────────────────────────────────────
+   Dos preguntas distintas que se miden en plazos distintos, y mezclarlas
+   estropea las dos:
+
+     · ¿cuánto gana AHORA?        → ventana reciente. Tiene que reaccionar.
+     · ¿se mueve de su percentil? → todo el tramo. Tiene que ser estable;
+                                    cruzar una banda es cosa de semanas, y
+                                    medirlo en diez días es inventárselo.
+
+   Por eso la deriva, el percentil y el aviso siguen saliendo del ajuste
+   largo, y sólo los gramos al día salen del corto. La curva de la
+   gráfica se dibuja con el corto: así la línea que ves ES el número que
+   lees, en vez de una recta suave que contradice la cifra de al lado. */
+function ajustePeso() {
+  const todas = pesadasParaAjuste();
+  const largo = ajustarZ(todas);
+  if (!largo) return null;
+
+  const reciente = ajustarZ(ventanaReciente(todas)) || largo;
+
+  return Object.assign({}, largo, {
+    // Del reloj corto: el ritmo de ahora, su margen, y la curva que se
+    // dibuja —que así es la misma que el número que se lee.
+    gPorDia:   reciente.gPorDia,
+    gMargen:   reciente.gMargen,
+    curva:     reciente.curva,
+    n:         reciente.n,
+    dias:      reciente.dias,
+    t0:        reciente.t0,
+    d0:        reciente.d0,
+    residuo:   reciente.residuo,
+
+    // Del largo: el percentil, su deriva y el aviso. `n` y `dias` de
+    // arriba son los del corto, así que los del largo van con nombre
+    // propio para la nota de debajo de la gráfica.
+    nLargo:    largo.n,
+    diasLargo: largo.dias
+  });
 }
 
 /* ── Los primeros días ─────────────────────────────────────────
@@ -1294,7 +1400,12 @@ function renderResumen() {
     const signo = g > 0 ? '+' : '';
 
     let clase, porque;
-    if (tend.necesario !== null && g >= Math.round(tend.necesario)) {
+    /* `necesario` y no `tend.necesario`: el primero sale de la última
+       pesada real y es el que se ENSEÑA dos líneas más abajo; el
+       segundo sale del ajuste, que está suavizado. Se parecen, pero en
+       el límite podían discrepar y pintar de verde un número que la
+       línea de debajo declaraba insuficiente. */
+    if (necesario !== null && g >= Math.round(necesario)) {
       clase  = 'ok';
       porque = t('sum.mantiene', 'Mantiene su percentil');
     } else if (primerMes && g < OBJETIVO_G_DIA) {
@@ -1309,9 +1420,17 @@ function renderResumen() {
         + 'Bajar de percentil no es, por sí solo, un problema');
     }
 
-    const ajuste = t2('sum.ajuste',
-      'Curva de la OMS ajustada a {n} pesadas de {d} días. Residuo: {r} g',
-      { n: tend.n, d: numero(tend.dias, 0), r: numero(tend.residuo, 0) });
+    /* Dice el plazo y el margen. El plazo porque «30 g/día» significa
+       cosas distintas si son los últimos diez días o el mes y medio
+       entero; el margen porque sin él la cifra no sabe lo imprecisa
+       que es, y esta pantalla ya cometió ese error una vez. */
+    const ajuste = tend.gMargen !== null
+      ? t2('sum.ajuste',
+          'Ritmo de los últimos {d} días ({n} pesadas). Margen: ±{m} g/día.',
+          { d: numero(tend.dias, 0), n: tend.n, m: numero(tend.gMargen, 0) })
+      : t2('sum.ajusteSin',
+          'Ritmo de los últimos {d} días ({n} pesadas).',
+          { d: numero(tend.dias, 0), n: tend.n });
     trend = `<div class="sum-trend ${clase}" title="${esc(porque)}. ${esc(ajuste)}">`
           + `${signo}${g} ${esc(t('u.gdia', 'g/día'))}</div>`;
   }
@@ -1337,11 +1456,17 @@ function renderResumen() {
     // 0,67 z es el ancho de una banda de la cartilla; a este ritmo,
     // cuántas semanas tardaría en cruzarla entera.
     const semanas = Math.abs(Z_CAIDA_AVISO / zSem);
+    /* Ojo con los plazos: esta línea se mide sobre TODO el tramo, no
+       sobre la ventana reciente de los gramos al día. Cruzar una banda
+       de percentiles es cosa de semanas, y medirlo en diez días sería
+       inventárselo. Por eso dice `nLargo` y no `n`. */
     derivaTxt = `<div class="sum-pct ${sube ? '' : 'nd'}" title="${esc(t2('sum.derivaTit',
-        'Ajustado sobre {n} pesadas: {z} z por semana. A este ritmo tardaría unas '
-        + '{s} semanas en cruzar una banda entera de percentiles, que es lo que se '
-        + 'suele mirar. Moverse de percentil no es, por sí solo, un problema.',
-        { n: tend.n, z: numero(zSem, 2), s: numero(semanas, 0) }))}">`
+        'Medido sobre las {n} pesadas de los últimos {d} días: {z} z por semana. A '
+        + 'este ritmo tardaría unas {s} semanas en cruzar una banda entera de '
+        + 'percentiles, que es lo que se suele mirar. Moverse de percentil no es, '
+        + 'por sí solo, un problema.',
+        { n: tend.nLargo, d: numero(tend.diasLargo, 0),
+          z: numero(zSem, 2), s: numero(semanas, 0) }))}">`
       + `${esc(sube ? t('sum.subiendo', '↗ subiendo de percentil')
                     : t('sum.bajando',  '↘ bajando de percentil'))}</div>`;
   }

@@ -310,7 +310,7 @@ TEXTOS.en = {
      una cifra de recién nacido medida sobre siete días de datos. Ahora el
      disparador es cruzar una banda de percentiles, y el texto es otro. */
   'graf.bajandoPct':      '⚠️ <strong>Dropping through the percentiles:</strong> gaining {g} g a day, and staying on their own line would take {n}. Plenty of babies settle onto a different line in the first months, so it is not on its own a problem — but it is worth a sentence at the next check-up.',
-  'graf.tendencia':       'Fitted to {n} weigh-ins across {d} days.',
+  'graf.tendencia':     'Rate over the last {n} weigh-ins ({d} days).',
   'graf.tendenciaTit':    'The WHO percentile curve that best fits their weigh-ins, carried a week ahead to show which way things are going. It is not a prediction: the further out, the less it is worth.',
   'graf.sinTendenciaTit': 'It takes at least three weigh-ins spread over ten days or more, once birth weight has been regained. With fewer, any figure would just be scale noise.',
   'graf.sinTendencia':    'Not enough weigh-ins to estimate a trend.',
@@ -402,10 +402,11 @@ TEXTOS.en = {
   'sum.mantiene':       'Holding their percentile',
   'sum.primerMes':      'In the first month at least {o} g a day is the usual expectation',
   'sum.pordebajo':      'Below what it would take to stay on the same percentile. Dropping a percentile is not, on its own, a problem',
-  'sum.ajuste':         'WHO curve fitted to {n} weigh-ins across {d} days. Residual: {r} g',
+  'sum.ajuste':         'Rate over the last {d} days ({n} weigh-ins). Margin: ±{m} g a day.',
+  'sum.ajusteSin':      'Rate over the last {d} days ({n} weigh-ins).',
   'sum.subiendo':       '↗ moving up the percentiles',
   'sum.bajando':        '↘ moving down the percentiles',
-  'sum.derivaTit':      'Fitted over {n} weigh-ins: {z} z per week. At this rate it would take about {s} weeks to cross a whole percentile band, which is the thing usually watched. Moving between percentiles is not, on its own, a problem.',
+  'sum.derivaTit':      'Measured across the {n} weigh-ins of the last {d} days: {z} z per week. At this rate it would take about {s} weeks to cross a whole percentile band, which is the thing usually watched. Moving between percentiles is not, on its own, a problem.',
   'sum.pctTit':         'Weight for age (WHO). {d} days old, z = {z}',
   'sum.pctNd':          'percentile n/a',
   'sum.deTotal':        'of {n} · all time',
