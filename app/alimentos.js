@@ -337,7 +337,10 @@ const RESTRICCIONES = {
      el motivo lo dice en vez de prohibir el alimento entero. */
   plomo: {
     edadMeses: 84,
-    etiqueta: 'No antes de los 7 años si se cazó con plomo',
+    // Corta, como el resto: la condición de la munición está dos líneas
+    // más abajo, en el motivo, que es donde se lee entera. Una etiqueta de
+    // 43 caracteres no cabe en una fila de móvil junto al nombre.
+    etiqueta: 'No antes de los 7 años',
     motivo: 'Plomo de la munición. Los fragmentos no se pueden quitar del todo, y AESAN '
           + 'señala una sensibilidad especial a sus efectos neurotóxicos en el feto y en '
           + 'los niños pequeños: hasta los 7 años, evitarla o limitarla a piezas que no '
@@ -1170,13 +1173,14 @@ const ALIMENTOS = [
     nota:'Es alérgeno oficial y pasa desapercibido: está en casi todos los caldos y '
        + 'sofritos. Si lo usáis para el caldo, cuenta como introducción.' },
 
-  { id:'caza', nombre:'Carne de caza (jabalí, ciervo, perdiz, liebre)', cat:'carne',
+  { id:'caza', nombre:'Carne de caza', cat:'carne',
     hierro:'alto', desdeMeses:84, restriccion:'plomo', orden:141.5,
     blw:'Si la pieza no se abatió con plomo, igual que cualquier otra carne guisada.',
     cuchara:'Lo mismo: triturada, y sólo si no hay munición de plomo de por medio.',
-    nota:'Tiene mucho hierro, pero eso no compensa el plomo. La de granja o la abatida '
-       + 'con munición sin plomo no tiene este problema — si no sabes con qué se cazó, '
-       + 'trátala como si fuera de plomo.' },
+    nota:'Jabalí, ciervo, corzo, perdiz, liebre. Tiene mucho hierro, pero eso no '
+       + 'compensa el plomo. La de granja o la abatida con munición sin plomo no '
+       + 'tiene este problema — si no sabes con qué se cazó, trátala como si fuera '
+       + 'de plomo.' },
 
   { id:'alcohol', nombre:'Alcohol (también en guisos y salsas)', cat:'otros', hierro:null,
     desdeMeses:9999, restriccion:'alcohol', orden:141.6,

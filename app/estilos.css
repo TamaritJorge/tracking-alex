@@ -717,6 +717,20 @@
       font-weight: 600;
       white-space: nowrap;
       vertical-align: middle;
+
+      /* Sin esto, el texto se SOLAPA con el de al lado.
+
+         La etiqueta va dentro de una fila flex, y un elemento flex se
+         encoge por defecto. Como además lleva white-space:nowrap, al
+         encogerse la caja el texto no se parte: se sale fuera y aterriza
+         encima del nombre del alimento. Pasó de verdad en un Android con
+         «Carne de caza (jabalí, ciervo, perdiz, liebre)», donde el «Fe»
+         quedó escrito sobre el nombre.
+
+         No se arregla acortando el nombre: eso quita el síntoma de UNA
+         fila. Esto lo arregla para todas. */
+      flex-shrink: 0;
+      max-width: 100%;
     }
 
     .tag-hierro   { background: rgba(220,38,38,.14);  color: #dc2626; }
@@ -854,6 +868,12 @@
     .ali-fila {
       display: flex;
       align-items: center;
+      /* Que las etiquetas puedan bajar a una segunda línea cuando el
+         nombre es largo, en vez de apretarse todas en una. Con esto y el
+         flex-shrink:0 de .tag, ninguna combinación de nombre y etiqueta
+         puede solaparse: lo peor que pasa es que la fila ocupe dos
+         líneas, que es exactamente lo que debe pasar en un móvil. */
+      flex-wrap: wrap;
       gap: 7px;
       width: 100%;
       padding: 11px 10px;
