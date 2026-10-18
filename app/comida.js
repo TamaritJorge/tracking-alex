@@ -638,6 +638,13 @@ function renderCatalogo() {
                         ventana de 3 días. Es lo accionable.
      · con reacción   → en rojo, que eso sí hay que verlo siempre.
      · ya tolerado    → nada: no es una primera exposición.          */
+/* Días que le quedan a una ventana abierta, redondeando hacia ARRIBA:
+   si quedan treinta horas son «2 días», no uno. Contar de menos es la
+   dirección en la que este número hace daño. */
+function diasQueQuedan(fin) {
+  return Math.max(1, Math.ceil((fin - Date.now()) / MS_DIA));
+}
+
 function etiquetaAlergeno(a, estAl) {
   if (!a.alergeno) return '';
   const e = (estAl || estadoAlergenos())[a.alergeno];
@@ -646,6 +653,23 @@ function etiquetaAlergeno(a, estAl) {
 
   if (e.conReaccion) return `<span class="tag tag-stop">⚠ ${nombre}</span>`;
   if (!e.introducido) return `<span class="tag tag-alergeno">${nombre}</span>`;
+
+  /* Ventana abierta: hasta ahora no se veía por ninguna parte. La fecha de
+     inicio siempre se ha guardado —se deduce del primer registro, que es
+     mejor que pedirla—, pero el contador no se enseñaba, así que la regla
+     de los 3 días había que llevarla en la cabeza. Señalado en la revisión
+     de Laia, oct-2026. */
+  const fin = e.primera + DIAS_VENTANA_ALERGENO * MS_DIA;
+  if (fin > Date.now()) {
+    const d = diasQueQuedan(fin);
+    /* La frase entera por plural y no sólo la palabra: en español el VERBO
+       también cambia («queda 1 día» / «quedan 2 días»), y en inglés el
+       «left» va al final. Dos idiomas que no parten la frase por el mismo
+       sitio, que es justo para lo que existe plural() con clave. */
+    const frase = plural(d, 'queda {n} día', 'quedan {n} días', 'comida.quedan');
+    return `<span class="tag tag-ventana">${nombre} · `
+         + `${esc(frase.split('{n}').join(d))}</span>`;
+  }
   return '';
 }
 
@@ -863,17 +887,27 @@ window.verFicha = function(id) {
       sólo lo habitual.</div>`;
   }
 
+  /* «Atragantamiento» a secas, como título, se lee como si el alimento
+     FUERA un atragantamiento. Es un riesgo, y eso cambia cómo se lee el
+     párrafo de debajo. Señalado en la revisión de Laia, oct-2026. */
   if (a.atragantamiento) {
-    html += `<div class="aviso aviso-ojo"><strong>Atragantamiento</strong><br>
+    html += `<div class="aviso aviso-ojo">
+      <strong>${esc(t('ficha.atragantamiento', 'Riesgo de atragantamiento'))}</strong><br>
       ${esc(a.atragantamiento)}</div>`;
   }
 
+  /* Las dos formas de ofrecerlo van bajo un encabezado común: son
+     alternativas entre sí, no dos apartados independientes, y suelta cada
+     una por su lado parecían dos instrucciones que hay que cumplir. */
+  if ((a.blw && a.blw !== '—') || (a.cuchara && a.cuchara !== '—')) {
+    html += `<p class="ficha-grupo">${esc(t('ficha.comoOfrecerlo', 'Cómo ofrecerlo'))}</p>`;
+  }
   if (a.blw && a.blw !== '—') {
-    html += `<div class="field"><label>En trozos (BLW)</label>
+    html += `<div class="field"><label>${esc(t('ficha.blw', 'En trozos (BLW)'))}</label>
       <p class="ficha-txt">${esc(a.blw)}</p></div>`;
   }
   if (a.cuchara && a.cuchara !== '—') {
-    html += `<div class="field"><label>Con cuchara</label>
+    html += `<div class="field"><label>${esc(t('ficha.cuchara', 'Con cuchara'))}</label>
       <p class="ficha-txt">${esc(a.cuchara)}</p></div>`;
   }
   if (a.nota) {

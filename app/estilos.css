@@ -724,14 +724,22 @@
     .tag-stop     { background: rgba(220,38,38,.14);  color: #dc2626; }
     .tag-pronto   { background: var(--surface2);      color: var(--text2); }
 
+    /* Ventana de alérgeno todavía abierta. Azul y no ámbar a propósito: el
+       ámbar de .tag-alergeno significa «sin introducir, ojo al estrenarlo»
+       y esto es lo contrario — ya está introducido y lo único que dice es
+       cuánto falta para poder estrenar el siguiente. */
+    .tag-ventana  { background: rgba(37,99,235,.14);  color: #2563eb; }
+
     @media (prefers-color-scheme: dark) {
       :root:not([data-theme="light"]) .tag-hierro   { color: #f87171; }
       :root:not([data-theme="light"]) .tag-alergeno { color: #fbbf24; }
+      :root:not([data-theme="light"]) .tag-ventana  { color: #93c5fd; }
       :root:not([data-theme="light"]) .tag-stop     { color: #f87171; }
     }
 
     :root[data-theme="dark"] .tag-hierro   { color: #f87171; }
     :root[data-theme="dark"] .tag-alergeno { color: #fbbf24; }
+    :root[data-theme="dark"] .tag-ventana  { color: #93c5fd; }
     :root[data-theme="dark"] .tag-stop     { color: #f87171; }
 
     /* Cola de "qué toca" */
@@ -868,6 +876,18 @@
     .pt-mal { color: var(--danger); }
 
     /* Texto de las fichas */
+    /* Encabezado que agrupa «En trozos» y «Con cuchara»: son dos maneras
+       alternativas de dar el mismo alimento, no dos cosas que haya que
+       hacer las dos. */
+    .ficha-grupo {
+      margin: 18px 0 2px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--text2);
+    }
+
     .ficha-txt {
       font-size: 0.87rem;
       line-height: 1.5;

@@ -95,6 +95,23 @@ const FUENTES = [
     titulo:'Arsenic in rice', anio:2024,
     url:'https://www.gov.uk/government/publications/arsenic-in-rice/arsenic-in-rice' },
 
+  /* Las dos siguientes llegan de la revisión de Laia (médico nutricionista),
+     octubre de 2026. Las dos verificadas: el PMID contra la API de NCBI y el
+     PDF de AEPap descargado y leído. */
+  { id:'arrozArsenico', org:'Kumarathilaka P, et al.', corto:'Kumarathilaka 2019',
+    titulo:'Arsenic in cooked rice foods: Assessing health risks and mitigation options',
+    pub:'Environ Int 2019;127:584-591. Lavar el grano y cocer con exceso de agua '
+      + 'bajan el arsénico; el pulido también, y por eso el integral lleva más',
+    anio:2019,
+    url:'https://pubmed.ncbi.nlm.nih.gov/30986740/' },
+
+  { id:'aepap2017', org:'AEPap', corto:'AEPap 2017',
+    titulo:'Alimentos más sanos, alimentos más seguros',
+    pub:'Jubete Vázquez MT. Curso de Actualización Pediatría 2017. Madrid: Lúa '
+      + 'Ediciones 3.0; p. 203-9',
+    anio:2017,
+    url:'https://www.aepap.org/sites/default/files/203-210_alimentos_mas_sanos.pdf' },
+
   { id:'aesanCaza', org:'AESAN',
     titulo:'Recomendaciones para el autoconsumo de carne de caza silvestre por presencia '
          + 'de metales (plomo)',
@@ -210,11 +227,21 @@ const RESTRICCIONES = {
     edadMeses: 12,
     etiqueta: 'No antes de los 12 meses',
     motivo: 'Nitratos, que el cuerpo convierte en nitritos y pueden causar '
-          + 'metahemoglobinemia, el «síndrome del bebé azul». AESAN recomienda '
-          + 'evitarlas el primer año; si la pediatra las indica igualmente, no más de '
-          + '25 g/día de 4 a 6 meses y 35 g/día de 6 a 12. De 1 a 3 años, media ración '
-          + '(45 g/día). Y nunca a un niño con una infección intestinal bacteriana.',
-    fuentes: ['aesanNitratos']
+          + 'metahemoglobinemia, el «síndrome del bebé azul». AESAN y AEPap recomiendan '
+          + 'no incluirlas el primer año; si la pediatra las indica igualmente, que '
+          + 'no pasen del 20 % del contenido del puré. De 1 a 3 años, no más de una '
+          + 'ración al día. Y nunca a un niño con una infección intestinal '
+          + 'bacteriana, que es justo lo que favorece el paso de nitrato a nitrito.',
+    /* Revisión de Laia, oct-2026. Dos cambios, y el primero conviene que
+       conste porque RELAJA lo que la app decía: de 1 a 3 años se pasa de
+       «media ración (45 g/día)» a «una ración al día», que es lo que dice
+       literalmente el documento de AEPap. Las dos agencias españolas no
+       coinciden del todo en esa cifra.
+
+       Lo del 20 % del puré sale del mismo sitio y es más útil que los
+       gramos: nadie pesa espinacas, pero cualquiera ve cuánto verde lleva
+       un puré. */
+    fuentes: ['aesanNitratos', 'aepap2017']
   },
   nitratosBorraja: {
     edadMeses: 36,
@@ -237,14 +264,35 @@ const RESTRICCIONES = {
     motivo: 'Puede contener esporas de Clostridium botulinum. El lactante todavía no '
           + 'produce suficiente ácido gástrico para neutralizarlas, y en su intestino '
           + 'pueden germinar.',
-    fuentes: ['aepap2009']
+    fuentes: ['aepap2009', 'aep2018']
   },
   lecheVaca: {
     edadMeses: 12,
     etiqueta: 'No como bebida antes de los 12 meses',
-    motivo: 'Desplaza a la leche materna o la fórmula y aporta poco hierro. A partir '
-          + 'del año, entera y sin diluir. En yogur o queso, en pequeña cantidad, sí '
-          + 'desde los 6 meses.',
+    /* La frase de los derivados decía «desde los 6 meses» y se ha movido a
+       los 9 en la revisión de Laia (oct-2026), a la vez que las fichas de
+       yogur, queso fresco, requesón y kéfir. Si se cambia una cosa sin la
+       otra, la aplicación se contradice a sí misma en dos pantallas que se
+       leen seguidas. */
+    motivo: 'Desplaza a la leche materna o la fórmula y aporta poco hierro, y sus '
+          + 'proteínas y minerales cargan el riñón de un lactante. A partir del año, '
+          + 'entera y sin diluir. En yogur o queso, en pequeña cantidad, a partir de '
+          + 'los 9 meses.',
+    fuentes: ['aepap2009']
+  },
+
+  /* El queso curado estaba en 6 meses «en poca cantidad: lleva bastante
+     sal», y eso se contradecía con la propia aplicación: aquí no se añade
+     sal a la comida, y el jamón serrano se retrasa a los 12 meses
+     PRECISAMENTE por la sal — y el curado lleva más que el serrano.
+     Señalado en la revisión de Laia, oct-2026. */
+  quesoCurado: {
+    edadMeses: 12,
+    etiqueta: 'No antes de los 12 meses',
+    motivo: 'Mucha sal, y además muy denso en proteína y grasa. Un trozo pequeño de '
+          + 'curado puede llevar más sal que todo el resto del plato, a una edad en '
+          + 'la que no se añade nada de sal a la comida. Pasado el año, rallado y en '
+          + 'poca cantidad.',
     fuentes: ['aepap2009']
   },
   lecheLigera: {
@@ -468,7 +516,15 @@ const ALIMENTOS = [
   { id:'huevo', nombre:'Huevo entero', cat:'huevo', hierro:'medio', alergeno:'huevo', desdeMeses:6, orden:11,
     blw:'Tortilla francesa cuajada, en tiras. O huevo duro en gajos.',
     cuchara:'Duro y chafado con aguacate o patata.',
-    nota:'Siempre bien cocinado, yema incluida, por la salmonela. Nada de huevo '
+    /* La nota anterior daba por sabido lo que hay que saber: decía «por la
+       salmonela» y ya. Señalado en la revisión de Laia, oct-2026. Lo que
+       faltaba es el porqué — que la bacteria puede ir DENTRO, no sólo en la
+       cáscara, que es lo que explica por qué no basta con lavar el huevo y
+       por qué la yema tiene que cuajar. */
+    nota:'Siempre bien cocinado, yema incluida. La salmonela puede estar dentro del '
+       + 'huevo y no sólo en la cáscara, así que lavarlo no sirve de nada: lo que la '
+       + 'mata es el calor. Y en un bebé una salmonelosis va mucho peor que en un '
+       + 'adulto. Lo concreto que hay que evitar es la yema líquida — nada de huevo '
        + 'crudo ni poco hecho (mayonesa casera, merengue, tortilla babosa).' },
 
   { id:'crema-cacahuete', nombre:'Crema de cacahuete', cat:'frutosecos', hierro:null, alergeno:'cacahuete', desdeMeses:6, orden:12,
@@ -483,9 +539,16 @@ const ALIMENTOS = [
   { id:'pan', nombre:'Pan', cat:'cereal', hierro:'medio', alergeno:'gluten', desdeMeses:6, orden:13,
     blw:'Tostado y en tiras: blando se le hace una bola en la boca.',
     cuchara:'Migas en el puré o sopas de pan.',
-    nota:'Sin sal. El pan normal de panadería lleva bastante.' },
+    /* El matiz de los fitatos no es un pero inventado: a los 6 meses el
+       hierro es LA prioridad de la alimentación complementaria, y el
+       integral estorba algo su absorción. No es motivo para no darlo; sí
+       para no venderlo como una mejora sin más. */
+    nota:'Sin sal: el pan normal de panadería lleva bastante. Mejor integral, aunque '
+       + 'con un matiz — lleva más fibra y fitatos, que estorban un poco la absorción '
+       + 'del hierro, justo lo que más falta hace a esta edad. Integral sí, pero sin '
+       + 'que desplace a la carne y la legumbre.' },
 
-  { id:'yogur', nombre:'Yogur natural entero', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:14,
+  { id:'yogur', nombre:'Yogur natural entero', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:9, orden:14,
     blw:'En un cuenco con cuchara precargada, o para mojar tiras de fruta.',
     cuchara:'Tal cual, sin azúcar ni miel.',
     nota:'Natural entero, no de sabores ni azucarado. Nada de "yogures para bebés" '
@@ -569,18 +632,24 @@ const ALIMENTOS = [
     atragantamiento:'Redondos y del tamaño justo de la vía aérea. Chafar siempre.' },
 
   /* ── Cereales ─────────────────────────────────────────────── */
+  /* Revisión de Laia, oct-2026. Aportaba tres cosas y una está mal:
+     evitar el integral SÍ (el arsénico se concentra en el salvado, y el
+     muestreo de la FDA lo confirma: 7,2 µg por ración frente a 4,6 del
+     blanco largo), lavarlo antes de cocer SÍ —es lo que dice el artículo
+     que ella misma cita—, pero lo del basmati NO: ese mismo muestreo lo
+     sitúa en 3,5 µg, el MÁS BAJO de todos. Se aplicaron las dos primeras.
+
+     El artículo avisa además de que lavar y cocer con exceso de agua
+     también se lleva nutrientes por delante, así que no es gratis. */
   { id:'arroz', nombre:'Arroz', cat:'cereal', hierro:null, desdeMeses:6, orden:30,
+    refs:['arrozArsenico'],
     blw:'Arroz redondo pasado de cocción, en bolitas que pueda coger.',
     cuchara:'Hervido y chafado con caldo.',
-    nota:'El arroz cocido normal no tiene problema. Lo que conviene limitar son '
-       + 'las tortitas y las bebidas de arroz.' },
-
-  { id:'cereales-hierro', nombre:'Cereales fortificados con hierro', cat:'cereal', hierro:'alto', alergeno:'gluten', desdeMeses:6, orden:31,
-    refs:['espghan2017'],
-    blw:'Espesos, sobre tostada o en tortita.',
-    cuchara:'Con leche materna o de fórmula.',
-    nota:'ESPGHAN los menciona junto a la carne como vía para cubrir el hierro. '
-       + 'Mira que no lleven azúcar añadido.' },
+    nota:'El arroz cocido normal no tiene problema, pero dos cosas ayudan: mejor el '
+       + 'blanco que el integral —el arsénico se concentra en el salvado— y lavarlo '
+       + 'bien antes de cocerlo. Cocerlo con agua de sobra y escurrirlo baja todavía '
+       + 'más, aunque también se lleva parte de los nutrientes. Lo que conviene '
+       + 'limitar de verdad son las tortitas y las bebidas de arroz.' },
 
   { id:'maiz', nombre:'Maíz', cat:'cereal', hierro:null, desdeMeses:6, orden:32,
     blw:'Mazorca cocida para que la roa, o granos chafados.',
@@ -593,7 +662,13 @@ const ALIMENTOS = [
 
   { id:'pasta', nombre:'Pasta', cat:'cereal', hierro:'medio', alergeno:'gluten', desdeMeses:6, orden:34,
     blw:'Formas grandes (espirales, lazos) muy cocidas, fáciles de agarrar.',
-    cuchara:'Cortada pequeña con salsa de verdura.' },
+    cuchara:'Cortada pequeña con salsa de verdura.',
+    // Mismo criterio que el pan, y a propósito: si una ficha dijera una cosa
+    // y la otra la contraria sobre el integral, no habría manera de saber
+    // cuál creer.
+    nota:'Mejor integral, con el mismo matiz que el pan: aporta más fibra, pero sus '
+       + 'fitatos estorban un poco la absorción del hierro. Bien como parte del '
+       + 'plato, no como el plato entero.' },
 
   { id:'cuscus', nombre:'Cuscús', cat:'cereal', hierro:'medio', alergeno:'gluten', desdeMeses:6, orden:35,
     blw:'Compactado con verdura en bolitas.',
@@ -890,19 +965,19 @@ const ALIMENTOS = [
     cuchara:'Chafada.',
     nota:'Bien cuajada, nada de tortilla poco hecha.' },
 
-  { id:'queso-fresco', nombre:'Queso fresco', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:101,
+  { id:'queso-fresco', nombre:'Queso fresco', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:9, orden:101,
     atragantamiento:'En dados pequeños es un riesgo clásico: resbala y tapona. '
                   + 'Mejor bastones, o dados grandes que tenga que morder.',
     blw:'En bastones, o en dados grandes. Nunca en taquitos pequeños.',
     cuchara:'Chafado.',
     nota:'Busca el de menos sal. El queso es de los alimentos que más sal aporta.' },
 
-  { id:'queso-curado', nombre:'Queso curado', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:102,
+  { id:'queso-curado', nombre:'Queso curado', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:12, restriccion:'quesoCurado', orden:102,
     blw:'Rallado o en bastones finos.',
     cuchara:'Rallado sobre la pasta.',
     nota:'En poca cantidad: lleva bastante sal.' },
 
-  { id:'requeson', nombre:'Requesón', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:103,
+  { id:'requeson', nombre:'Requesón', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:9, orden:103,
     blw:'Sobre tostada.', cuchara:'Tal cual, sin azúcar.' },
 
   { id:'mantequilla', nombre:'Mantequilla', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:104,
@@ -941,6 +1016,7 @@ const ALIMENTOS = [
        + 'alimentos de origen animal a diario, 5 g si sí.' },
 
   { id:'miel', nombre:'Miel', cat:'otros', hierro:null, desdeMeses:12, restriccion:'botulismo', orden:121,
+    refs:['aep2018', 'aepap2009'],
     blw:'—', cuchara:'—' },
 
   { id:'sal', nombre:'Sal', cat:'otros', hierro:null, desdeMeses:12, restriccion:'nunca', orden:122,
@@ -971,11 +1047,24 @@ const ALIMENTOS = [
     atragantamiento:'Forma y tamaño de alto riesgo, además del hueso.',
     nota:'Llevan mucha sal; que sea algo puntual.' },
 
-  { id:'salchicha', nombre:'Salchichas y embutido', cat:'otros', hierro:'medio', desdeMeses:12, orden:129,
+  { id:'salchicha', nombre:'Salchichas y embutido', cat:'carne', hierro:'medio', desdeMeses:12, restriccion:'embutidos', orden:129,
     blw:'Cortadas a lo LARGO, nunca en rodajas.',
     cuchara:'Picadas.',
     atragantamiento:'En rodajas tiene justo la forma y el tamaño de la vía aérea.',
     nota:'Mucha sal y poca calidad. Mejor carne de verdad.' },
+
+  /* No existía, y era el hueco que quedaba entre el jamón cocido y las
+     salchichas. Señalado en la revisión de Laia, oct-2026. Va con la misma
+     restricción que el resto de procesados: no es un alimento de diario. */
+  { id:'bacon', nombre:'Bacon y panceta', cat:'carne', hierro:'medio',
+    desdeMeses:12, restriccion:'embutidos', orden:129.5,
+    blw:'Si alguna vez, muy hecho y en tiras finas. Nunca una loncha entera.',
+    cuchara:'Picado muy fino, y poco.',
+    atragantamiento:'Las lonchas son correosas y difíciles de partir sin muelas.',
+    nota:'Es de los alimentos con más sal del supermercado, y encima curado. La AEP '
+       + 'pone las carnes procesadas —salchichas, bacon, fiambres, embutidos— en el '
+       + 'grupo de lo que se reserva para ocasiones muy puntuales, no para el día a '
+       + 'día. Para dar sabor a un guiso hay alternativas sin esa carga de sal.' },
 
   { id:'chocolate', nombre:'Chocolate', cat:'otros', hierro:'medio', desdeMeses:24, orden:130,
     blw:'—', cuchara:'—',
@@ -1186,7 +1275,7 @@ const ALIMENTOS = [
     atragantamiento:'La vaina no, y el grano entero tampoco: es redondo y firme.' },
 
   { id:'kefir', nombre:'Kéfir', cat:'lacteo', hierro:null, alergeno:'leche',
-    desdeMeses:6, orden:107,
+    desdeMeses:9, orden:107,
     blw:'Para mojar tiras de fruta.', cuchara:'Natural, sin azúcar.' },
 
   { id:'conserva-pescado', nombre:'Pescado en conserva', cat:'pescado', hierro:'alto',
