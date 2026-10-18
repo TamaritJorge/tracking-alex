@@ -268,7 +268,7 @@ const RESTRICCIONES = {
   },
   lecheVaca: {
     edadMeses: 12,
-    etiqueta: 'No como bebida antes de los 12 meses',
+    etiqueta: 'Como bebida, no antes del año',
     /* La frase de los derivados decía «desde los 6 meses» y se ha movido a
        los 9 en la revisión de Laia (oct-2026), a la vez que las fichas de
        yogur, queso fresco, requesón y kéfir. Si se cambia una cosa sin la
@@ -325,7 +325,7 @@ const RESTRICCIONES = {
   },
   enteroAtragantamiento: {
     edadMeses: 60,
-    etiqueta: 'Enteros no antes de los 5 años',
+    etiqueta: 'Enteros, no antes de 5 años',
     motivo: 'Tamaño y forma de alto riesgo de atragantamiento. Molidos o en crema sí '
           + 'se pueden dar desde los 6 meses, y así aportan lo mismo.',
     fuentes: ['aep2018', 'aepap2006']
@@ -364,7 +364,7 @@ const RESTRICCIONES = {
 
   yodo: {
     edadMeses: 216,
-    etiqueta: 'Mejor evitarlas durante la infancia',
+    etiqueta: 'Mejor evitarlas',
     motivo: 'Cantidades muy altas y muy variables de yodo, sobre todo el alga kombu, '
           + 'que pueden alterar la función del tiroides. AESAN recomienda que la '
           + 'población infantil evite su consumo, sin poner una edad de corte.',
@@ -394,7 +394,7 @@ const RESTRICCIONES = {
   },
   azucarAnadido: {
     edadMeses: 24,
-    etiqueta: 'Mejor evitarlo en los primeros años',
+    etiqueta: 'Mejor evitarlo',
     motivo: 'Azúcar añadido. Que algo se venda como «de bebé» no lo hace adecuado: '
           + 'acostumbra al sabor dulce y favorece la caries. Para la OMS, por debajo '
           + 'de los 2 años no hay ninguna cantidad recomendable.',
@@ -408,7 +408,7 @@ const RESTRICCIONES = {
   },
   bebidaVegetal: {
     edadMeses: 12,
-    etiqueta: 'No como sustituto de la leche antes de los 12 meses',
+    etiqueta: 'No sustituye a la leche',
     motivo: 'No sustituyen a la leche materna ni a la fórmula: llevan muy poca '
           + 'proteína, grasa y calcio. En una receta puntual no pasa nada; como '
           + 'bebida principal, no.'

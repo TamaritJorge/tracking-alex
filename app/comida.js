@@ -689,15 +689,27 @@ function filaAlimento(a, estAl) {
     : av.suave ? `<span class="tag tag-pronto">${av.suave} m</span>`
     : '';
 
+  /* Las etiquetas van TODAS dentro de un contenedor propio, y no sueltas
+     como hermanas del nombre. No es cosmético: así la fila es una rejilla
+     de dos columnas —nombre a la izquierda, etiquetas a la derecha— y las
+     columnas de una rejilla no se pueden solapar nunca.
+
+     Sueltas, eran elementos flex, y un elemento flex que no puede encoger
+     —las etiquetas llevan white-space:nowrap— se SALE de su caja y
+     aterriza encima del vecino. Eso es lo que pasaba en Android: el «Fe»
+     escrito sobre el nombre del alimento. Con la rejilla, lo peor que
+     puede pasar es que el nombre ocupe dos líneas. */
   return `
     <button type="button" class="ali-fila" onclick="verFicha('${a.id}')">
       ${marca}
       <span class="ali-nom">${esc(a.nombre)}</span>
-      ${a.hierro === 'alto' ? '<span class="tag tag-hierro">Fe</span>' : ''}
-      ${etiquetaAlergeno(a, estAl)}
-      ${a.mio ? '<span class="tag tag-mio">vuestro</span>' : ''}
-      ${etiquetaEdad}
-      ${e.veces ? `<span class="ali-veces">×${e.veces}</span>` : ''}
+      <span class="ali-tags">
+        ${a.hierro === 'alto' ? '<span class="tag tag-hierro">Fe</span>' : ''}
+        ${etiquetaAlergeno(a, estAl)}
+        ${a.mio ? '<span class="tag tag-mio">vuestro</span>' : ''}
+        ${etiquetaEdad}
+        ${e.veces ? `<span class="ali-veces">×${e.veces}</span>` : ''}
+      </span>
     </button>`;
 }
 

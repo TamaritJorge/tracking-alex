@@ -865,16 +865,35 @@
 
     .cat-lista { padding: 4px 0 8px; }
 
+    /* Rejilla de tres columnas —marca · nombre · etiquetas— y no flex.
+
+       Con flex esto se solapaba en Android: las etiquetas llevan
+       white-space:nowrap, así que al apretarse la fila su caja se encogía
+       por debajo del texto y el texto se salía encima del nombre. Poner
+       flex-shrink:0 y flex-wrap lo arreglaba sólo a medias: seguía
+       fallando dentro del catálogo, donde las filas van indentadas y hay
+       menos ancho del que yo medí al probarlo.
+
+       La rejilla lo arregla por construcción, no por ajuste fino: las
+       columnas de un grid NO SE SOLAPAN. Si no cabe, el nombre ocupa dos
+       líneas y las etiquetas se apilan. Nunca se pisan.
+
+       Los dos minmax() son los que hacen el trabajo fino:
+
+         · el nombre tiene un SUELO de 8em. Sin él la columna se quedaba
+           sin ancho y «Queso curado» salía partido letra a letra, una por
+           línea. No se solapaba —la rejilla cumplía— pero era ilegible.
+           8em y no otro número: medido sobre las 149 fichas a 320 px, es
+           donde ningún nombre pasa de tres líneas. Por encima no mejora.
+         · las etiquetas tienen minmax(0, auto): piden lo que necesitan,
+           pero pueden ceder. Con `auto` a secas exigían su tamaño máximo
+           y se comían la fila entera. */
     .ali-fila {
-      display: flex;
+      display: grid;
+      grid-template-columns: auto minmax(8em, 1fr) minmax(0, auto);
       align-items: center;
-      /* Que las etiquetas puedan bajar a una segunda línea cuando el
-         nombre es largo, en vez de apretarse todas en una. Con esto y el
-         flex-shrink:0 de .tag, ninguna combinación de nombre y etiqueta
-         puede solaparse: lo peor que pasa es que la fila ocupe dos
-         líneas, que es exactamente lo que debe pasar en un móvil. */
-      flex-wrap: wrap;
-      gap: 7px;
+      column-gap: 7px;
+      row-gap: 4px;
       width: 100%;
       padding: 11px 10px;
       border: none;
@@ -887,7 +906,25 @@
       cursor: pointer;
     }
 
-    .ali-nom   { flex: 1; min-width: 0; }
+    /* break-word y NO anywhere: `anywhere` parte por cualquier letra en
+       cuanto hay presión, y con la columna estrecha salía una letra por
+       línea. `break-word` sólo parte una palabra si ella sola no cabe. */
+    .ali-nom   { min-width: 0; overflow-wrap: break-word; }
+
+    /* La columna de la derecha. Las etiquetas se ponen en fila mientras
+       quepan y se apilan solas cuando no — que es lo que pedía Jorge y lo
+       que mejor se lee: dos cortas al lado del nombre no justifican
+       gastar dos líneas, pero una larga sí. Alineadas a la derecha para
+       que el borde quede recto en toda la lista. */
+    .ali-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+    }
+
     .ali-veces { font-size: 0.72rem; color: var(--text2); }
 
     .pt { width: 14px; flex-shrink: 0; font-weight: 700; text-align: center; }
