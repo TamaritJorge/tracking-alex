@@ -211,6 +211,7 @@ const RESTRICCIONES = {
   mercurio: {
     edadMeses: 120,
     etiqueta: 'No antes de los 10 años',
+    corta: 'desde 10 años',
     motivo: 'Mercurio. Son peces grandes, depredadores y longevos, que es lo que hace '
           + 'que acumulen más. AESAN sitúa a los niños de hasta 10 años, junto a las '
           + 'embarazadas, como la población más vulnerable y les recomienda evitarlos. '
@@ -226,6 +227,7 @@ const RESTRICCIONES = {
   nitratos: {
     edadMeses: 12,
     etiqueta: 'No antes de los 12 meses',
+    corta: 'desde 12 meses',
     motivo: 'Nitratos, que el cuerpo convierte en nitritos y pueden causar '
           + 'metahemoglobinemia, el «síndrome del bebé azul». AESAN y AEPap recomiendan '
           + 'no incluirlas el primer año; si la pediatra las indica igualmente, que '
@@ -246,6 +248,7 @@ const RESTRICCIONES = {
   nitratosBorraja: {
     edadMeses: 36,
     etiqueta: 'No antes de los 3 años',
+    corta: 'desde 3 años',
     motivo: 'Nitratos. A la borraja AESAN le pone una edad propia, más tardía que a '
           + 'las espinacas y las acelgas: no incluirla antes de los 3 años de vida.',
     fuentes: ['aesanNitratos']
@@ -253,6 +256,7 @@ const RESTRICCIONES = {
   nitratosOtras: {
     edadMeses: 12,
     etiqueta: 'No antes de los 12 meses',
+    corta: 'desde 12 meses',
     motivo: 'Nitratos. Es una hortaliza que los acumula, aunque no está entre las que '
           + 'AESAN nombra expresamente: la edad de aquí es prudencia, no una cifra '
           + 'publicada.'
@@ -261,6 +265,7 @@ const RESTRICCIONES = {
   botulismo: {
     edadMeses: 12,
     etiqueta: 'No antes de los 12 meses',
+    corta: 'desde 12 meses',
     motivo: 'Puede contener esporas de Clostridium botulinum. El lactante todavía no '
           + 'produce suficiente ácido gástrico para neutralizarlas, y en su intestino '
           + 'pueden germinar.',
@@ -269,6 +274,7 @@ const RESTRICCIONES = {
   lecheVaca: {
     edadMeses: 12,
     etiqueta: 'Como bebida, no antes del año',
+    corta: 'bebida, desde 12 m',
     /* La frase de los derivados decía «desde los 6 meses» y se ha movido a
        los 9 en la revisión de Laia (oct-2026), a la vez que las fichas de
        yogur, queso fresco, requesón y kéfir. Si se cambia una cosa sin la
@@ -276,8 +282,9 @@ const RESTRICCIONES = {
        leen seguidas. */
     motivo: 'Desplaza a la leche materna o la fórmula y aporta poco hierro, y sus '
           + 'proteínas y minerales cargan el riñón de un lactante. A partir del año, '
-          + 'entera y sin diluir. En yogur o queso, en pequeña cantidad, a partir de '
-          + 'los 9 meses.',
+          + 'entera y sin diluir. En yogur o queso, en pequeña cantidad, sí '
+          + 'desde los 6 meses: es la forma de introducir el alérgeno sin retrasarlo. '
+          + 'Como alimento habitual, a partir de los 9-10.',
     fuentes: ['aepap2009']
   },
 
@@ -289,6 +296,7 @@ const RESTRICCIONES = {
   quesoCurado: {
     edadMeses: 12,
     etiqueta: 'No antes de los 12 meses',
+    corta: 'desde 12 meses',
     motivo: 'Mucha sal, y además muy denso en proteína y grasa. Un trozo pequeño de '
           + 'curado puede llevar más sal que todo el resto del plato, a una edad en '
           + 'la que no se añade nada de sal a la comida. Pasado el año, rallado y en '
@@ -298,6 +306,7 @@ const RESTRICCIONES = {
   lecheLigera: {
     edadMeses: 24,
     etiqueta: 'No antes de los 2 años',
+    corta: 'desde 2 años',
     motivo: 'La desnatada y la semidesnatada llevan menos vitaminas liposolubles y '
           + 'menos grasa, y desplazan calorías hacia la proteína. No se recomiendan '
           + 'en menores de 2 años.',
@@ -306,6 +315,7 @@ const RESTRICCIONES = {
   arsenico: {
     edadMeses: 60,
     etiqueta: 'No antes de los 5 años',
+    corta: 'desde 5 años',
     motivo: 'Arsénico inorgánico. La agencia británica de seguridad alimentaria dice '
           + 'que los menores de 5 años no deben tomar bebida de arroz en lugar de la '
           + 'leche, porque beben más y pesan menos. AESAN y EFSA añaden que el arroz y '
@@ -316,6 +326,7 @@ const RESTRICCIONES = {
   cadmio: {
     edadMeses: 216,
     etiqueta: 'Mejor no dárselas',
+    corta: 'mejor no',
     motivo: 'Cadmio, que se concentra en el hepatopáncreas: la cabeza de gambas, '
           + 'langostinos y cigalas, y el cuerpo de los cangrejos (centollo, nécora, '
           + 'buey de mar). AESAN recomienda limitar esa carne oscura a toda la '
@@ -326,6 +337,7 @@ const RESTRICCIONES = {
   enteroAtragantamiento: {
     edadMeses: 60,
     etiqueta: 'Enteros, no antes de 5 años',
+    corta: 'enteros, desde 5 años',
     motivo: 'Tamaño y forma de alto riesgo de atragantamiento. Molidos o en crema sí '
           + 'se pueden dar desde los 6 meses, y así aportan lo mismo.',
     fuentes: ['aep2018', 'aepap2006']
@@ -341,6 +353,7 @@ const RESTRICCIONES = {
     // más abajo, en el motivo, que es donde se lee entera. Una etiqueta de
     // 43 caracteres no cabe en una fila de móvil junto al nombre.
     etiqueta: 'No antes de los 7 años',
+    corta: 'desde 7 años',
     motivo: 'Plomo de la munición. Los fragmentos no se pueden quitar del todo, y AESAN '
           + 'señala una sensibilidad especial a sus efectos neurotóxicos en el feto y en '
           + 'los niños pequeños: hasta los 7 años, evitarla o limitarla a piezas que no '
@@ -356,6 +369,7 @@ const RESTRICCIONES = {
   alcohol: {
     edadMeses: 9999,
     etiqueta: 'Nunca, a ninguna edad',
+    corta: 'nunca',
     motivo: 'No hay una cantidad segura de alcohol en la infancia. Y no basta con '
           + 'cocinarlo: al guisar se evapora una parte, no todo, así que un plato hecho '
           + 'con vino, cerveza o licor sigue llevando algo. Para un bebé no compensa.',
@@ -365,6 +379,7 @@ const RESTRICCIONES = {
   yodo: {
     edadMeses: 216,
     etiqueta: 'Mejor evitarlas',
+    corta: 'mejor evitarlas',
     motivo: 'Cantidades muy altas y muy variables de yodo, sobre todo el alga kombu, '
           + 'que pueden alterar la función del tiroides. AESAN recomienda que la '
           + 'población infantil evite su consumo, sin poner una edad de corte.',
@@ -373,6 +388,7 @@ const RESTRICCIONES = {
   nunca: {
     edadMeses: 9999,
     etiqueta: 'Mejor no añadirla',
+    corta: 'mejor no añadir',
     motivo: 'No aporta nada y acostumbra al sabor. La OMS pide no añadir sal ni '
           + 'azúcares a la alimentación complementaria, y AEPap, no añadirlos antes '
           + 'del año y sólo en pequeñas cantidades durante el segundo. La sal además '
@@ -382,6 +398,7 @@ const RESTRICCIONES = {
   sinValorNutritivo: {
     edadMeses: 24,
     etiqueta: 'Mejor evitarlo',
+    corta: 'mejor evitarlo',
     /* Genérico a propósito: lo comparten las infusiones y los refrescos.
        Lo que sólo le pasa a una de las dos —los taninos de la infusión,
        la cafeína del refresco— va en la `nota` de cada ficha. Si se
@@ -395,6 +412,7 @@ const RESTRICCIONES = {
   azucarAnadido: {
     edadMeses: 24,
     etiqueta: 'Mejor evitarlo',
+    corta: 'mejor evitarlo',
     motivo: 'Azúcar añadido. Que algo se venda como «de bebé» no lo hace adecuado: '
           + 'acostumbra al sabor dulce y favorece la caries. Para la OMS, por debajo '
           + 'de los 2 años no hay ninguna cantidad recomendable.',
@@ -403,12 +421,14 @@ const RESTRICCIONES = {
   embutidos: {
     edadMeses: 12,
     etiqueta: 'No antes de los 12 meses',
+    corta: 'desde 12 meses',
     motivo: 'Mucha sal y nitritos, y ningún nutriente que no dé la carne de verdad. '
           + 'Los curados y las lonchas enteras añaden riesgo de atragantamiento.'
   },
   bebidaVegetal: {
     edadMeses: 12,
     etiqueta: 'No sustituye a la leche',
+    corta: 'no sustituye la leche',
     motivo: 'No sustituyen a la leche materna ni a la fórmula: llevan muy poca '
           + 'proteína, grasa y calcio. En una receta puntual no pasa nada; como '
           + 'bebida principal, no.'
@@ -551,10 +571,11 @@ const ALIMENTOS = [
        + 'del hierro, justo lo que más falta hace a esta edad. Integral sí, pero sin '
        + 'que desplace a la carne y la legumbre.' },
 
-  { id:'yogur', nombre:'Yogur natural entero', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:9, orden:14,
+  { id:'yogur', nombre:'Yogur natural entero', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:14,
     blw:'En un cuenco con cuchara precargada, o para mojar tiras de fruta.',
     cuchara:'Tal cual, sin azúcar ni miel.',
-    nota:'Natural entero, no de sabores ni azucarado. Nada de "yogures para bebés" '
+    nota:'En poca cantidad: una o dos cucharadas bastan, y así se introduce el alérgeno de la leche sin retrasarlo. Como alimento habitual no hace falta antes de los 9-10 meses. '
+       + 'Natural entero, no de sabores ni azucarado: nada de "yogures para bebés" '
        + 'azucarados.' },
 
   { id:'merluza', nombre:'Merluza', cat:'pescado', hierro:'medio', alergeno:'pescado', desdeMeses:6, orden:15,
@@ -968,20 +989,22 @@ const ALIMENTOS = [
     cuchara:'Chafada.',
     nota:'Bien cuajada, nada de tortilla poco hecha.' },
 
-  { id:'queso-fresco', nombre:'Queso fresco', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:9, orden:101,
+  { id:'queso-fresco', nombre:'Queso fresco', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:101,
     atragantamiento:'En dados pequeños es un riesgo clásico: resbala y tapona. '
                   + 'Mejor bastones, o dados grandes que tenga que morder.',
     blw:'En bastones, o en dados grandes. Nunca en taquitos pequeños.',
     cuchara:'Chafado.',
-    nota:'Busca el de menos sal. El queso es de los alimentos que más sal aporta.' },
+    nota:'En poca cantidad: una o dos cucharadas bastan, y así se introduce el alérgeno de la leche sin retrasarlo. Como alimento habitual no hace falta antes de los 9-10 meses. '
+       + 'Busca el de menos sal: el queso es de los alimentos que más sal aporta.' },
 
   { id:'queso-curado', nombre:'Queso curado', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:12, restriccion:'quesoCurado', orden:102,
     blw:'Rallado o en bastones finos.',
     cuchara:'Rallado sobre la pasta.',
     nota:'En poca cantidad: lleva bastante sal.' },
 
-  { id:'requeson', nombre:'Requesón', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:9, orden:103,
-    blw:'Sobre tostada.', cuchara:'Tal cual, sin azúcar.' },
+  { id:'requeson', nombre:'Requesón', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:103,
+    blw:'Sobre tostada.', cuchara:'Tal cual, sin azúcar.',
+    nota:'En poca cantidad: una o dos cucharadas bastan, y así se introduce el alérgeno de la leche sin retrasarlo. Como alimento habitual no hace falta antes de los 9-10 meses.' },
 
   { id:'mantequilla', nombre:'Mantequilla', cat:'lacteo', hierro:null, alergeno:'leche', desdeMeses:6, orden:104,
     blw:'Fina sobre la tostada.', cuchara:'Una punta en el puré.',
@@ -1279,8 +1302,9 @@ const ALIMENTOS = [
     atragantamiento:'La vaina no, y el grano entero tampoco: es redondo y firme.' },
 
   { id:'kefir', nombre:'Kéfir', cat:'lacteo', hierro:null, alergeno:'leche',
-    desdeMeses:9, orden:107,
-    blw:'Para mojar tiras de fruta.', cuchara:'Natural, sin azúcar.' },
+    desdeMeses:6, orden:107,
+    blw:'Para mojar tiras de fruta.', cuchara:'Natural, sin azúcar.',
+    nota:'En poca cantidad: una o dos cucharadas bastan, y así se introduce el alérgeno de la leche sin retrasarlo. Como alimento habitual no hace falta antes de los 9-10 meses.' },
 
   { id:'conserva-pescado', nombre:'Pescado en conserva', cat:'pescado', hierro:'alto',
     alergeno:'pescado', desdeMeses:6, orden:98,

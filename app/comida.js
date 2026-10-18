@@ -682,10 +682,24 @@ function filaAlimento(a, estAl) {
               : e.veces                 ? '<span class="pt pt-med">•</span>'
               : '<span class="pt"></span>';
 
-  // La etiqueta de edad sólo cuando aporta algo. Usa los mismos
-  // criterios que el modal para no contradecirse con la cola.
+  /* La etiqueta de edad sólo cuando aporta algo. Usa los mismos
+     criterios que el modal para no contradecirse con la cola.
+
+     En la lista va la versión CORTA —«desde 12 meses»— y no la larga
+     —«No antes de los 12 meses»—. Dos motivos:
+
+       · cabe. Con la larga, las etiquetas quedaban dentadas y cada fila
+         empezaba en un sitio distinto; con la corta, 146 de las 149
+         fichas caben en una sola línea y el borde derecho queda recto.
+       · sigue diciendo QUÉ es. La alternativa era un «12 m» en rojo
+         frente al «12 m» gris del aviso suave, distinguidos sólo por el
+         color — justo lo que este proyecto no hace, por lo mismo que
+         los colores de la caca llevan su nombre escrito al lado.
+
+     La larga no se pierde: es la que sale en la ficha, donde hay sitio
+     y donde además va el motivo entero. */
   const etiquetaEdad =
-      av.duro  ? `<span class="tag tag-stop">${esc(av.duro.etiqueta)}</span>`
+      av.duro  ? `<span class="tag tag-stop">${esc(av.duro.corta || av.duro.etiqueta)}</span>`
     : av.suave ? `<span class="tag tag-pronto">${av.suave} m</span>`
     : '';
 
