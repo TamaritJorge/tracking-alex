@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<!-- Oculta de los buscadores, pero NO con Disallow en robots.txt: Disallow
+     impide RASTREAR, así que el buscador nunca llegaría a leer este noindex
+     y la URL podría acabar listada igual, sin título y sin descripción. La
+     etiqueta sola sí funciona. Tampoco va en sitemap.xml. -->
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+
+<title>Carga UJI</title>
+<meta name="description" content="Disponibilidad de los puntos de recarga del campus.">
+<meta name="theme-color" content="#0f172a">
+
+<link rel="manifest" href="manifest.webmanifest">
+<!-- Icono propio, no el de la app del bebé: las dos acaban juntas en la
+     misma pantalla de inicio y con el mismo dibujo habría que adivinar. -->
+<link rel="icon" href="icono-192.png">
+<link rel="apple-touch-icon" href="icono-192.png">
+
+<link rel="stylesheet" href="../marca.css">
+<link rel="stylesheet" href="../app/estilos.css">
+
+<style>
+  /* ── EL MAPA ──────────────────────────────────────────────────
+     Es el plano oficial del campus que publica la UJI, convertido de
+     PDF a WebP: 187 KB para 1400x784.
+
+     Es un dibujo ISOMETRICO, no una proyeccion geografica, asi que las
+     seis zonas NO se pueden situar con una transformacion de latitud y
+     longitud como se hacia antes: van a mano, identificadas por el
+     edificio que tienen al lado. Menos elegante, pero es la unica forma
+     de poner un punto donde la gente lo reconoce.
+
+     La imagen va en el repositorio en vez de pedirsela a la UJI en cada
+     visita por un motivo practico: lo que publican es un PDF de 1,6 MB,
+     y un PDF no se puede pintar en un <img>. */
+  /* container-type convierte el ancho del mapa en una unidad (cqw), que es
+     lo que permite que las marcas encojan CON el plano. Con un tamaño en
+     píxeles fijo, en un móvil de 375 px las seis burbujas se comen el
+     dibujo y se solapan entre ellas. */
+  .mapa {
+    position: relative;
+    container-type: inline-size;
+    width: 100%;
+    aspect-ratio: 1400 / 784;
+    background: var(--surface2);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .m-fondo { position: absolute; inset: 0; width: 100%; height: 100%;
+             object-fit: cover; }
+
+  .zona {
+    position: absolute;
+    transform: translate(-50%, -50%);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    width: clamp(34px, 9.5cqw, 54px); height: clamp(34px, 9.5cqw, 54px);
+    border-radius: 999px;
+    /* Relleno OPACO, no translúcido. El plano de la UJI es un dibujo muy
+       saturado —verdes, naranjas, amarillos, rojos— y una burbuja con
+       transparencia se mezcla con lo que tenga debajo: encima del césped
+       el verde de «hay sitio» deja de leerse como un estado y pasa a ser
+       parte del mapa. Opaco, el número se ve igual caiga donde caiga.
+
+       El aro blanco y la sombra hacen el resto: separan la marca del
+       fondo sin depender de que ese fondo sea claro u oscuro. */
+    border: 2px solid rgba(255,255,255,.9);
+    box-shadow: 0 2px 6px rgba(15,23,42,.35);
+    background: #64748b;
+    color: #fff;
+    font-family: inherit;
+    cursor: pointer;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .zona:hover, .zona:focus-visible { transform: translate(-50%,-50%) scale(1.08); }
+
+  .zona b    { font-size: clamp(.8rem, 3cqw, 1rem); line-height: 1; font-weight: 800; }
+  /* Las siglas más largas son CIETD y ESTCE, cinco caracteres: sin
+     nowrap se parten en dos líneas dentro del círculo y el número se
+     descoloca. Más vale que la sigla sobresalga un poco. */
+  .zona span { font-size: clamp(.44rem, 1.6cqw, .58rem); font-weight: 700;
+               letter-spacing: .02em; margin-top: 2px; opacity: .9;
+               white-space: nowrap; }
+
+  /* El color dice lo único que importa: si puedes bajar o no.
+
+     Son un punto más oscuros que --ok y --danger a propósito: aquellos se
+     usan sobre fondo claro con texto de color, y aquí el texto es blanco
+     encima del color. #059669 con blanco encima se queda en 3,6:1, por
+     debajo del mínimo; #047857 sube a 4,8:1 y #b91c1c a 7,0:1. */
+  .zona.hay   { background: #047857; }
+  .zona.nada  { background: #b91c1c; }
+  .zona.nd    { opacity: .55; }
+
+  /* La misma información en lista, que es como se mira de verdad con una
+     mano. El mapa sitúa; la lista responde. */
+  .zfila {
+    display: grid;
+    grid-template-columns: auto minmax(6em, 1fr) auto;
+    align-items: center; gap: 10px;
+    width: 100%; padding: 12px 10px;
+    border: none; border-bottom: 1px solid var(--border);
+    background: none; color: var(--text);
+    font-family: inherit; font-size: .92rem; text-align: left; cursor: pointer;
+  }
+  .zpunto { width: 12px; height: 12px; border-radius: 999px; background: var(--border); }
+  .zpunto.hay  { background: var(--ok); }
+  .zpunto.nada { background: var(--danger); }
+  .zcuenta { font-variant-numeric: tabular-nums; font-weight: 700; }
+
+  /* ── LAS ZONAS QUE VIGILAS ────────────────────────────────────
+     Botones de activar/desactivar, no casillas. Son seis, se tocan con
+     el pulgar y lo que importa es ver de un vistazo cuáles están
+     marcadas: una rejilla de casillas de 14 px con su etiqueta al lado
+     ocuparía el doble y se acertaría la mitad de las veces. */
+  .zonas-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr));
+                 gap: 8px; }
+  .chip-zona {
+    display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+    padding: 9px 11px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    background: var(--surface); color: var(--text2);
+    font-family: inherit; text-align: left; cursor: pointer;
+    transition: border-color .15s, background .15s, color .15s;
+  }
+  .chip-zona b    { font-size: .88rem; font-weight: 800; }
+  .chip-zona span { font-size: .68rem; opacity: .85; line-height: 1.25; }
+  .chip-zona.on   { border-color: var(--ok); background: rgba(5,150,105,.14); color: var(--text); }
+  .chip-zona.on b { color: var(--ok); }
+
+  .franja { display: flex; align-items: center; gap: 10px; }
+  .franja select {
+    flex: 1; padding: 12px 10px;
+    border: 1.5px solid var(--border); border-radius: 10px;
+    background: var(--surface); color: var(--text);
+    font-size: 1rem; font-family: inherit;
+  }
+  .franja span { color: var(--text2); font-size: .85rem; }
+
+  /* En la app del bebé las fichas separan sus párrafos a mano, uno a uno,
+     porque allí cada ficha maqueta lo suyo. Aquí el cuerpo del modal lo
+     compone JavaScript con varios párrafos seguidos, así que la
+     separación va en un sitio: .ficha-txt viene con margin 0 y .hint-txt
+     con un margen superior NEGATIVO —pensado para ir pegado debajo de un
+     campo de formulario— que aquí monta un texto encima de otro. */
+  #modalCuerpo .ficha-txt { margin: 0 0 12px; }
+  #modalCuerpo .ficha-txt:last-child { margin-bottom: 0; }
+  #modalCuerpo .hint-txt  { margin: 14px 0 0; }
+
+  .leyenda { display: flex; gap: 14px; flex-wrap: wrap;
+             font-size: .74rem; color: var(--text2); margin: 10px 2px 0; }
+  .leyenda i { display: inline-block; width: 9px; height: 9px;
+               border-radius: 999px; margin-right: 5px; vertical-align: 0; }
+</style>
+</head>
+<body>
+
+<!-- toast() lo busca sin comprobar que exista -->
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+<header class="header">
+  <div class="header-title">⚡ Carga UJI</div>
+  <div class="header-right">
+    <button class="icon-btn" id="themeBtn1" aria-label="Cambiar tema">🌞</button>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- ── ESTADO EN VIVO ──────────────────────────────────────────
+       Esta tarjeta NO depende de Supabase: el navegador le pregunta
+       directamente a la UJI. Si nuestra base de datos se cayera, esto
+       sigue funcionando — que es precisamente cuando hace falta. -->
+  <section class="card">
+    <p class="card-title">Ahora mismo</p>
+    <p class="card-sub" id="resumen">Consultando…</p>
+
+    <!-- Sin loading="lazy": esta imagen es lo primero que se mira al
+         abrir la página, así que diferirla sólo consigue que el mapa
+         aparezca medio segundo tarde y en blanco. -->
+    <div class="mapa" id="mapa">
+      <img class="m-fondo" src="campus.webp" alt="Plano del campus de la UJI" decoding="async">
+    </div>
+
+    <div class="leyenda">
+      <span><i style="background:var(--ok)"></i>Hay sitio</span>
+      <span><i style="background:var(--danger)"></i>Lleno</span>
+    </div>
+
+    <div id="lista" style="margin-top:14px"></div>
+
+    <p class="hint-txt" id="actualizado" style="margin:10px 0 0"></p>
+  </section>
+
+  <!-- ── AVISOS ──────────────────────────────────────────────── -->
+  <section class="card">
+    <p class="card-title">🔔 Avisarme cuando se libere</p>
+    <div id="avisos"></div>
+  </section>
+
+  <!-- ── ESTADÍSTICAS ────────────────────────────────────────── -->
+  <section class="card">
+    <p class="card-title">📊 A qué horas suele haber sitio</p>
+    <p class="card-sub" id="statsSub">Cargando…</p>
+    <div class="chart-wrap"><canvas id="chartOcupacion"></canvas></div>
+    <p class="hint-txt" id="statsNota" style="margin:10px 0 0"></p>
+  </section>
+
+  <p class="hint-txt" style="margin:18px 2px; text-align:center">
+    Datos de la <a href="https://www.uji.es/serveis/opgm/base/serveis/medi-ambient/mobilitat/recarrega"
+       target="_blank" rel="noopener noreferrer">página de movilidad de la UJI</a>.
+    Herramienta personal, sin relación con la universidad.
+  </p>
+</main>
+
+<!-- El modal reutiliza las clases de la app para no inventar otro -->
+<div class="modal-overlay" id="modal" style="display:none">
+  <div class="modal-box">
+    <p class="modal-title" id="modalTitulo"></p>
+    <div id="modalCuerpo"></div>
+    <div class="modal-btns" id="modalBtns"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+
+<!-- NO se carga nada de la app del bebé. No comparten ni un concepto, y el
+     propio proyecto dice que la duplicación entre páginas es lo correcto y
+     los globales compartidos el peligro. Lo único copiado de app/push.js
+     son claveABytes() y la detección de iOS, que no tienen nada de
+     específico de un bebé. -->
+<script src="carga.js"></script>
+<script src="push.js"></script>
+</body>
+</html>
