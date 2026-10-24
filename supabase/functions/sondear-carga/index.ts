@@ -18,10 +18,10 @@
 
    ── UN SOLO CRON, LA DECISION AQUI ──
    pg_cron la llama cada 2 minutos siempre. Es esta funcion la que mira
-   el reloj: en horario laboral actua siempre, y fuera solo si el minuto
-   es multiplo de 15. Una regla en un sitio, en vez de tres expresiones
-   de cron que se solapan y que hay que leer a la vez para saber cuando
-   corre de verdad.
+   el reloj: en horario laboral actua siempre, fuera solo si el minuto es
+   multiplo de 15, y SIEMPRE si alguien tiene un aviso armado. Una regla
+   en un sitio, en vez de tres expresiones de cron que se solapan y que
+   hay que leer a la vez para saber cuando corre de verdad.
 
    ── LA CARGA SOBRE LA UJI ──
    Son unas 400 peticiones al dia. La pagina oficial refresca cada 5
@@ -92,15 +92,27 @@ Deno.serve(async () => {
   const inicio = Date.now();
   const ahora  = new Date();
 
-  if (!toca(ahora)) {
-    return new Response(JSON.stringify({ ok: true, saltado: 'fuera de turno' }),
-      { headers: { 'Content-Type': 'application/json' } });
-  }
-
   const sb = createClient(
     Deno.env.get('SUPABASE_URL')!,
     Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
   );
+
+  /* Fuera de turno se sondea cada 15 minutos en vez de cada 2... salvo que
+     alguien tenga un aviso ARMADO. Quien arma uno un sabado se enteraria
+     hasta 15 minutos tarde de que se ha liberado un poste, y para entonces
+     ya hay otro coche: el aviso seria inutil justo cuando mas falta hace.
+
+     La consulta extra solo ocurre en la rama de saltar, y lo normal es que
+     no haya nadie esperando, asi que esto no cambia el volumen de
+     peticiones a la UJI en la practica. */
+  if (!toca(ahora)) {
+    const { data: armados, error: eArm } = await sb.rpc('carga_hay_armados');
+    if (eArm) console.error('carga_hay_armados:', eArm);
+    if (!armados) {
+      return new Response(JSON.stringify({ ok: true, saltado: 'fuera de turno' }),
+        { headers: { 'Content-Type': 'application/json' } });
+    }
+  }
 
   /* ── 1. PREGUNTAR A LA UJI ──
      El endpoint no esta documentado y puede cambiar o desaparecer sin

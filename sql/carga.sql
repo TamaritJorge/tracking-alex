@@ -520,6 +520,84 @@ REVOKE ALL ON FUNCTION public.carga_ocupacion(INT) FROM PUBLIC;
 GRANT EXECUTE ON FUNCTION public.carga_ocupacion(INT) TO anon, authenticated;
 
 
+-- ── 8b. DESDE CUÁNDO ESTÁ ASÍ CADA POSTE ───────────────────────────────────
+--
+-- Para la ficha que se abre al pulsar un círculo del mapa: cuándo pasó cada
+-- poste a su estado actual, y por tanto a qué hora vence el límite de 3 h de
+-- carga si está ocupado.
+--
+-- NO vale con mirar la última fila de carga_estado, por dos motivos:
+--
+--   1. El latido diario inserta una fila con el MISMO estado para dejar
+--      constancia de que el sondeo seguía vivo. Tomando la última fila, un
+--      poste ocupado desde ayer parecería ocupado desde las 4 de la
+--      madrugada, que es cuando corre el latido.
+--   2. Lo que se busca no es la última fila, es el PRINCIPIO del tramo
+--      actual: la fila más reciente en la que el estado cambió de verdad.
+--
+-- Por eso se mira `lag`: la última fila cuyo `libre` difiere del anterior.
+-- Las filas de latido tienen el mismo valor, así que caen solas.
+--
+-- `observada` dice si llegamos a VER la transición. Si esa fila es la primera
+-- que tenemos de ese poste, lo único que sabemos es que estaba así cuando
+-- empezamos a mirar: el historial arrancó el 23/10/2026. Sin esta bandera la
+-- pantalla diría «ocupado desde las 15:27» de un coche que llevaba ahí desde
+-- por la mañana, y encima calcularía mal el límite.
+
+CREATE OR REPLACE FUNCTION public.carga_zona_detalle(p_zona TEXT)
+ RETURNS TABLE(poste_id TEXT, libre BOOLEAN, desde TIMESTAMPTZ, observada BOOLEAN)
+ LANGUAGE sql
+ STABLE
+ SECURITY DEFINER
+ SET search_path = ''
+AS $function$
+  WITH h AS (
+    SELECT e.poste_id, e.momento, e.libre,
+           lag(e.libre) OVER (PARTITION BY e.poste_id ORDER BY e.momento) AS ant
+      FROM public.carga_estado e
+      JOIN public.carga_postes p ON p.id = e.poste_id
+     WHERE p.zona_id = p_zona AND p.activo
+  )
+  SELECT DISTINCT ON (h.poste_id)
+         h.poste_id, h.libre, h.momento, (h.ant IS NOT NULL)
+    FROM h
+   WHERE h.ant IS DISTINCT FROM h.libre
+   ORDER BY h.poste_id, h.momento DESC;
+$function$;
+
+REVOKE ALL ON FUNCTION public.carga_zona_detalle(TEXT) FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.carga_zona_detalle(TEXT) TO anon, authenticated;
+
+
+-- ── 8c. ¿HAY ALGUIEN ESPERANDO UN AVISO? ───────────────────────────────────
+--
+-- La Edge Function sondea cada 2 minutos en horario laboral y cada 15 el
+-- resto del tiempo, para no cargar al servidor de la UJI sin motivo. Esa
+-- regla se escribió cuando el aviso era una suscripción permanente.
+--
+-- Con el aviso a demanda ya no vale: quien arma uno un sábado se enteraría
+-- hasta 15 minutos tarde de que se ha liberado un poste, y para entonces ya
+-- hay otro coche aparcado. El aviso sería inútil justo cuando más falta hace.
+--
+-- Así que el ritmo suave se mantiene SALVO cuando alguien está esperando.
+-- Como lo normal es que no haya nadie, esto no cambia el volumen de
+-- peticiones en la práctica: sólo aprieta mientras hay alguien pendiente.
+
+CREATE OR REPLACE FUNCTION public.carga_hay_armados()
+ RETURNS BOOLEAN
+ LANGUAGE sql
+ STABLE
+ SECURITY DEFINER
+ SET search_path = ''
+AS $function$
+  SELECT EXISTS (SELECT 1 FROM public.carga_push
+                  WHERE cardinality(zonas) > 0 AND fallos < 5);
+$function$;
+
+REVOKE ALL ON FUNCTION public.carga_hay_armados() FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.carga_hay_armados() TO service_role;
+
+
 -- ── 9. BORRAR LA CUENTA ────────────────────────────────────────────────────
 --
 -- Regla de la casa: cada tabla nueva contesta a esta pregunta.

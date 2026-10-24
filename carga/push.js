@@ -236,6 +236,34 @@ window.alternarZona = async function (z) {
 
 window.cancelarAviso = function () { return guardarZonas([]); };
 
+/* El botón de la ficha del mapa: «avísame cuando quede libre». Desde ahí
+   la persona no sabe ni quiere saber que hacen falta una sesión y un
+   permiso del navegador, así que este atajo resuelve lo que falte y
+   luego arma la zona. Es el mismo camino de la tarjeta de abajo, pero
+   sin obligar a bajar hasta ella y averiguar el orden de los pasos. */
+window.avisarmeDeZona = async function (z) {
+  if (!sesion) {
+    toast('Primero entra con tu correo: hace falta para saber a qué móvil avisarte.', 5000);
+    entrar();
+    return;
+  }
+
+  if (estadoAv !== 'activo') {
+    await activarAvisos();
+    // activarAvisos() deja estadoAv al día; si no cuajó (permiso denegado,
+    // iPhone sin instalar) ya ha dicho por qué y aquí no hay nada que armar.
+    if (estadoAv !== 'activo') return;
+  }
+
+  if ((miAviso.zonas || []).indexOf(z) >= 0) {
+    toast('Ya tenías el aviso puesto para ' + nombreZona(z));
+    return;
+  }
+
+  cerrarModal();
+  await guardarZonas((miAviso.zonas || []).concat([z]));
+};
+
 async function guardarZonas(zonas) {
   if (!miAviso) return;
 

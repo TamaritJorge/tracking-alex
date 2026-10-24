@@ -152,6 +152,26 @@
      separación va en un sitio: .ficha-txt viene con margin 0 y .hint-txt
      con un margen superior NEGATIVO —pensado para ir pegado debajo de un
      campo de formulario— que aquí monta un texto encima de otro. */
+  /* ── LA FICHA DE UNA ZONA ─────────────────────────────────── */
+  .postes { list-style: none; margin: 4px 0 14px; padding: 0; }
+  .postes li { font-size: .84rem; line-height: 1.5; padding: 7px 0;
+               border-bottom: 1px solid var(--border); }
+  .postes li:last-child { border-bottom: none; }
+  .p-ok   { color: var(--ok); }
+  .p-no   { color: var(--danger); }
+  .p-tarde{ color: var(--target); font-weight: 600; }
+
+  /* ── FILTROS DE LAS GRÁFICAS ──────────────────────────────── */
+  .filtros { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .f-btn {
+    padding: 6px 11px;
+    border: 1.5px solid var(--border); border-radius: 999px;
+    background: var(--surface); color: var(--text2);
+    font-family: inherit; font-size: .76rem; font-weight: 600; cursor: pointer;
+  }
+  .f-btn.on { border-color: var(--primary); background: rgba(109,40,217,.14);
+              color: var(--primary-txt); }
+
   #modalCuerpo .ficha-txt { margin: 0 0 12px; }
   #modalCuerpo .ficha-txt:last-child { margin-bottom: 0; }
   #modalCuerpo .hint-txt  { margin: 14px 0 0; }
@@ -208,8 +228,11 @@
   </section>
 
   <!-- ── ESTADÍSTICAS ────────────────────────────────────────── -->
-  <section class="card">
+  <!-- El id es el destino del botón «Ver estadísticas» de la ficha de
+       cada zona, que hace scroll hasta aquí con esa zona ya elegida. -->
+  <section class="card" id="estadisticas">
     <p class="card-title">📊 A qué horas suele haber sitio</p>
+    <div id="statsFiltros"></div>
     <p class="card-sub" id="statsSub">Cargando…</p>
     <div class="chart-wrap"><canvas id="chartOcupacion"></canvas></div>
     <p class="hint-txt" id="statsNota" style="margin:10px 0 0"></p>

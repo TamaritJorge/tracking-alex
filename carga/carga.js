@@ -60,9 +60,17 @@ const POSTES = [
    PERO SE CUENTA EN POSTES, no en puntos. El endpoint da un `disponible`
    por poste, y no sabemos si un poste «libre» tiene sus dos conectores
    libres o sólo uno. Multiplicar por dos sería inventarse la mitad de la
-   cifra. «2 de 3 postes» es lo que el dato sostiene; el detalle de la
-   zona explica que cada poste da para dos coches. */
+   cifra. «2 de 3 postes» es lo que el dato sostiene. */
 const CONECTORES_POR_POSTE = 2;
+
+/* Límite de tiempo de carga en el campus. De aquí sale la hora a la que
+   un poste ocupado DEBERÍA quedar libre.
+
+   Es una norma, no una predicción, y la pantalla lo dice así: nada
+   impide que un coche se quede más rato, y de hecho la ficha avisa
+   cuando el límite ya ha pasado en vez de callárselo. Si la UJI cambia
+   la norma, se cambia este número. */
+const LIMITE_CARGA_H = 3;
 
 /* Nombres de las zonas.
 
@@ -310,65 +318,223 @@ async function consultarEstado() {
   }
 }
 
-window.detalleZona = function (z) {
+/* ─────────────────────────────────────────────────────────────
+   LA FICHA DE UNA ZONA
+
+   Lo que se quiere saber al pulsar un círculo es una sola cosa: ¿voy o
+   no voy? Y si está lleno, ¿cuánto falta?
+
+   La hora de cada poste NO sale del endpoint de la UJI, que sólo dice
+   libre o no: sale de nuestro propio historial de cambios. Por eso esta
+   ficha es asíncrona y por eso puede decir «desde antes de que empezara
+   a mirar» — el historial arrancó el 23/10/2026 y antes de esa fecha no
+   hay nada que contar.
+   ───────────────────────────────────────────────────────────── */
+function horaDe(ts) {
+  if (!ts) return null;
+  // Postgres puede devolver «2026-10-23 15:02:01+00»: con espacio en vez
+  // de T, y con el huso en dos dígitos. Ninguna de las dos cosas es ISO
+  // válido y Safari las rechaza devolviendo una fecha inválida — que es
+  // justo el fallo que convertía una línea correcta en «sin datos».
+  const s = String(ts).replace(' ', 'T').replace(/([+-]\d{2})$/, '$1:00');
+  const d = new Date(s);
+  return isNaN(d) ? null : d;
+}
+
+function hhmm(d) {
+  return d.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' });
+}
+
+function lineaPoste(f) {
+  /* Sin haber visto la transición no se puede calcular el límite: lo
+     único que sabemos es que ya estaba así cuando empezamos a mirar.
+     Dar una hora inventada aquí sería peor que no dar ninguna. Va antes
+     que todo lo demás porque esta rama no necesita la fecha. */
+  if (!f.libre && !f.observada) {
+    return `<li><span class="p-no">●</span> <strong>${esc(f.poste_id)}</strong>
+      ocupado desde antes de que empezara a mirar</li>`;
+  }
+
+  const d = horaDe(f.desde);
+  if (!d) return `<li>${esc(f.poste_id)} · sin datos</li>`;
+
+  const hoy = d.toDateString() === new Date().toDateString();
+  const cuando = hhmm(d) + (hoy ? '' : ' del ' + d.toLocaleDateString('es-ES',
+    { day: 'numeric', month: 'short' }));
+
+  if (f.libre) {
+    return `<li><span class="p-ok">●</span> <strong>${esc(f.poste_id)}</strong>
+      libre desde las ${esc(cuando)}</li>`;
+  }
+
+  const limite = new Date(d.getTime() + LIMITE_CARGA_H * 3600000);
+  const pasado = limite < new Date();
+
+  return `<li><span class="p-no">●</span> <strong>${esc(f.poste_id)}</strong>
+    ocupado desde las ${esc(cuando)} ·
+    ${pasado
+      ? `<span class="p-tarde">pasado el límite de ${LIMITE_CARGA_H} h (${esc(hhmm(limite))})</span>`
+      : `libre como máximo a las <strong>${esc(hhmm(limite))}</strong>`}</li>`;
+}
+
+window.detalleZona = async function (z) {
   const e = estadoActual && estadoActual[z];
-  const postes = POSTES.filter(p => p.zona === z);
-  abrirModal(nombreZona(z), `
-    <p class="ficha-txt">${e
-      ? `<strong>${e.libres} de ${e.total}</strong> postes libres ahora mismo.`
-      : 'Sin datos ahora mismo.'}</p>
-    <p class="ficha-txt">Cada poste tiene ${CONECTORES_POR_POSTE} conectores, así que
-       ${postes.length} ${postes.length === 1 ? 'poste da' : 'postes dan'} para
-       ${postes.length * CONECTORES_POR_POSTE} coches si están todos libres.</p>
-    <p class="hint-txt">${NOMBRES[z] ? '' :
-       'Esta zona todavía no tiene nombre puesto: se identifica por su letra.'}</p>`,
-    `<button class="btn" onclick="cerrarModal()"
-       style="background:var(--surface2);color:var(--text)">Cerrar</button>`);
+  const lleno = e && e.libres === 0;
+
+  const botones =
+    (lleno ? `<button class="btn btn-primary" onclick="avisarmeDeZona('${z}')"
+                >Avisarme cuando quede libre</button>` : '')
+    + `<button class="btn" onclick="verEstadisticas('${z}')"
+         style="background:var(--surface2);color:var(--text)">Ver estadísticas</button>
+       <button class="btn" onclick="cerrarModal()"
+         style="background:var(--surface2);color:var(--text)">Cerrar</button>`;
+
+  const cabecera = `<p class="ficha-txt">${e
+    ? `<strong>${e.libres} de ${e.total}</strong> postes libres ahora mismo.`
+    : 'Sin datos ahora mismo.'}</p>`;
+
+  abrirModal(nombreZona(z), cabecera + '<p class="hint-txt">Cargando el detalle…</p>', botones);
+
+  const { data, error } = await sb.rpc('carga_zona_detalle', { p_zona: z });
+
+  // La ficha puede haberse cerrado o haber abierto otra mientras tanto
+  const titulo = document.getElementById('modalTitulo');
+  if (!titulo || titulo.textContent !== nombreZona(z)) return;
+
+  if (error) {
+    console.error('carga_zona_detalle:', error);
+    document.getElementById('modalCuerpo').innerHTML = cabecera +
+      '<p class="hint-txt">No he podido cargar las horas. El recuento de arriba' +
+      ' viene de la UJI y sigue siendo bueno.</p>';
+    return;
+  }
+
+  const filas = (data || []).map(lineaPoste).join('');
+
+  // La explicación del límite sólo tiene sentido si hay algo ocupado
+  const hayOcupado = (data || []).some(f => !f.libre);
+
+  document.getElementById('modalCuerpo').innerHTML = cabecera +
+    `<ul class="postes">${filas || '<li>Sin historial todavía.</li>'}</ul>` +
+    (hayOcupado ? `<p class="hint-txt">El límite de carga en el campus es de
+      ${LIMITE_CARGA_H} h, así que esa es la hora a la que <em>debería</em> quedar
+      libre. Es una norma, no una promesa: nada impide que un coche se quede
+      más rato.</p>` : '');
 };
 
 /* ─────────────────────────────────────────────────────────────
    ESTADÍSTICAS
    ───────────────────────────────────────────────────────────── */
-let chart = null;
+let chart      = null;
+let statsDatos = null;     // lo que devolvió carga_ocupacion, en crudo
+let statsZona  = null;     // null = todas las zonas juntas
+let statsHoy   = false;    // false = media de lunes a viernes
 
+const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+
+/* Se pide UNA vez y se filtra en el navegador. Son como mucho unas
+   pocas miles de filas (6 zonas × 7 días × 24 horas = 1.008 como tope),
+   así que cambiar de zona o de día no vuelve a tocar el servidor y es
+   instantáneo. */
 async function cargarEstadisticas() {
-  const sub  = document.getElementById('statsSub');
-  const nota = document.getElementById('statsNota');
-
   const { data, error } = await sb.rpc('carga_ocupacion', { p_dias: 60 });
   if (error) {
-    sub.textContent = 'No he podido cargar el historial.';
+    document.getElementById('statsSub').textContent = 'No he podido cargar el historial.';
     console.error('carga_ocupacion:', error);
     return;
   }
+  statsDatos = data || [];
+  pintarFiltrosStats();
+  pintarEstadisticas();
+}
 
-  // Horas observadas en total: es lo que dice si el historial da para algo
-  const horas = (data || []).reduce((s, f) => s + (f.muestras || 0), 0);
-  const dias  = horas / 24 / Math.max(1, POSTES.length);
+function pintarFiltrosStats() {
+  const c = document.getElementById('statsFiltros');
+  if (!c) return;
 
-  /* Con dos días no se puede decir nada y con dos semanas sí. Se dice,
-     en vez de dibujar una gráfica que aparenta saber. Es lo mismo que
-     hace la gráfica de peso cuando faltan pesadas. */
-  if (dias < 7) {
-    sub.textContent = 'Todavía no hay historial suficiente.';
-    nota.textContent = `Llevo ${dias < 1 ? 'menos de un día' : Math.floor(dias) + ' días'}`
-      + ' recogiendo datos. A partir de dos semanas esto empieza a poder'
-      + ' responder a «¿a qué hora suele haber sitio?».';
-    document.querySelector('.chart-wrap').style.display = 'none';
-    return;
-  }
+  const zonas = [['', 'Todas']].concat(Object.keys(SIGLAS).map(z => [z, SIGLAS[z]]));
+  const bz = zonas.map(([v, et]) => `
+    <button type="button" class="f-btn ${(statsZona || '') === v ? 'on' : ''}"
+            onclick="filtrarStats('${v}', null)">${esc(et)}</button>`).join('');
 
-  // Media por hora entre semana, que es cuando se usa el campus
+  const hoy = DIAS[new Date().getDay()];
+  c.innerHTML = `
+    <div class="filtros">${bz}</div>
+    <div class="filtros">
+      <button type="button" class="f-btn ${statsHoy ? '' : 'on'}"
+              onclick="filtrarStats(null, false)">L-V</button>
+      <button type="button" class="f-btn ${statsHoy ? 'on' : ''}"
+              onclick="filtrarStats(null, true)">Hoy (${esc(hoy)})</button>
+    </div>`;
+}
+
+window.filtrarStats = function (zona, hoy) {
+  if (zona !== null) statsZona = zona || null;
+  if (hoy  !== null) statsHoy  = hoy;
+  pintarFiltrosStats();
+  pintarEstadisticas();
+};
+
+/* Lleva a las gráficas con la zona ya elegida y mirando el día de hoy,
+   que es la pregunta que uno se hace de pie junto al coche. */
+window.verEstadisticas = function (z) {
+  cerrarModal();
+  statsZona = z;
+  statsHoy  = true;
+  pintarFiltrosStats();
+  pintarEstadisticas();
+  const s = document.getElementById('estadisticas');
+  if (s) s.scrollIntoView({ behavior: 'smooth', block: 'start' });
+};
+
+function pintarEstadisticas() {
+  const sub  = document.getElementById('statsSub');
+  const nota = document.getElementById('statsNota');
+  const caja = document.querySelector('.chart-wrap');
+  if (!statsDatos) return;
+
+  const dow = new Date().getDay();
+  const filas = statsDatos.filter(f =>
+       (!statsZona || f.zona_id === statsZona)
+    && (statsHoy ? f.dia_semana === dow : (f.dia_semana !== 0 && f.dia_semana !== 6)));
+
   const porHora = new Array(24).fill(null).map(() => ({ s: 0, n: 0 }));
-  (data || []).forEach(f => {
-    if (f.dia_semana === 0 || f.dia_semana === 6) return;   // domingo y sábado
+  filas.forEach(f => {
     porHora[f.hora].s += f.prob_libre * f.muestras;
     porHora[f.hora].n += f.muestras;
   });
 
-  sub.textContent = 'Media de lunes a viernes, últimos 60 días.';
-  nota.textContent = 'Probabilidad de encontrar al menos un punto libre.';
-  document.querySelector('.chart-wrap').style.display = '';
+  /* El umbral se mide sobre LO QUE SE VA A PINTAR, no sobre el total.
+     Puede haber dos meses de historial general y cuatro horas de una
+     zona concreta en sábado; dibujar eso como si fuera una tendencia
+     sería exactamente la clase de gráfica que miente. */
+  const horas   = filas.reduce((s, f) => s + (f.muestras || 0), 0);
+  const postes  = statsZona ? POSTES.filter(p => p.zona === statsZona).length : POSTES.length;
+  const dias    = horas / 24 / Math.max(1, postes);
+  const minimo  = statsHoy ? 2 : 7;   // «hoy» es un día de cada siete
+
+  const donde = statsZona ? nombreZona(statsZona) : 'todo el campus';
+  const cuando = statsHoy ? DIAS[dow] + 's' : 'de lunes a viernes';
+
+  if (dias < minimo) {
+    sub.textContent = `Todavía no hay historial suficiente de ${donde} ${cuando}.`;
+    nota.textContent = `Llevo ${dias < 1 ? 'menos de un día' : Math.floor(dias) + ' días'}`
+      + ' de datos para ese filtro. Esto empieza a poder responder a «¿a qué hora'
+      + ' suele haber sitio?» cuando haya unas cuantas semanas.';
+    caja.style.display = 'none';
+    if (chart) { chart.destroy(); chart = null; }
+    return;
+  }
+
+  sub.textContent = `${donde[0].toUpperCase()}${donde.slice(1)}, ${cuando}, últimos 60 días.`;
+  /* OJO CON ESTA FRASE. Antes decía «probabilidad de encontrar al menos
+     un poste libre» y era FALSO: carga_ocupacion() suma segundos de
+     poste, así que lo que sale es qué proporción del parque estuvo
+     libre, no si quedaba alguno. En una zona de tres postes con uno
+     siempre libre, lo primero da 33 % y lo segundo 100 %. Las dos cifras
+     son útiles, pero no son la misma, y la que calculamos es ésta. */
+  nota.textContent = 'Proporción media de postes libres en esa hora.';
+  caja.style.display = '';
 
   if (chart) chart.destroy();
   chart = new Chart(document.getElementById('chartOcupacion'), {
@@ -389,7 +555,7 @@ async function cargarEstadisticas() {
       responsive: true, maintainAspectRatio: false,
       plugins: {
         legend: { display: false },
-        tooltip: { callbacks: { label: c => c.parsed.y + ' % de probabilidad' } }
+        tooltip: { callbacks: { label: c => c.parsed.y + ' % de los postes libres' } }
       },
       scales: {
         y: { beginAtZero: true, max: 100, ticks: { callback: v => v + ' %' } },
