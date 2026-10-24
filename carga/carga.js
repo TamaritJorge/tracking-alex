@@ -428,9 +428,17 @@ window.detalleZona = async function (z) {
 let chart      = null;
 let statsDatos = null;     // lo que devolvió carga_ocupacion, en crudo
 let statsZona  = null;     // null = todas las zonas juntas
-let statsHoy   = false;    // false = media de lunes a viernes
 
-const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+/* El día: 'hoy', 'lv' (media de lunes a viernes) o un número 0..6.
+
+   Arranca en 'hoy' porque la pregunta que trae a alguien a esta página
+   es «¿y ahora?». La media de L-V se queda como opción, no como punto de
+   partida: mezcla cinco días que no tienen por qué parecerse, y si el
+   martes y el viernes son distintos, promediarlos los esconde a los dos. */
+let statsDia = 'hoy';
+
+const DIAS  = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const INIC  = ['D', 'L', 'M', 'X', 'J', 'V', 'S'];
 
 /* Se pide UNA vez y se filtra en el navegador. Son como mucho unas
    pocas miles de filas (6 zonas × 7 días × 24 horas = 1.008 como tope),
@@ -448,6 +456,9 @@ async function cargarEstadisticas() {
   pintarEstadisticas();
 }
 
+/* Dos grupos separados y etiquetados, no una tira de botones seguidos:
+   «MD» y «J» son las dos cosas cortas y en mayúscula, y sin separarlas
+   parecen la misma clase de filtro cuando se combinan entre sí. */
 function pintarFiltrosStats() {
   const c = document.getElementById('statsFiltros');
   if (!c) return;
@@ -457,20 +468,28 @@ function pintarFiltrosStats() {
     <button type="button" class="f-btn ${(statsZona || '') === v ? 'on' : ''}"
             onclick="filtrarStats('${v}', null)">${esc(et)}</button>`).join('');
 
-  const hoy = DIAS[new Date().getDay()];
+  // 'hoy' y 'lv' primero, y después los cinco días sueltos
+  const dias = [['hoy', 'Hoy'], ['lv', 'L-V']]
+    .concat([1, 2, 3, 4, 5].map(n => [String(n), INIC[n]]));
+
+  const bd = dias.map(([v, et]) => `
+    <button type="button" class="f-btn ${String(statsDia) === v ? 'on' : ''}"
+            onclick="filtrarStats(null, '${v}')"
+            title="${esc(v === 'hoy' ? DIAS[new Date().getDay()]
+                       : v === 'lv' ? 'media de lunes a viernes'
+                       : DIAS[Number(v)])}">${esc(et)}</button>`).join('');
+
   c.innerHTML = `
+    <p class="f-tit">Zona</p>
     <div class="filtros">${bz}</div>
-    <div class="filtros">
-      <button type="button" class="f-btn ${statsHoy ? '' : 'on'}"
-              onclick="filtrarStats(null, false)">L-V</button>
-      <button type="button" class="f-btn ${statsHoy ? 'on' : ''}"
-              onclick="filtrarStats(null, true)">Hoy (${esc(hoy)})</button>
-    </div>`;
+    <p class="f-tit">Día</p>
+    <div class="filtros">${bd}</div>`;
 }
 
-window.filtrarStats = function (zona, hoy) {
+window.filtrarStats = function (zona, dia) {
   if (zona !== null) statsZona = zona || null;
-  if (hoy  !== null) statsHoy  = hoy;
+  // Los días sueltos llegan como texto desde el onclick: se vuelven número
+  if (dia  !== null) statsDia  = /^\d$/.test(dia) ? Number(dia) : dia;
   pintarFiltrosStats();
   pintarEstadisticas();
 };
@@ -480,7 +499,7 @@ window.filtrarStats = function (zona, hoy) {
 window.verEstadisticas = function (z) {
   cerrarModal();
   statsZona = z;
-  statsHoy  = true;
+  statsDia  = 'hoy';
   pintarFiltrosStats();
   pintarEstadisticas();
   const s = document.getElementById('estadisticas');
@@ -494,9 +513,14 @@ function pintarEstadisticas() {
   if (!statsDatos) return;
 
   const dow = new Date().getDay();
+  const dia = statsDia === 'hoy' ? dow : statsDia;   // 'lv' se queda como está
+
+  const esDelDia = f => dia === 'lv'
+    ? (f.dia_semana !== 0 && f.dia_semana !== 6)
+    : f.dia_semana === dia;
+
   const filas = statsDatos.filter(f =>
-       (!statsZona || f.zona_id === statsZona)
-    && (statsHoy ? f.dia_semana === dow : (f.dia_semana !== 0 && f.dia_semana !== 6)));
+    (!statsZona || f.zona_id === statsZona) && esDelDia(f));
 
   const porHora = new Array(24).fill(null).map(() => ({ s: 0, n: 0 }));
   filas.forEach(f => {
@@ -511,10 +535,16 @@ function pintarEstadisticas() {
   const horas   = filas.reduce((s, f) => s + (f.muestras || 0), 0);
   const postes  = statsZona ? POSTES.filter(p => p.zona === statsZona).length : POSTES.length;
   const dias    = horas / 24 / Math.max(1, postes);
-  const minimo  = statsHoy ? 2 : 7;   // «hoy» es un día de cada siete
 
-  const donde = statsZona ? nombreZona(statsZona) : 'todo el campus';
-  const cuando = statsHoy ? DIAS[dow] + 's' : 'de lunes a viernes';
+  /* Un día suelto sólo aparece una vez por semana, así que dos ya dicen
+     algo; la media de L-V junta cinco y se le puede pedir más. */
+  const minimo  = dia === 'lv' ? 7 : 2;
+
+  const donde  = statsZona ? nombreZona(statsZona) : 'todo el campus';
+  /* «los lunes», no «los luness»: en castellano los días acabados en -s
+     no cambian en plural, y sólo sábado y domingo llevan la -s. */
+  const enPlural = d => /s$/.test(d) ? d : d + 's';
+  const cuando = dia === 'lv' ? 'de lunes a viernes' : 'los ' + enPlural(DIAS[dia]);
 
   if (dias < minimo) {
     sub.textContent = `Todavía no hay historial suficiente de ${donde} ${cuando}.`;
