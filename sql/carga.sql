@@ -157,7 +157,19 @@ CREATE TABLE IF NOT EXISTS public.carga_desconocidos (
 );
 
 
--- ── 4. SUSCRIPCIONES AL AVISO ──────────────────────────────────────────────
+-- ── 4. EL AVISO, QUE ES DE UN SOLO USO ─────────────────────────────────────
+--
+-- ── NADIE ESTÁ SUSCRITO A NADA ──
+-- Esta tabla NO es una lista de gente vigilando zonas. Es una dirección de
+-- entrega (el móvil) más las zonas que ese móvil tiene ARMADAS ahora mismo.
+-- El aviso se arma desde la página cuando hace falta —vas de camino y la
+-- zona está llena— suena una vez al liberarse un poste, y carga_aviso_enviado()
+-- vacía `zonas`. Se acabó.
+--
+-- Eso elimina de un plumazo dos cosas que antes eran imprescindibles: la
+-- franja horaria (si lo armas a las 3:40 es porque lo quieres a las 3:40) y
+-- el enfriamiento (no hay segundo aviso del que protegerse). Las dos estaban
+-- aquí y las dos se han quitado; si aparecen en código viejo, es de antes.
 --
 -- ── POR QUÉ UNA TABLA PROPIA Y NO med_push ──
 -- med_push no distingue de qué aplicación viene cada suscripción, y
@@ -167,11 +179,11 @@ CREATE TABLE IF NOT EXISTS public.carga_desconocidos (
 -- worker de los cargadores — que ni siquiera sabe pintarlos. Tabla aparte, y
 -- NO una columna `tipo` en la de medicación.
 --
--- ── zonas: EL VACÍO SIGNIFICA TODAS ──
--- No es un atajo. Si la UJI pone cargadores nuevos, quien dijo «todas» los
--- quiere también y quien eligió tres concretas no. Guardar la lista completa
--- en vez de {} haría que una zona nueva no avisara a nadie, y nadie
--- entendería por qué.
+-- ── zonas: EL VACÍO SIGNIFICA NADA ARMADO ──
+-- Es el estado de reposo, y es donde vuelve sola la fila cada vez que suena
+-- un aviso. Que la fila exista con `zonas` vacío NO significa que el móvil
+-- esté esperando nada: significa que tiene permiso concedido y puede armar
+-- un aviso sin volver a pasar por el diálogo del navegador.
 
 CREATE TABLE IF NOT EXISTS public.carga_push (
   endpoint    TEXT PRIMARY KEY,
@@ -180,32 +192,19 @@ CREATE TABLE IF NOT EXISTS public.carga_push (
   auth        TEXT NOT NULL,
   agente      TEXT,
   zonas       TEXT[] NOT NULL DEFAULT '{}',
-  desde_hora  SMALLINT NOT NULL DEFAULT 7  CHECK (desde_hora BETWEEN 0 AND 23),
-  hasta_hora  SMALLINT NOT NULL DEFAULT 21 CHECK (hasta_hora BETWEEN 1 AND 24),
   fallos      INTEGER NOT NULL DEFAULT 0,
   creada_en   TIMESTAMPTZ NOT NULL DEFAULT now(),
-  ultimo_ok   TIMESTAMPTZ,
-  CONSTRAINT carga_push_franja CHECK (hasta_hora > desde_hora)
+  ultimo_ok   TIMESTAMPTZ
 );
 
 CREATE INDEX IF NOT EXISTS carga_push_user_idx ON public.carga_push (user_id);
 
 COMMENT ON COLUMN public.carga_push.zonas IS
-  'Zonas que vigila. Vacío = todas, incluidas las que se añadan en el futuro.';
+  'Zonas ARMADAS ahora mismo. Vacío = nada armado. Se vacía sola al disparar el aviso.';
 
--- ON DELETE CASCADE aquí sí, y es la excepción razonada: una suscripción no
--- es historial, es una dirección de entrega. Si el usuario se va, mandar
--- avisos a su móvil sería exactamente lo contrario de lo que pidió.
-
-
--- Enfriamiento. Por usuario Y ZONA: así dos zonas distintas pueden avisar
--- seguidas, pero una sola que parpadee no manda cinco avisos.
-CREATE TABLE IF NOT EXISTS public.carga_avisos (
-  user_id    UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  zona_id    TEXT NOT NULL REFERENCES public.carga_zonas(id),
-  enviado_en TIMESTAMPTZ NOT NULL DEFAULT now(),
-  PRIMARY KEY (user_id, zona_id)
-);
+-- ON DELETE CASCADE aquí sí, y es la excepción razonada: esto no es
+-- historial, es una dirección de entrega. Si el usuario se va, mandar avisos
+-- a su móvil sería exactamente lo contrario de lo que pidió.
 
 
 -- ── 5. PERMISOS ────────────────────────────────────────────────────────────
@@ -249,11 +248,9 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON public.carga_push TO authenticated;
 REVOKE ALL ON public.carga_push FROM anon, PUBLIC;
 REVOKE TRUNCATE, TRIGGER ON public.carga_push FROM authenticated;
 
--- Las dos del servidor: RLS encendida y SIN políticas ni GRANT. Sólo
+-- La del servidor: RLS encendida y SIN políticas ni GRANT. Sólo
 -- service_role, que se salta RLS.
-ALTER TABLE public.carga_avisos       ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.carga_desconocidos ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON public.carga_avisos       FROM anon, authenticated, PUBLIC;
 REVOKE ALL ON public.carga_desconocidos FROM anon, authenticated, PUBLIC;
 
 
@@ -381,11 +378,16 @@ GRANT EXECUTE ON FUNCTION public.carga_latido() TO service_role;
 
 -- ── 7. A QUIÉN HAY QUE AVISAR ──────────────────────────────────────────────
 --
--- Tres guardas, y las tres existen porque un aviso que molesta se desactiva y
--- entonces no sirve para nada:
---   · la zona está entre las que vigila (o las vigila todas),
---   · estamos dentro de su franja horaria, en hora de Madrid,
---   · y no se le ha avisado de ESA zona en los últimos 20 minutos.
+-- Una sola condición: que tenga ARMADA una de las zonas que acaban de liberar
+-- un poste. Siendo el aviso de un solo uso, no hacen falta ni franja horaria
+-- ni enfriamiento.
+--
+-- DISTINCT ON (endpoint) y no una fila por zona: si se liberan a la vez dos
+-- de las zonas armadas, lo que se quiere es UN aviso, no dos. Sin esto el
+-- bucle de la Edge Function mandaría el segundo con la lista que ya tenía en
+-- memoria, después de haber desarmado, y la promesa de «luego se desactiva»
+-- sería mentira. Se elige la zona de menor `orden`: criterio estable, y da
+-- igual cuál salga porque el aviso dice cuántos sitios hay.
 
 CREATE OR REPLACE FUNCTION public.carga_avisos_por_enviar(p_zonas TEXT[])
  RETURNS TABLE(endpoint TEXT, p256dh TEXT, clave_auth TEXT,
@@ -409,7 +411,8 @@ AS $function$
            count(*)::INT                      AS total
       FROM estado GROUP BY zona_id
   )
-  SELECT s.endpoint, s.p256dh, s.auth, s.user_id,
+  SELECT DISTINCT ON (s.endpoint)
+         s.endpoint, s.p256dh, s.auth, s.user_id,
          z.id, COALESCE(z.nombre, 'Zona ' || z.id),
          pz.libres, pz.total
     FROM public.carga_push s
@@ -417,22 +420,23 @@ AS $function$
     JOIN public.carga_zonas z  ON z.id = z_id
     JOIN por_zona          pz  ON pz.zona_id = z.id
    WHERE s.fallos < 5
-     AND (cardinality(s.zonas) = 0 OR z.id = ANY (s.zonas))
-     AND EXTRACT(HOUR FROM (now() AT TIME ZONE 'Europe/Madrid'))
-           BETWEEN s.desde_hora AND s.hasta_hora - 1
-     AND NOT EXISTS (
-           SELECT 1 FROM public.carga_avisos a
-            WHERE a.user_id = s.user_id
-              AND a.zona_id = z.id
-              AND a.enviado_en > now() - interval '20 minutes');
+     AND z.id = ANY (s.zonas)
+   ORDER BY s.endpoint, z.orden;
 $function$;
 
 REVOKE ALL ON FUNCTION public.carga_avisos_por_enviar(TEXT[]) FROM PUBLIC, anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.carga_avisos_por_enviar(TEXT[]) TO service_role;
 
 
-CREATE OR REPLACE FUNCTION public.carga_aviso_enviado(
-  p_user UUID, p_zona TEXT, p_endpoint TEXT, p_ok BOOLEAN)
+-- Al enviar: se DESARMA. Esto es lo que convierte el aviso en de un solo uso,
+-- y por eso se hace aquí dentro y no en la Edge Function: si se hiciera allí,
+-- un fallo a mitad del bucle dejaría el aviso armado y sonando otra vez dos
+-- minutos después. Tampoco puede hacerlo el cliente: un aviso recibido con la
+-- página cerrada no tiene a nadie que lo apague.
+--
+-- Si el envío falló NO se desarma. El móvil no se ha enterado de nada, así
+-- que lo que pidió sigue pendiente. A la quinta se deja de intentar.
+CREATE OR REPLACE FUNCTION public.carga_aviso_enviado(p_endpoint TEXT, p_ok BOOLEAN)
  RETURNS void
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -440,18 +444,17 @@ CREATE OR REPLACE FUNCTION public.carga_aviso_enviado(
 AS $function$
 BEGIN
   IF p_ok THEN
-    INSERT INTO public.carga_avisos (user_id, zona_id) VALUES (p_user, p_zona)
-    ON CONFLICT (user_id, zona_id) DO UPDATE SET enviado_en = now();
-    UPDATE public.carga_push SET ultimo_ok = now(), fallos = 0 WHERE endpoint = p_endpoint;
+    UPDATE public.carga_push
+       SET zonas = '{}', ultimo_ok = now(), fallos = 0
+     WHERE endpoint = p_endpoint;
   ELSE
-    -- Un móvil que ya no acepta avisos. A la quinta se deja de intentar.
     UPDATE public.carga_push SET fallos = fallos + 1 WHERE endpoint = p_endpoint;
   END IF;
 END $function$;
 
-REVOKE ALL ON FUNCTION public.carga_aviso_enviado(UUID, TEXT, TEXT, BOOLEAN)
+REVOKE ALL ON FUNCTION public.carga_aviso_enviado(TEXT, BOOLEAN)
   FROM PUBLIC, anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.carga_aviso_enviado(UUID, TEXT, TEXT, BOOLEAN)
+GRANT EXECUTE ON FUNCTION public.carga_aviso_enviado(TEXT, BOOLEAN)
   TO service_role;
 
 
@@ -521,9 +524,10 @@ GRANT EXECUTE ON FUNCTION public.carga_ocupacion(INT) TO anon, authenticated;
 --
 -- Regla de la casa: cada tabla nueva contesta a esta pregunta.
 --
--- carga_push y carga_avisos apuntan a auth.users con ON DELETE CASCADE, así
--- que el `DELETE FROM auth.users` que ya hace borrar_mi_cuenta() se las lleva
--- solas, por los tres caminos que tiene la función. No hay que tocarla.
+-- carga_push es la única tabla de aquí con datos de una persona, y apunta a
+-- auth.users con ON DELETE CASCADE, así que el `DELETE FROM auth.users` que
+-- ya hace borrar_mi_cuenta() se la lleva sola, por los tres caminos que tiene
+-- la función. No hay que tocarla.
 --
 -- Se comprueba así, con una cuenta de usar y tirar:
 --   select count(*) from carga_push where user_id = '<uuid>';   -- 1

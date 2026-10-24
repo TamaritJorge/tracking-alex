@@ -113,12 +113,21 @@
   .zpunto.nada { background: var(--danger); }
   .zcuenta { font-variant-numeric: tabular-nums; font-weight: 700; }
 
-  /* ── LAS ZONAS QUE VIGILAS ────────────────────────────────────
+  /* ── LAS ZONAS PARA LAS QUE PIDES AVISO ───────────────────────
      Botones de activar/desactivar, no casillas. Son seis, se tocan con
      el pulgar y lo que importa es ver de un vistazo cuáles están
      marcadas: una rejilla de casillas de 14 px con su etiqueta al lado
-     ocuparía el doble y se acertaría la mitad de las veces. */
-  .zonas-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(9.5em, 1fr));
+     ocuparía el doble y se acertaría la mitad de las veces.
+
+     Cada chip lleva debajo su estado actual («llena», «2 libres»), que
+     es lo que convierte la decisión en inmediata: lo que se quiere armar
+     es, casi siempre, justo la que está llena. */
+  /* El mínimo va en px y no en em a propósito: en em depende del tamaño
+     de letra heredado, y con el de esta tarjeta se pasaba de los 152 px
+     justos que hacen falta para que entren dos columnas en un móvil de
+     375. Seis zonas en una sola columna son un scroll absurdo para algo
+     que se mira con una mano. */
+  .zonas-chips { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
                  gap: 8px; }
   .chip-zona {
     display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
@@ -133,14 +142,9 @@
   .chip-zona.on   { border-color: var(--ok); background: rgba(5,150,105,.14); color: var(--text); }
   .chip-zona.on b { color: var(--ok); }
 
-  .franja { display: flex; align-items: center; gap: 10px; }
-  .franja select {
-    flex: 1; padding: 12px 10px;
-    border: 1.5px solid var(--border); border-radius: 10px;
-    background: var(--surface); color: var(--text);
-    font-size: 1rem; font-family: inherit;
-  }
-  .franja span { color: var(--text2); font-size: .85rem; }
+  .chip-est       { font-size: .66rem; font-weight: 700; margin-top: 3px; opacity: .9; }
+  .chip-est.llena { color: var(--danger); }
+  .chip-est.libre { color: var(--ok); }
 
   /* En la app del bebé las fichas separan sus párrafos a mano, uno a uno,
      porque allí cada ficha maqueta lo suyo. Aquí el cuerpo del modal lo
@@ -199,7 +203,7 @@
 
   <!-- ── AVISOS ──────────────────────────────────────────────── -->
   <section class="card">
-    <p class="card-title">🔔 Avisarme cuando se libere</p>
+    <p class="card-title">🔔 Pedir aviso de sitio libre</p>
     <div id="avisos"></div>
   </section>
 

@@ -3,7 +3,14 @@
 
    Lo único de esta página que necesita cuenta. El mapa y las
    estadísticas funcionan sin registrarse; esto no puede, porque hay que
-   guardar a qué móvil mandar el aviso y de qué zonas.
+   guardar a qué móvil mandar el aviso.
+
+   ── ES UN AVISO DE UN SOLO USO ──
+   No se vigila nada de forma permanente. Se ARMA cuando hace falta —vas
+   de camino y la zona está llena— suena UNA vez al liberarse un poste, y
+   se desactiva solo. Lo que lo apaga es carga_aviso_enviado() en el
+   servidor, no este fichero: si lo apagara el cliente, un aviso recibido
+   con la página cerrada seguiría armado y volvería a sonar.
 
    ── LO QUE NO SE PUEDE ──
      · En iPhone sólo funciona si la web está añadida a la pantalla de
@@ -96,7 +103,7 @@ async function calcularEstado() {
   if (!sus) return 'apagado';
 
   const { data, error } = await sb.from('carga_push')
-    .select('endpoint, zonas, desde_hora, hasta_hora')
+    .select('endpoint, zonas')
     .eq('endpoint', sus.endpoint)
     .maybeSingle();
   if (error) { console.error('carga_push:', error); return 'apagado'; }
@@ -146,9 +153,10 @@ window.activarAvisos = async function () {
   }
 
   const j = sus.toJSON();
-  /* zonas vacío = TODAS, también las que la UJI añada mañana. Es el
-     estado inicial a propósito: quien acaba de activarlo no ha elegido
-     nada todavía, y lo que quiere es enterarse. */
+  /* Nace sin ninguna zona armada, y eso NO es un descuido: dar permiso
+     para que suene el móvil es una cosa y pedir un aviso concreto es
+     otra. Aquí sólo se guarda la dirección de entrega; el aviso se arma
+     después, marcando una zona. */
   const { error } = await sb.from('carga_push').upsert({
     endpoint: sus.endpoint,
     p256dh:   j.keys.p256dh,
@@ -160,7 +168,7 @@ window.activarAvisos = async function () {
 
   if (error) { toast('❌ No se pudo guardar: ' + (error.message || ''), 4500); return; }
 
-  toast('🔔 Listo: este móvil ya recibe los avisos');
+  toast('✅ Listo. Ahora marca la zona que te interese.', 4000);
   await refrescarAvisos();
 };
 
@@ -200,37 +208,36 @@ async function renovarAvisos() {
 
 
 /* ─────────────────────────────────────────────────────────────
-   QUÉ ZONAS VIGILA
+   ARMAR EL AVISO
 
-   Selección múltiple: ninguna, una, varias o todas. El botón «Todas»
-   existe porque es el caso más frecuente y marcar seis a mano es
-   absurdo — y porque «todas» marcando las seis NO es lo mismo que
-   «todas» con la lista vacía: la primera deja fuera cualquier zona que
-   la UJI añada en el futuro, y la segunda no.
+   Esto NO es una suscripción permanente. El aviso se ARMA cuando hace
+   falta —vas de camino, la zona está llena— y se GASTA al dispararse:
+   suena una vez y queda desactivado.
+
+   Es un cambio con consecuencias en cadena, todas a favor:
+     · No hace falta franja horaria. Si lo armas a las tres de la
+       madrugada es porque lo quieres a las tres de la madrugada.
+     · No hace falta enfriamiento. No hay segundo aviso del que
+       protegerse.
+     · `zonas` vacío significa NADA ARMADO, que es el estado de reposo.
+       (En el modelo anterior el vacío quería decir «todas». Si alguna
+       vez vuelve a leerse código viejo, ojo con eso.)
+
+   Marcar una zona la arma en el acto, sin un botón de «guardar»
+   aparte: esto se usa con una mano y a menudo dentro del coche.
    ───────────────────────────────────────────────────────────── */
 window.alternarZona = async function (z) {
   if (!miAviso) return;
-  const actuales = (miAviso.zonas && miAviso.zonas.length)
-    ? miAviso.zonas.slice()
-    : Object.keys(SIGLAS);           // vacío significaba todas: se materializa
-
-  const i = actuales.indexOf(z);
-  if (i >= 0) actuales.splice(i, 1); else actuales.push(z);
-
-  // Si acaban marcadas todas, se guarda el vacío, que es lo que de
-  // verdad quiere decir «todas».
-  const guardar = actuales.length === Object.keys(SIGLAS).length ? [] : actuales;
-  await guardarZonas(guardar);
+  const armadas = (miAviso.zonas || []).slice();
+  const i = armadas.indexOf(z);
+  if (i >= 0) armadas.splice(i, 1); else armadas.push(z);
+  await guardarZonas(armadas);
 };
 
-window.todasLasZonas = function () { return guardarZonas([]); };
-window.ningunaZona   = function () { return guardarZonas(null); };
+window.cancelarAviso = function () { return guardarZonas([]); };
 
 async function guardarZonas(zonas) {
   if (!miAviso) return;
-
-  // «Ninguna» no es una lista vacía (eso es «todas»): es apagar.
-  if (zonas === null) { await desactivarAvisos(); return; }
 
   const { error } = await sb.from('carga_push')
     .update({ zonas })
@@ -239,23 +246,12 @@ async function guardarZonas(zonas) {
 
   miAviso.zonas = zonas;
   pintarAvisos();
-  toast(zonas.length ? '✅ Guardado' : '✅ Te avisaré de todas las zonas');
+
+  if (!zonas.length) { toast('Aviso cancelado'); return; }
+  toast(zonas.length === 1
+    ? '🔔 Te aviso cuando se libere algo en ' + nombreZona(zonas[0])
+    : '🔔 Te aviso cuando se libere algo en ' + zonas.length + ' zonas');
 }
-
-window.guardarFranja = async function () {
-  if (!miAviso) return;
-  const d = Number(document.getElementById('avDesde').value);
-  const h = Number(document.getElementById('avHasta').value);
-  if (!(h > d)) { toast('⚠️ La hora de fin tiene que ser posterior a la de inicio.', 4000); return; }
-
-  const { error } = await sb.from('carga_push')
-    .update({ desde_hora: d, hasta_hora: h })
-    .eq('endpoint', miAviso.endpoint);
-  if (error) { toast('❌ No se pudo guardar: ' + (error.message || ''), 4000); return; }
-
-  miAviso.desde_hora = d; miAviso.hasta_hora = h;
-  toast('✅ Sólo te avisaré entre las ' + d + ':00 y las ' + h + ':00');
-};
 
 
 /* ─────────────────────────────────────────────────────────────
@@ -341,6 +337,11 @@ window.ayudaAvisos = function () {
       permitirlo desde los ajustes del navegador: no se puede desde aquí.</p>`;
   }
 
+  cuerpo += `<p class="ficha-txt"><strong>El aviso es de un solo uso.</strong> No te
+    suscribes a nada: marcas una zona cuando vas de camino, suena una vez en
+    cuanto se libere un poste, y queda desactivado. Para el día siguiente se
+    vuelve a marcar.</p>`;
+
   cuerpo += `<p class="hint-txt">El aviso puede llegar con retraso si el móvil está
     ahorrando batería, y entre que se libera el poste y llegas tú puede haber
     otro coche. Te digo lo que ha pasado, no te guardo el sitio.</p>`;
@@ -360,37 +361,50 @@ function botonAyuda() {
 }
 
 function htmlZonas() {
-  const todas = !miAviso.zonas || !miAviso.zonas.length;
-  const sel = z => todas || miAviso.zonas.indexOf(z) >= 0;
+  const armadas = miAviso.zonas || [];
+  const armada  = z => armadas.indexOf(z) >= 0;
 
-  const chips = Object.keys(SIGLAS).map(z => `
-    <button type="button" class="chip-zona ${sel(z) ? 'on' : ''}"
-            onclick="alternarZona('${z}')"
-            aria-pressed="${sel(z)}">
-      <b>${esc(SIGLAS[z])}</b><span>${esc(nombreZona(z))}</span>
-    </button>`).join('');
+  /* Cada chip lleva su estado actual. Sin él, armar un aviso es a
+     ciegas: lo normal es querer marcar precisamente la zona que está
+     llena, y si no se ve cuál es, hay que subir al mapa y volver. */
+  const chips = Object.keys(SIGLAS).map(z => {
+    const e = estadoActual && estadoActual[z];
+    const estado = !e ? '<span class="chip-est">sin datos</span>'
+      : e.libres === 0
+        ? '<span class="chip-est llena">llena</span>'
+        : `<span class="chip-est libre">${e.libres} ${e.libres === 1 ? 'libre' : 'libres'}</span>`;
+    return `
+      <button type="button" class="chip-zona ${armada(z) ? 'on' : ''}"
+              onclick="alternarZona('${z}')"
+              aria-pressed="${armada(z)}">
+        <b>${esc(SIGLAS[z])}</b><span>${esc(nombreZona(z))}</span>${estado}
+      </button>`;
+  }).join('');
 
-  const d = miAviso.desde_hora, h = miAviso.hasta_hora;
-  const horas = n => Array.from({ length: 25 }, (_, i) => i)
-    .map(i => `<option value="${i}" ${i === n ? 'selected' : ''}>${i}:00</option>`).join('');
+  if (!armadas.length) {
+    return `
+      <p class="hint-txt" style="margin:0 0 10px">
+        Marca la zona que te interese y te avisaré <strong>una vez</strong>, en cuanto
+        se libere un poste. Luego el aviso se desactiva solo.</p>
+      <div class="zonas-chips">${chips}</div>`;
+  }
+
+  /* Armar una zona que ya tiene sitio no sirve de nada ahora mismo: el
+     aviso salta en la TRANSICIÓN de ocupado a libre, así que esperaría a
+     que se llenara y volviera a vaciarse. Se dice, pero no se impide:
+     para cuando llegues puede estar llena, y es decisión tuya. */
+  const conSitio = armadas.filter(z => estadoActual && estadoActual[z] && estadoActual[z].libres > 0);
 
   return `
-    <p class="hint-txt" style="margin:0 0 8px">
-      ${todas ? 'Te aviso de <strong>todas</strong> las zonas, incluidas las que se añadan.'
-              : 'Te aviso sólo de las marcadas.'}
-    </p>
+    <p class="card-sub" style="margin:0 0 10px">
+      🔔 Aviso armado para <strong>${esc(armadas.map(nombreZona).join(', '))}</strong>.
+      Sonará una vez, cuando se libere un poste, y quedará desactivado.</p>
     <div class="zonas-chips">${chips}</div>
-    ${todas ? '' : `<button class="btn" onclick="todasLasZonas()"
-        style="background:var(--surface2);color:var(--text);margin-top:10px">Todas</button>`}
-
-    <p class="card-sub" style="margin:18px 0 6px">Sólo entre estas horas</p>
-    <div class="franja">
-      <select id="avDesde" onchange="guardarFranja()">${horas(d)}</select>
-      <span>y</span>
-      <select id="avHasta" onchange="guardarFranja()">${horas(h)}</select>
-    </div>
-    <p class="hint-txt" style="margin:8px 0 0">
-      Hora de Madrid. Nadie quiere saber a las 3:40 que hay un cargador libre.</p>`;
+    ${conSitio.length ? `<p class="hint-txt" style="margin:10px 0 0">
+      Ojo: en ${esc(conSitio.map(nombreZona).join(' y '))} ya hay sitio ahora mismo. El aviso
+      salta cuando un poste pasa de ocupado a libre, así que esperaría a que se llenara antes.</p>` : ''}
+    <button class="btn" onclick="cancelarAviso()"
+      style="background:var(--surface2);color:var(--text);margin-top:14px">Cancelar el aviso</button>`;
 }
 
 function pintarAvisos() {
@@ -432,21 +446,29 @@ function pintarAvisos() {
 
   if (estadoAv === 'apagado') {
     c.innerHTML = `
-      <p class="card-sub">Te aviso en cuanto un poste pase de ocupado a libre.</p>
-      <button class="btn btn-primary" onclick="activarAvisos()" style="margin-top:12px">Avisarme en este móvil</button>
+      <p class="card-sub">Cuando vayas de camino y la zona esté llena, pide un aviso y te
+         digo en cuanto se libere un poste. Suena una vez y se apaga solo.</p>
+      <button class="btn btn-primary" onclick="activarAvisos()" style="margin-top:12px">Permitir avisos en este móvil</button>
       ${botonAyuda()}
       <p class="hint-txt" style="margin:12px 0 0">Sesión: ${esc(sesion.user.email)} ·
         <a href="#" onclick="salir();return false">salir</a></p>`;
     return;
   }
 
+  /* Aquí abajo sólo van enlaces, no botones. «Cancelar el aviso» es lo
+     único que se pulsa a menudo y ya es un botón dentro de htmlZonas();
+     tres botones grises idénticos uno encima de otro harían que el que
+     importa dejara de verse.
+
+     «Cancelar el aviso» (desarmar) y «quitar este móvil» (borrar la
+     suscripción) son cosas distintas a propósito: lo normal es cancelar
+     un aviso y seguir pudiendo pedir otro mañana sin volver a pasar por
+     el permiso del navegador. */
   c.innerHTML = `
-    <p class="card-sub">🔔 Este móvil recibe los avisos.</p>
     ${htmlZonas()}
-    <button class="btn" onclick="desactivarAvisos()"
-      style="background:var(--surface2);color:var(--text);margin-top:16px">Dejar de avisarme</button>
-    ${botonAyuda()}
-    <p class="hint-txt" style="margin:12px 0 0">Sesión: ${esc(sesion.user.email)} ·
+    <p class="hint-txt" style="margin:16px 0 0">${esc(sesion.user.email)} ·
+      <a href="#" onclick="ayudaAvisos();return false">cómo funciona</a> ·
+      <a href="#" onclick="desactivarAvisos();return false">quitar este móvil</a> ·
       <a href="#" onclick="salir();return false">salir</a></p>`;
 }
 

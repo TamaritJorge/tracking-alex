@@ -288,6 +288,13 @@ async function consultarEstado() {
     estadoActual = z;
     pintarMapa(); pintarLista(); pintarResumen();
 
+    /* Los chips para armar el aviso muestran cuántos postes quedan en
+       cada zona, así que también se repintan. Sólo con el aviso ya
+       permitido: en los demás estados la tarjeta es texto fijo y
+       repintarla cada veinte segundos no aporta nada. */
+    if (typeof pintarAvisos === 'function' && typeof estadoAv !== 'undefined'
+        && estadoAv === 'activo') pintarAvisos();
+
     const h = new Date().toLocaleTimeString('es-ES',
       { hour: '2-digit', minute: '2-digit', second: '2-digit' });
     act.textContent = 'Actualizado a las ' + h

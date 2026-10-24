@@ -5,6 +5,12 @@
    a la base de datos, y si algun poste ha pasado de ocupado a libre
    manda los avisos de esa zona.
 
+   ── EL AVISO ES DE UN SOLO USO ──
+   Nadie esta suscrito de forma permanente. Se ARMA desde la pagina cuando
+   hace falta —vas de camino y la zona esta llena— y se GASTA al
+   dispararse. Aqui eso no cambia nada del sondeo: lo unico que lo
+   implementa es carga_aviso_enviado(), que vacia las zonas armadas.
+
    QUIEN DECIDE QUE ES UN CAMBIO NO ES ESTA FUNCION. Eso lo hace
    carga_registrar(), dentro de la base. Aqui solo se pide y se pasa. Si
    la logica estuviera repartida entre los dos sitios acabarian
@@ -184,12 +190,13 @@ Deno.serve(async () => {
        aviso que promete una plaza y falla se desactiva a la segunda. */
     const carga = JSON.stringify({
       titulo: `⚡ ${a.zona_nombre}`,
-      cuerpo: a.libres === 1
+      cuerpo: (a.libres === 1
         ? `Se ha liberado un poste. Queda 1 de ${a.total}.`
-        : `Se ha liberado un poste. Quedan ${a.libres} de ${a.total}.`,
+        : `Se ha liberado un poste. Quedan ${a.libres} de ${a.total}.`)
+        // Se dice que el aviso se ha gastado. Si no, la primera reaccion
+        // al volver otro dia es esperar uno que no va a llegar.
+        + ' El aviso queda desactivado.',
       url: './',
-      // El tag es la zona: un aviso nuevo de la misma zona sustituye al
-      // anterior, pero dos zonas distintas conviven en la pantalla.
       tag: 'carga-' + a.zona_id
     });
 
@@ -209,8 +216,11 @@ Deno.serve(async () => {
       caidos++;
     }
 
+    /* Desarma el aviso, que es lo que lo hace de un solo uso. Se hace en
+       la base y no aqui: si fallara a mitad del bucle, el aviso quedaria
+       armado y volveria a sonar dentro de dos minutos. */
     const { error: e2 } = await sb.rpc('carga_aviso_enviado', {
-      p_user: a.user_id, p_zona: a.zona_id, p_endpoint: a.endpoint, p_ok: ok
+      p_endpoint: a.endpoint, p_ok: ok
     });
     if (e2) console.error('carga_aviso_enviado:', e2);
   }
